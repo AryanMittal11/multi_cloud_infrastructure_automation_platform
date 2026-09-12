@@ -1,0 +1,236 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// Canonical Enums
+// ==========================================
+
+enum Role {
+  ADMIN
+  DEVELOPER
+  VIEWER
+}
+
+enum Provider {
+  AWS
+  AZURE
+  GCP
+}
+
+enum OperationType {
+  CREATE
+  MODIFY
+  DESTROY
+}
+
+enum DeploymentStatus {
+  DRAFT
+  PLANNING
+  PLANNED
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum ResourceStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  FAILED
+  DESTROYING
+  DESTROYED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SLACK
+  DISCORD
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// ==========================================
+// Models
+// ==========================================
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          Role           @default(DEVELOPER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  cloudAccounts CloudAccount[]
+  projects      Project[]
+  deployments   Deployment[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model CloudAccount {
+  id                          String        @id @default(uuid())
+  name                        String
+  provider                    Provider
+  accountReference            String        // AWS Account ID / Azure Sub ID / GCP Project ID
+  encryptedCredentialReference String        // Encrypted credentials JSON string (AES-256)
+  ownerId                     String
+  projectId                   String?
+  createdAt                   DateTime      @default(now())
+  updatedAt                   DateTime      @updatedAt
+
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  environments Environment[]
+
+  @@map("cloud_accounts")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cloudAccounts CloudAccount[]
+  environments  Environment[]
+  deployments   Deployment[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@map("projects")
+}
+
+model Environment {
+  id             String        @id @default(uuid())
+  name           String        // e.g. "development", "staging", "production"
+  projectId      String
+  cloudAccountId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cloudAccount CloudAccount? @relation(fields: [cloudAccountId], references: [id], onDelete: SetNull)
+  deployments  Deployment[]
+
+  @@unique([projectId, name])
+  @@map("environments")
+}
+
+model Template {
+  id                String    @id @default(uuid())
+  name              String
+  provider          Provider? // Null indicates a cross-cloud portable template
+  version           String
+  description       String?
+  inputSchema       Json      // JSONSchema defining parameter definitions and validations
+  templateReference String    // Internal file reference or module path
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  deployments Deployment[]
+
+  @@map("templates")
+}
+
+model Deployment {
+  id                 String           @id @default(uuid())
+  projectId          String
+  environmentId      String
+  templateId         String
+  userId             String
+  operationType      OperationType    @default(CREATE)
+  status             DeploymentStatus @default(DRAFT)
+  configuration      Json             // Validated user input values
+  planOutput         String?          @db.Text
+  applyOutput        String?          @db.Text
+  executionReference String?          // Lock ID / worker execution reference
+  costEstimate       Json?            // Monthly delta cost & breakdown
+  policyEvaluation   Json?            // Policy check results & severity
+  planTime           DateTime?
+  applyTime          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  template    Template    @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  resources   Resource[]
+  auditLogs   AuditLog[]
+
+  @@map("deployments")
+}
+
+model Resource {
+  id                 String         @id @default(uuid())
+  deploymentId       String
+  provider           Provider
+  resourceType       String         // e.g. "aws_instance", "aws_vpc", "azurerm_virtual_network"
+  providerResourceId String?        // Provider native ID (e.g. ARN, resource URI)
+  name               String?
+  status             ResourceStatus @default(PENDING)
+  outputs            Json?          // Provider outputs (e.g. public IP, DNS name, endpoint)
+  dependencies       Json?          // Array of resource IDs or relationship edges
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  deployment Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+
+  @@map("resources")
+}
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  userId       String?
+  projectId    String?
+  deploymentId String?
+  action       String      // e.g. "DEPLOYMENT_PLAN", "DEPLOYMENT_APPLY", "SAFE_DESTROY"
+  status       String      // "SUCCESS", "FAILURE", "PENDING"
+  message      String
+  metadata     Json?       // Parameters, actor IP, diffs
+  timestamp    DateTime    @default(now())
+
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  deployment Deployment? @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id             String              @id @default(uuid())
+  userId         String?
+  projectId      String?
+  channel        NotificationChannel
+  eventType      String              // e.g. "DEPLOYMENT_SUCCEEDED", "POLICY_BLOCKED"
+  configuration  Json                // e.g. destination email or webhook URL
+  deliveryStatus NotificationStatus  @default(PENDING)
+  payload        Json?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
