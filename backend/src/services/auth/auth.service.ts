@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { env } from '../../config/env';
@@ -177,6 +178,7 @@ export class AuthService {
     const refreshPayload: RefreshTokenPayload = {
       userId: payload.userId,
       email: payload.email,
+      jti: crypto.randomUUID(),
     };
 
     const refreshToken = jwt.sign(refreshPayload, env.JWT_REFRESH_SECRET, {

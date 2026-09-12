@@ -28,4 +28,5 @@ export interface TokenPayload {
 export interface RefreshTokenPayload {
   userId: string;
   email: string;
+  jti?: string;
 }
