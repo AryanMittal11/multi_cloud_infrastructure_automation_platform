@@ -1,1 +1,2 @@
-export const projectsService = { name: 'projectsService' };
+export * from './project.types';
+export * from './project.service';

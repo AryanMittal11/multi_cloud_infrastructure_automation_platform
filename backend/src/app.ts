@@ -5,6 +5,8 @@ import { env } from './config/env';
 
 import { healthRouter } from './routes/health.routes';
 import { authRouter } from './routes/auth.routes';
+import { projectRouter } from './routes/project.routes';
+import { cloudRouter } from './routes/cloud.routes';
 
 export const app = express();
 
@@ -22,6 +24,8 @@ app.use(express.urlencoded({ extended: true }));
 // Mount routes
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/cloud-accounts', cloudRouter);
 
 // Centralized error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
