@@ -1,4 +1,2 @@
-// Placeholder for authentication & RBAC service
-export const authService = {
-  name: 'authService',
-};
+export * from './auth.types';
+export * from './auth.service';

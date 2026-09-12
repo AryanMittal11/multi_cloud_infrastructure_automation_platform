@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { env } from './config/env';
 
 import { healthRouter } from './routes/health.routes';
+import { authRouter } from './routes/auth.routes';
 
 export const app = express();
 
@@ -18,15 +19,19 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Mount health check routes
+// Mount routes
 app.use('/api', healthRouter);
+app.use('/api/auth', authRouter);
 
 // Centralized error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Unhandled application error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const statusCode = typeof err.statusCode === 'number' ? err.statusCode : 500;
+  if (statusCode >= 500) {
+    console.error('Unhandled application error:', err);
+  }
+  res.status(statusCode).json({
+    error: err.name || 'Application Error',
+    message: err.message || 'An unexpected error occurred',
   });
 });
 
