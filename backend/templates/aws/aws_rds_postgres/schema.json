@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS RDS PostgreSQL Database",
+  "description": "Managed relational database running PostgreSQL with automated storage management and private security isolation",
+  "type": "object",
+  "required": ["db_name", "vpc_id", "subnet_ids"],
+  "properties": {
+    "db_name": {
+      "type": "string",
+      "title": "Database Identifier",
+      "default": "appdb",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "description": "Database and RDS instance identifier"
+    },
+    "db_username": {
+      "type": "string",
+      "title": "Master Username",
+      "default": "postgresadmin",
+      "description": "Administrator login name"
+    },
+    "db_password": {
+      "type": "string",
+      "title": "Master Password",
+      "default": "",
+      "description": "Leave blank to generate a high-entropy cryptographically secure password"
+    },
+    "db_instance_class": {
+      "type": "string",
+      "title": "Database Instance Class",
+      "default": "db.t3.micro",
+      "enum": ["db.t3.micro", "db.t3.small", "db.t3.medium", "db.t3.large", "db.r6g.large"],
+      "description": "RDS compute tier"
+    },
+    "allocated_storage": {
+      "type": "number",
+      "title": "Allocated Storage (GB)",
+      "default": 20,
+      "minimum": 20,
+      "maximum": 1000,
+      "description": "Initial storage capacity in GB"
+    },
+    "vpc_id": {
+      "type": "string",
+      "title": "VPC Identifier",
+      "description": "Target VPC where the database security group resides"
+    },
+    "subnet_ids": {
+      "type": "array",
+      "title": "Subnet Identifiers",
+      "items": { "type": "string" },
+      "minItems": 2,
+      "description": "At least two subnets across different Availability Zones"
+    },
+    "allowed_ingress_cidr": {
+      "type": "string",
+      "title": "Allowed Ingress CIDR",
+      "default": "10.0.0.0/16",
+      "description": "CIDR block permitted to connect to PostgreSQL port 5432"
+    }
+  }
+}

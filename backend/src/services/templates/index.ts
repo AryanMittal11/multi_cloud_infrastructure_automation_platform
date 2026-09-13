@@ -1,1 +1,3 @@
-export const templatesService = { name: 'templatesService' };
+export * from './template.types';
+export * from './template.validator';
+export * from './template.service';

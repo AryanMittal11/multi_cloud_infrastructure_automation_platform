@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS S3 Secure Object Storage",
+  "description": "Enterprise-grade AWS S3 bucket with default server-side encryption (AES-256), public access prevention, and optional versioning",
+  "type": "object",
+  "required": ["bucket_name_prefix"],
+  "properties": {
+    "bucket_name_prefix": {
+      "type": "string",
+      "title": "Bucket Name Prefix",
+      "default": "multicloud-storage",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,50}$",
+      "description": "Prefix used for S3 bucket name (will be automatically suffixed for global uniqueness)"
+    },
+    "enable_versioning": {
+      "type": "boolean",
+      "title": "Enable Object Versioning",
+      "default": false,
+      "description": "Keep multiple variants of an object in the same bucket for auditability and recovery"
+    },
+    "force_destroy": {
+      "type": "boolean",
+      "title": "Force Destroy on Teardown",
+      "default": true,
+      "description": "Enables clean teardown even if test objects remain in bucket"
+    }
+  }
+}
