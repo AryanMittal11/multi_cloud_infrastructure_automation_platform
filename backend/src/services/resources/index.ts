@@ -1,1 +1,1 @@
-export const resourcesService = { name: 'resourcesService' };
+export * from './resource.service';
