@@ -58,7 +58,13 @@ export class StateParser {
         const item: ParsedResourceItem = {
           type: res.type,
           name: instances.length > 1 ? `${res.name}[${i}]` : res.name,
-          provider: (res.provider || 'aws').replace(/^provider\[.*?\]\./, '').toUpperCase(),
+          provider: (() => {
+            const p = (res.provider || 'aws').toLowerCase();
+            if (p.includes('aws')) return 'AWS';
+            if (p.includes('azure') || p.includes('azurerm')) return 'AZURE';
+            if (p.includes('google') || p.includes('gcp')) return 'GCP';
+            return p.toUpperCase();
+          })(),
           providerResourceId,
           status: 'ACTIVE',
           outputs: attributes,

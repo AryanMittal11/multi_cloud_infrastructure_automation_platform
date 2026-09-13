@@ -9,6 +9,7 @@ import { projectRouter } from './routes/project.routes';
 import { cloudRouter } from './routes/cloud.routes';
 import { templateRouter } from './routes/template.routes';
 import { deploymentLockRouter } from './routes/deployment.lock.routes';
+import { deploymentRouter } from './routes/deployment.routes';
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/projects', projectRouter);
 app.use('/api/cloud-accounts', cloudRouter);
 app.use('/api/templates', templateRouter);
 app.use('/api/deployments/locks', deploymentLockRouter);
+app.use('/api/deployments', deploymentRouter);
 
 // Centralized error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
