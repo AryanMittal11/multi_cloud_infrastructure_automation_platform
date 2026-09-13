@@ -16,24 +16,32 @@ export class TemplateService {
 
   /**
    * Scans templates on disk and synchronizes catalog entries with the database.
+   * Multi-provider aware: ingests AWS, Azure, and GCP module directories.
    */
   async syncTemplatesFromDisk(): Promise<{ syncedCount: number; templates: TemplateResponse[] }> {
-    const awsDir = path.join(this.templatesRootDir, 'aws');
+    const providerDirs: Array<{ dirName: string; provider: Provider }> = [
+      { dirName: 'aws', provider: Provider.AWS },
+      { dirName: 'azure', provider: Provider.AZURE },
+      { dirName: 'gcp', provider: Provider.GCP },
+    ];
     const syncedTemplates: any[] = [];
 
-    if (fs.existsSync(awsDir)) {
+    for (const { dirName, provider } of providerDirs) {
+      const providerDir = path.join(this.templatesRootDir, dirName);
+      if (!fs.existsSync(providerDir)) continue;
+
       const moduleDirs = fs
-        .readdirSync(awsDir, { withFileTypes: true })
+        .readdirSync(providerDir, { withFileTypes: true })
         .filter((d) => d.isDirectory())
         .map((d) => d.name);
 
       for (const moduleName of moduleDirs) {
-        const schemaPath = path.join(awsDir, moduleName, 'schema.json');
+        const schemaPath = path.join(providerDir, moduleName, 'schema.json');
         if (!fs.existsSync(schemaPath)) continue;
 
         try {
           const schemaContent: JSONSchema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
-          const templateRef = `templates/aws/${moduleName}`;
+          const templateRef = `templates/${dirName}/${moduleName}`;
 
           const existing = await prisma.template.findFirst({
             where: { templateReference: templateRef },
@@ -48,7 +56,7 @@ export class TemplateService {
               where: { id: existing.id },
               data: {
                 name,
-                provider: Provider.AWS,
+                provider,
                 version: '1.0.0',
                 description,
                 inputSchema: schemaContent as any,
@@ -58,7 +66,7 @@ export class TemplateService {
             record = await prisma.template.create({
               data: {
                 name,
-                provider: Provider.AWS,
+                provider,
                 version: '1.0.0',
                 description,
                 templateReference: templateRef,

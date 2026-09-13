@@ -113,7 +113,14 @@ export default function TemplatesPage() {
                 const schemaProperties = template.inputSchema?.properties
                   ? Object.keys(template.inputSchema.properties).length
                   : 0;
-                const isAws = template.provider === 'AWS';
+                const providerBadgeClass =
+                  template.provider === 'AWS'
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                    : template.provider === 'AZURE'
+                      ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
+                      : template.provider === 'GCP'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
 
                 return (
                   <div
@@ -128,11 +135,7 @@ export default function TemplatesPage() {
                           </h2>
                           <div className="flex items-center space-x-2">
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                                isAws
-                                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                  : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
-                              }`}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${providerBadgeClass}`}
                             >
                               {template.provider || 'CROSS-CLOUD'}
                             </span>

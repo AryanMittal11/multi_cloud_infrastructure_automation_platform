@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud SQL PostgreSQL Database",
+  "description": "Managed relational database running PostgreSQL with private IP connectivity, SSD storage, automated backups, and restricted authorized networks",
+  "type": "object",
+  "required": ["gcp_project_id", "network_self_link"],
+  "properties": {
+    "instance_name": {
+      "type": "string",
+      "title": "Database Identifier",
+      "default": "platform-postgres",
+      "pattern": "^[a-z][a-z0-9-]{2,48}$",
+      "description": "Cloud SQL instance identifier (globally unique, lowercase)"
+    },
+    "gcp_project_id": {
+      "type": "string",
+      "title": "GCP Project ID",
+      "description": "GCP project ID where the database will be created"
+    },
+    "network_self_link": {
+      "type": "string",
+      "title": "VPC Network Self-Link",
+      "description": "Self-link URI of the VPC network for private IP connectivity (typically an output of the GCP VPC template)"
+    },
+    "manage_vpc_peering": {
+      "type": "boolean",
+      "title": "Manage VPC Peering",
+      "default": true,
+      "description": "Create the Service Networking peering connection (set false if peering is already managed elsewhere)"
+    },
+    "database_name": {
+      "type": "string",
+      "title": "Database Name",
+      "default": "appdb",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "description": "Name of the application database created inside the instance"
+    },
+    "db_username": {
+      "type": "string",
+      "title": "Master Username",
+      "default": "postgresadmin",
+      "description": "Application database username"
+    },
+    "db_password": {
+      "type": "string",
+      "title": "Master Password",
+      "default": "",
+      "description": "Leave blank to generate a high-entropy cryptographically secure password"
+    },
+    "postgres_version": {
+      "type": "string",
+      "title": "PostgreSQL Version",
+      "default": "15",
+      "enum": ["13", "14", "15", "16"],
+      "description": "PostgreSQL engine major version"
+    },
+    "tier": {
+      "type": "string",
+      "title": "Database Tier",
+      "default": "db-f1-micro",
+      "enum": ["db-f1-micro", "db-g1-small", "db-custom-2-7680", "db-custom-4-15360"],
+      "description": "Cloud SQL machine tier (compute + memory sizing)"
+    },
+    "region": {
+      "type": "string",
+      "title": "GCP Region",
+      "default": "us-east1",
+      "enum": ["us-east1", "us-central1", "us-west1", "europe-west1", "europe-west4", "asia-southeast1"],
+      "description": "GCP region where the instance will be deployed"
+    },
+    "allocated_storage_gb": {
+      "type": "number",
+      "title": "Allocated Storage (GB)",
+      "default": 20,
+      "minimum": 10,
+      "maximum": 1024,
+      "description": "Initial SSD storage capacity in GB"
+    },
+    "disk_autoresize": {
+      "type": "boolean",
+      "title": "Disk Auto-Resize",
+      "default": true,
+      "description": "Automatically increase storage when nearing capacity"
+    },
+    "high_availability": {
+      "type": "boolean",
+      "title": "High Availability",
+      "default": false,
+      "description": "Enable regional (multi-zone) high availability"
+    },
+    "point_in_time_recovery": {
+      "type": "boolean",
+      "title": "Point-In-Time Recovery",
+      "default": true,
+      "description": "Enable point-in-time recovery from binary logs"
+    },
+    "backup_retention_count": {
+      "type": "number",
+      "title": "Backup Retention (Count)",
+      "default": 7,
+      "minimum": 1,
+      "maximum": 365,
+      "description": "Number of automated backups to retain"
+    },
+    "deletion_protection": {
+      "type": "boolean",
+      "title": "Deletion Protection",
+      "default": false,
+      "description": "Protect the instance from accidental deletion"
+    },
+    "allowed_ingress_cidrs": {
+      "type": "array",
+      "title": "Authorized Networks",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "CIDR blocks permitted to connect over the public path. Empty list restricts access to private IP only."
+    },
+    "labels": {
+      "type": "object",
+      "title": "Instance Labels",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

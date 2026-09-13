@@ -1,6 +1,6 @@
 # Multi-Cloud Infrastructure Automation Platform
 
-A centralized control plane and orchestration platform for managing, planning, and safely provisioning cloud infrastructure across **AWS**, **Azure**, and **GCP**.
+A centralized control plane and orchestration platform for managing, planning, and safely provisioning cloud infrastructure across **AWS**, **Azure**, and **GCP** — with a cross-cloud template portability layer that maps one universal infrastructure intent onto any provider.
 
 ---
 
@@ -57,12 +57,13 @@ $$\text{Request} \to \text{Validate} \to \text{Plan} \to \text{Cost/Policy Check
 │   │   ├── routes/           # REST endpoints
 │   │   ├── controllers/      # Request handlers
 │   │   ├── services/         # Domain business logic
+│   │   │   └── portability/  # Cross-cloud mapper & output normalizer (Phase 2)
 │   │   ├── workers/          # RabbitMQ Terraform workers
 │   │   └── utils/            # Logger, crypto & helpers
 │   ├── prisma/               # Prisma database schema & migrations
 │   ├── templates/            # Provider-specific Terraform modules
 │   │   ├── aws/              # AWS VPC, EC2, RDS, S3
-│   │   ├── azure/            # Azure VNet, VM, DB, Blob
+│   │   ├── azure/            # Azure VNet, VM, PostgreSQL Flexible, Blob Storage
 │   │   └── gcp/              # GCP VPC, GCE, Cloud SQL, GCS
 │   └── package.json
 ├── frontend/                 # Next.js 14+ Web Application
@@ -111,3 +112,31 @@ npm run dev:frontend
 # Start async provisioning worker
 npm run dev:worker
 ```
+
+---
+
+## Cloud Provider Support Status
+
+| Capability | AWS | Azure | GCP |
+| :--- | :--- | :--- | :--- |
+| Credential onboarding & live validation | ✅ STS `GetCallerIdentity` | ✅ ARM `Subscriptions - Get` | ✅ Resource Manager `projects.get` |
+| Terraform modules (network / compute / database / storage) | ✅ | ✅ | ✅ |
+| Worker credential injection | ✅ `AWS_*` env vars | ✅ `ARM_*` env vars | ✅ `GOOGLE_CREDENTIALS` |
+| Cross-cloud portability (tier & region mapping) | ✅ | ✅ | ✅ |
+
+### Azure Onboarding
+Service Principal credentials: `clientId`, `clientSecret`, `tenantId`, `subscriptionId` — validated
+against Azure AD (client credentials flow) and the Azure Resource Manager REST API before being
+encrypted with AES-256-GCM.
+
+### GCP Onboarding
+Service Account credentials: `projectId`, `clientEmail`, `privateKey` — validated by signing a JWT
+(RS256) exchanged for an OAuth2 token and calling the Cloud Resource Manager `projects.get` API
+before being encrypted with AES-256-GCM.
+
+### Cross-Cloud Portability
+The `portability` service (`backend/src/services/portability/`) defines universal template
+archetypes (`web-service-stack`, `storage-backend`, `secure-network`), translates abstract compute
+tiers (`small`/`medium`/`large`) into provider SKUs, normalizes regions across clouds
+(`us-east-1` ↔ `eastus` ↔ `us-east1`), and unifies provider outputs into common descriptors
+(`compute_public_ip`, `database_endpoint`, `storage_uri`).

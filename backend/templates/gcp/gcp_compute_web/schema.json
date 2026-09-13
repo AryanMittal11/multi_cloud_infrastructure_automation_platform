@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Compute Engine Web Application Server",
+  "description": "Ubuntu Linux VM running Nginx with reserved static external IP, shielded VM security features, and guarded firewall rules",
+  "type": "object",
+  "required": ["gcp_project_id", "network_name", "subnet_self_link"],
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Server Name",
+      "default": "web-frontend",
+      "description": "Hostname and name prefix applied to the instance resources"
+    },
+    "gcp_project_id": {
+      "type": "string",
+      "title": "GCP Project ID",
+      "description": "GCP project ID where compute resources will be created"
+    },
+    "network_name": {
+      "type": "string",
+      "title": "VPC Network Name",
+      "description": "Name of the VPC network the instance attaches to (typically an output of the GCP VPC template)"
+    },
+    "subnet_self_link": {
+      "type": "string",
+      "title": "Subnet Self-Link",
+      "description": "Self-link URI of the subnetwork to attach the instance to (typically an output of the GCP VPC template)"
+    },
+    "zone": {
+      "type": "string",
+      "title": "GCP Zone",
+      "default": "us-east1-b",
+      "enum": ["us-east1-b", "us-east1-c", "us-east1-d", "us-central1-a", "us-central1-b", "europe-west1-b", "asia-southeast1-a"],
+      "description": "GCP zone in which to provision the instance"
+    },
+    "region": {
+      "type": "string",
+      "title": "GCP Region",
+      "default": "us-east1",
+      "enum": ["us-east1", "us-central1", "us-west1", "europe-west1", "europe-west4", "asia-southeast1"],
+      "description": "GCP region for the reserved static IP"
+    },
+    "machine_type": {
+      "type": "string",
+      "title": "Machine Type",
+      "default": "e2-micro",
+      "enum": ["e2-micro", "e2-small", "e2-medium", "e2-standard-2", "e2-standard-4"],
+      "description": "GCP machine type (compute tier sizing)"
+    },
+    "allocated_storage_gb": {
+      "type": "number",
+      "title": "Boot Disk Storage (GB)",
+      "default": 20,
+      "minimum": 10,
+      "maximum": 500,
+      "description": "Boot disk storage capacity in Gigabytes"
+    },
+    "boot_image": {
+      "type": "string",
+      "title": "Boot Disk Image",
+      "default": "ubuntu-os-cloud/ubuntu-2204-lts",
+      "description": "Boot disk operating system image family"
+    },
+    "service_account_email": {
+      "type": "string",
+      "title": "Instance Service Account",
+      "default": "",
+      "description": "Service account email attached to the instance (leave blank for compute default)"
+    },
+    "preemptible": {
+      "type": "boolean",
+      "title": "Preemptible Instance",
+      "default": false,
+      "description": "Run the instance as preemptible (spot) for cost savings on ephemeral workloads"
+    },
+    "allowed_ssh_cidrs": {
+      "type": "array",
+      "title": "Allowed SSH CIDRs",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Permitted IPv4 network blocks for SSH administrative access. Empty list disables inbound SSH."
+    },
+    "labels": {
+      "type": "object",
+      "title": "Instance Labels",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

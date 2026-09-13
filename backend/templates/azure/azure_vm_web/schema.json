@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure VM Web Application Server",
+  "description": "Ubuntu Linux virtual machine running Nginx with static public IP, guarded Network Security Group, and encrypted premium OS disk",
+  "type": "object",
+  "required": ["resource_group_name", "subnet_id", "admin_ssh_public_key"],
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Server Name",
+      "default": "web-frontend",
+      "description": "Hostname and name prefix applied to the VM resources"
+    },
+    "resource_group_name": {
+      "type": "string",
+      "title": "Resource Group Name",
+      "description": "Existing resource group hosting the VM stack (typically an output of the Azure VNet template)"
+    },
+    "subnet_id": {
+      "type": "string",
+      "title": "Subnet Resource ID",
+      "description": "Azure Resource ID of the subnet to attach the VM NIC to (typically an output of the Azure VNet template)"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "enum": ["eastus", "westus2", "centralus", "northeurope", "westeurope", "southeastasia"],
+      "description": "Azure region where the VM resources will be deployed"
+    },
+    "vm_size": {
+      "type": "string",
+      "title": "Compute Instance Size",
+      "default": "Standard_B1s",
+      "enum": ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_D2s_v5", "Standard_D4s_v5"],
+      "description": "Azure VM compute tier sizing"
+    },
+    "allocated_storage_gb": {
+      "type": "number",
+      "title": "OS Disk Storage (GB)",
+      "default": 30,
+      "minimum": 30,
+      "maximum": 1024,
+      "description": "OS disk storage capacity in Gigabytes"
+    },
+    "admin_username": {
+      "type": "string",
+      "title": "Admin Username",
+      "default": "azureadmin",
+      "description": "Administrator login name for the Linux VM"
+    },
+    "admin_ssh_public_key": {
+      "type": "string",
+      "title": "Admin SSH Public Key",
+      "description": "SSH public key (OpenSSH authorized_keys format) authorized for administrative access"
+    },
+    "allowed_ssh_cidr": {
+      "type": "string",
+      "title": "Allowed SSH CIDR",
+      "default": "",
+      "description": "Permitted IPv4 network block for SSH administrative access. Leave blank to disable inbound SSH."
+    },
+    "tags": {
+      "type": "object",
+      "title": "Resource Tags",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

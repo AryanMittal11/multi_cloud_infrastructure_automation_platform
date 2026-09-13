@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Custom VPC Network Template",
+  "description": "Configurable GCP Virtual Private Cloud with regional public and private subnetworks, Cloud NAT egress, and deny-by-default firewall rules",
+  "type": "object",
+  "required": ["gcp_project_id", "environment_name"],
+  "properties": {
+    "gcp_project_id": {
+      "type": "string",
+      "title": "GCP Project ID",
+      "description": "GCP project ID where network resources will be created"
+    },
+    "environment_name": {
+      "type": "string",
+      "title": "Environment Name",
+      "default": "dev-network",
+      "description": "Identifier prefix applied to all VPC networking resources"
+    },
+    "region": {
+      "type": "string",
+      "title": "GCP Region",
+      "default": "us-east1",
+      "enum": ["us-east1", "us-central1", "us-west1", "europe-west1", "europe-west4", "asia-southeast1"],
+      "description": "GCP region where the network resources will be deployed"
+    },
+    "public_subnet_cidr": {
+      "type": "string",
+      "title": "Public Subnet CIDR",
+      "default": "10.2.1.0/24",
+      "description": "CIDR range for the public (workload-facing) subnetwork"
+    },
+    "private_subnet_cidr": {
+      "type": "string",
+      "title": "Private Subnet CIDR",
+      "default": "10.2.2.0/24",
+      "description": "CIDR range for the private (database / internal) subnetwork"
+    },
+    "enable_private_nat": {
+      "type": "boolean",
+      "title": "NAT Only Private Subnet",
+      "default": true,
+      "description": "Route only the private subnet through Cloud NAT (true) or all subnetworks (false)"
+    },
+    "allowed_ssh_cidrs": {
+      "type": "array",
+      "title": "Allowed SSH CIDRs",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Permitted IPv4 network blocks for SSH administrative access. Empty list disables inbound SSH."
+    },
+    "tags": {
+      "type": "object",
+      "title": "Network Tags",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

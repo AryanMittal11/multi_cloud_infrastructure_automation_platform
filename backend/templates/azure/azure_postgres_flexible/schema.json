@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure PostgreSQL Flexible Server Database",
+  "description": "Managed relational database running PostgreSQL with encrypted storage, private DNS resolution, and restricted network access",
+  "type": "object",
+  "required": ["resource_group_name", "vnet_id"],
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Database Identifier",
+      "default": "platform-postgres",
+      "pattern": "^[a-z][a-z0-9-]{2,48}$",
+      "description": "Database server identifier (globally unique, lowercase)"
+    },
+    "resource_group_name": {
+      "type": "string",
+      "title": "Resource Group Name",
+      "description": "Existing resource group hosting the database (typically an output of the Azure VNet template)"
+    },
+    "vnet_id": {
+      "type": "string",
+      "title": "Virtual Network Resource ID",
+      "description": "Azure Resource ID of the VNet for private DNS resolution (typically an output of the Azure VNet template)"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "enum": ["eastus", "westus2", "centralus", "northeurope", "westeurope", "southeastasia"],
+      "description": "Azure region where the database will be deployed"
+    },
+    "postgres_version": {
+      "type": "string",
+      "title": "PostgreSQL Version",
+      "default": "15",
+      "enum": ["13", "14", "15", "16"],
+      "description": "PostgreSQL engine major version"
+    },
+    "sku_name": {
+      "type": "string",
+      "title": "Database SKU",
+      "default": "B_Standard_B1ms",
+      "enum": ["B_Standard_B1ms", "B_Standard_B2s", "GP_Standard_D2ds_v4", "GP_Standard_D4ds_v4"],
+      "description": "Azure Flexible Server compute tier"
+    },
+    "storage_mb": {
+      "type": "number",
+      "title": "Storage Capacity (MB)",
+      "default": 32768,
+      "minimum": 32768,
+      "maximum": 1048576,
+      "description": "Maximum storage capacity in Megabytes (32 GB minimum per Azure constraints)"
+    },
+    "admin_username": {
+      "type": "string",
+      "title": "Master Username",
+      "default": "postgresadmin",
+      "description": "Administrator login name"
+    },
+    "admin_password": {
+      "type": "string",
+      "title": "Master Password",
+      "default": "",
+      "description": "Leave blank to generate a high-entropy cryptographically secure password"
+    },
+    "backup_retention_days": {
+      "type": "number",
+      "title": "Backup Retention (Days)",
+      "default": 7,
+      "minimum": 1,
+      "maximum": 35,
+      "description": "Number of days to retain automated backups"
+    },
+    "geo_redundant_backup": {
+      "type": "boolean",
+      "title": "Geo-Redundant Backups",
+      "default": false,
+      "description": "Replicate backups to a paired region for disaster recovery"
+    },
+    "allowed_ingress_cidr": {
+      "type": "string",
+      "title": "Allowed Ingress CIDR",
+      "default": "",
+      "description": "CIDR block permitted to connect to PostgreSQL port 5432. Leave blank to allow only private network access."
+    },
+    "tags": {
+      "type": "object",
+      "title": "Resource Tags",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

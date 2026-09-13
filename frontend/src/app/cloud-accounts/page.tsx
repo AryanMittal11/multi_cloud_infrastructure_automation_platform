@@ -28,6 +28,15 @@ export default function CloudAccountsPage() {
   const [awsAccessKey, setAwsAccessKey] = useState('');
   const [awsSecretKey, setAwsSecretKey] = useState('');
   const [awsRegion, setAwsRegion] = useState('us-east-1');
+  // Azure credential fields (Sub-Phase 2.1.1)
+  const [azureClientId, setAzureClientId] = useState('');
+  const [azureClientSecret, setAzureClientSecret] = useState('');
+  const [azureTenantId, setAzureTenantId] = useState('');
+  const [azureSubscriptionId, setAzureSubscriptionId] = useState('');
+  // GCP credential fields (Sub-Phase 2.1.2)
+  const [gcpProjectId, setGcpProjectId] = useState('');
+  const [gcpClientEmail, setGcpClientEmail] = useState('');
+  const [gcpPrivateKey, setGcpPrivateKey] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
@@ -49,14 +58,63 @@ export default function CloudAccountsPage() {
       setIsModalOpen(false);
       setName('');
       setAccountReference('');
-      setAwsAccessKey('');
-      setAwsSecretKey('');
+      resetCredentialFields();
       setFormError(null);
     },
     onError: (err: any) => {
       setFormError(err.message || 'Failed to onboard cloud account');
     },
   });
+
+  const buildCredentials = (): Record<string, string> | null => {
+    if (provider === 'AWS') {
+      if (!awsAccessKey.trim() || !awsSecretKey.trim()) {
+        setFormError('AWS Access Key ID and Secret Access Key are required');
+        return null;
+      }
+      return {
+        accessKeyId: awsAccessKey.trim(),
+        secretAccessKey: awsSecretKey.trim(),
+        defaultRegion: awsRegion,
+      };
+    }
+
+    if (provider === 'AZURE') {
+      if (!azureClientId.trim() || !azureClientSecret.trim() || !azureTenantId.trim() || !azureSubscriptionId.trim()) {
+        setFormError('Azure Client ID, Client Secret, Tenant ID, and Subscription ID are all required');
+        return null;
+      }
+      return {
+        clientId: azureClientId.trim(),
+        clientSecret: azureClientSecret.trim(),
+        tenantId: azureTenantId.trim(),
+        subscriptionId: azureSubscriptionId.trim(),
+      };
+    }
+
+    // GCP
+    if (!gcpProjectId.trim() || !gcpClientEmail.trim() || !gcpPrivateKey.trim()) {
+      setFormError('GCP Project ID, Client Email, and Private Key are all required');
+      return null;
+    }
+    return {
+      projectId: gcpProjectId.trim(),
+      clientEmail: gcpClientEmail.trim(),
+      privateKey: gcpPrivateKey.trim(),
+    };
+  };
+
+  const resetCredentialFields = () => {
+    setAwsAccessKey('');
+    setAwsSecretKey('');
+    setAzureClientId('');
+    setAzureClientSecret('');
+    setAzureTenantId('');
+    setAzureSubscriptionId('');
+    setGcpProjectId('');
+    setGcpClientEmail('');
+    setGcpPrivateKey('');
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,19 +123,8 @@ export default function CloudAccountsPage() {
       return;
     }
 
-    const credentials: Record<string, string> = {};
-    if (provider === 'AWS') {
-      if (!awsAccessKey.trim() || !awsSecretKey.trim()) {
-        setFormError('AWS Access Key ID and Secret Access Key are required');
-        return;
-      }
-      credentials.accessKeyId = awsAccessKey.trim();
-      credentials.secretAccessKey = awsSecretKey.trim();
-      credentials.region = awsRegion;
-    } else {
-      // Mock / placeholder for Azure / GCP until Phase 2
-      credentials.serviceAccount = 'mock-service-principal';
-    }
+    const credentials = buildCredentials();
+    if (!credentials) return;
 
     setFormError(null);
     createMutation.mutate({
@@ -347,6 +394,88 @@ export default function CloudAccountsPage() {
                       <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
                     </select>
                   </div>
+                </div>
+              )}
+
+              {provider === 'AZURE' && (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="text-[11px] font-semibold text-sky-400 uppercase tracking-wider">
+                    Azure Service Principal
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Application (Client) ID — UUID"
+                      value={azureClientId}
+                      onChange={(e) => setAzureClientId(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                    <input
+                      type="password"
+                      placeholder="Client Secret"
+                      value={azureClientSecret}
+                      onChange={(e) => setAzureClientSecret(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Directory (Tenant) ID — UUID"
+                      value={azureTenantId}
+                      onChange={(e) => setAzureTenantId(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Subscription ID — UUID"
+                      value={azureSubscriptionId}
+                      onChange={(e) => setAzureSubscriptionId(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Verified against Azure Resource Manager (Subscriptions — Get) before storage.
+                  </p>
+                </div>
+              )}
+
+              {provider === 'GCP' && (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">
+                    GCP Service Account
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Project ID (e.g. infra-platform-prod)"
+                      value={gcpProjectId}
+                      onChange={(e) => setGcpProjectId(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Service Account Email (name@project.iam.gserviceaccount.com)"
+                      value={gcpClientEmail}
+                      onChange={(e) => setGcpClientEmail(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                    <textarea
+                      placeholder="Private Key (PEM format: -----BEGIN PRIVATE KEY-----)"
+                      value={gcpPrivateKey}
+                      onChange={(e) => setGcpPrivateKey(e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Verified against Google Cloud Resource Manager (projects.get) before storage.
+                  </p>
                 </div>
               )}
 

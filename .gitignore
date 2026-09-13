@@ -43,3 +43,6 @@ crash.log
 Thumbs.db
 .vscode/
 .idea/
+
+# Codebuff agent workspace
+.freebuff/

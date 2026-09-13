@@ -1,9 +1,15 @@
 import { Provider } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { encryptCredential, decryptCredential, maskSecret } from '../../utils/crypto';
-import { validateAwsCredentials } from './cloud.validator';
+import {
+  validateAwsCredentials,
+  validateAzureCredentials,
+  validateGcpCredentials,
+} from './cloud.validator';
 import {
   AwsCredentials,
+  AzureCredentials,
+  GcpCredentials,
   CloudCredentials,
   CreateCloudAccountInput,
   CloudAccountResponse,
@@ -20,13 +26,32 @@ export class CloudService {
     let accountReference = input.accountReference || '';
 
     // 1. Validate credentials based on provider
-    if (input.provider === Provider.AWS) {
-      const awsCreds = input.credentials as AwsCredentials;
-      const callerIdentity = await validateAwsCredentials(awsCreds, input.skipValidation);
-      accountReference = callerIdentity.account || awsCreds.accessKeyId;
-    } else {
-      // For Azure / GCP (Phase 2), default reference is user supplied or extracted from credentials
-      accountReference = input.accountReference || 'unverified-provider-account';
+    switch (input.provider) {
+      case Provider.AWS: {
+        const awsCreds = input.credentials as AwsCredentials;
+        const callerIdentity = await validateAwsCredentials(awsCreds, input.skipValidation);
+        accountReference = accountReference || callerIdentity.account || awsCreds.accessKeyId;
+        break;
+      }
+      case Provider.AZURE: {
+        const azureCreds = input.credentials as AzureCredentials;
+        const azureIdentity = await validateAzureCredentials(azureCreds, input.skipValidation);
+        // Normalize to subscription ID as canonical Azure account reference
+        accountReference = accountReference || azureIdentity.subscriptionId;
+        break;
+      }
+      case Provider.GCP: {
+        const gcpCreds = input.credentials as GcpCredentials;
+        const gcpIdentity = await validateGcpCredentials(gcpCreds, input.skipValidation);
+        // Normalize to project ID as canonical GCP account reference
+        accountReference = accountReference || gcpIdentity.projectId;
+        break;
+      }
+      default: {
+        const error: any = new Error(`Unsupported cloud provider: ${input.provider}`);
+        error.statusCode = 400;
+        throw error;
+      }
     }
 
     // 2. Encrypt credentials at rest using AES-256-GCM

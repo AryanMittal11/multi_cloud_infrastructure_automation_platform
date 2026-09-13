@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud Storage Bucket",
+  "description": "Secure storage bucket with public access prevention enforced, uniform bucket-level IAM, server-side encryption, versioning, and lifecycle tiering",
+  "type": "object",
+  "required": ["gcp_project_id"],
+  "properties": {
+    "bucket_name_prefix": {
+      "type": "string",
+      "title": "Bucket Name Prefix",
+      "default": "multicloud-storage",
+      "pattern": "^[a-z0-9-]{3,30}$",
+      "description": "Prefix for the bucket name (a random suffix is appended for global uniqueness)"
+    },
+    "gcp_project_id": {
+      "type": "string",
+      "title": "GCP Project ID",
+      "description": "GCP project ID where the bucket will be created"
+    },
+    "location": {
+      "type": "string",
+      "title": "GCP Location",
+      "default": "US",
+      "enum": ["US", "EU", "ASIA", "us-east1", "us-central1", "us-west1", "europe-west1", "asia-southeast1"],
+      "description": "GCP location (multi-region or region) where the bucket will be hosted"
+    },
+    "storage_class": {
+      "type": "string",
+      "title": "Storage Class",
+      "default": "STANDARD",
+      "enum": ["STANDARD", "NEARLINE", "COLDLINE", "ARCHIVE"],
+      "description": "Default storage class for objects"
+    },
+    "enable_versioning": {
+      "type": "boolean",
+      "title": "Enable Object Versioning",
+      "default": true,
+      "description": "Enable object versioning for rollback and disaster recovery"
+    },
+    "soft_delete_retention_days": {
+      "type": "number",
+      "title": "Soft Delete Retention (Days)",
+      "default": 7,
+      "minimum": 0,
+      "maximum": 90,
+      "description": "Days to retain soft-deleted objects for recovery"
+    },
+    "force_destroy": {
+      "type": "boolean",
+      "title": "Force Destroy",
+      "default": true,
+      "description": "Allow bucket destruction even if it contains objects (useful for dev/test environments)"
+    },
+    "enable_lifecycle_rules": {
+      "type": "boolean",
+      "title": "Enable Lifecycle Tiering",
+      "default": true,
+      "description": "Automatically transition objects to NEARLINE (90d) and ARCHIVE (365d) storage classes"
+    },
+    "kms_key_name": {
+      "type": "string",
+      "title": "Customer-Managed KMS Key",
+      "default": "",
+      "description": "Cloud KMS key resource name for customer-managed encryption. Leave blank for Google-managed encryption."
+    },
+    "iam_readers": {
+      "type": "array",
+      "title": "IAM Read Members",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "IAM members (e.g. serviceAccount:email, user:email) granted object read access via bucket policy"
+    },
+    "create_healthcheck_object": {
+      "type": "boolean",
+      "title": "Create Healthcheck Object",
+      "default": false,
+      "description": "Create a marker object used for platform health verification"
+    },
+    "labels": {
+      "type": "object",
+      "title": "Bucket Labels",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Blob Storage Account",
+  "description": "Secure storage account with private blob container, infrastructure double-encryption, TLS 1.2 enforcement, and public access blocked",
+  "type": "object",
+  "required": ["resource_group_name"],
+  "properties": {
+    "storage_name_prefix": {
+      "type": "string",
+      "title": "Storage Account Name Prefix",
+      "default": "multicloudstorage",
+      "pattern": "^[a-z0-9]{3,16}$",
+      "description": "Prefix for the storage account name (3-16 lowercase alphanumerics; a random suffix is appended for global uniqueness)"
+    },
+    "container_name": {
+      "type": "string",
+      "title": "Blob Container Name",
+      "default": "application-data",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,61}$",
+      "description": "Name of the blob container created inside the storage account"
+    },
+    "resource_group_name": {
+      "type": "string",
+      "title": "Resource Group Name",
+      "description": "Existing resource group hosting the storage account (typically an output of the Azure VNet template)"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "enum": ["eastus", "westus2", "centralus", "northeurope", "westeurope", "southeastasia"],
+      "description": "Azure region where the storage account will be deployed"
+    },
+    "account_tier": {
+      "type": "string",
+      "title": "Performance Tier",
+      "default": "Standard",
+      "enum": ["Standard", "Premium"],
+      "description": "Storage account performance tier"
+    },
+    "replication_type": {
+      "type": "string",
+      "title": "Replication Strategy",
+      "default": "LRS",
+      "enum": ["LRS", "ZRS", "GRS", "RAGRS"],
+      "description": "Storage replication strategy: Locally-redundant, Zone-redundant, Geo-redundant, or Read-access geo-redundant"
+    },
+    "enable_versioning": {
+      "type": "boolean",
+      "title": "Enable Blob Versioning",
+      "default": true,
+      "description": "Enable object versioning for rollback and disaster recovery"
+    },
+    "shared_access_key_enabled": {
+      "type": "boolean",
+      "title": "Allow Shared Key Access",
+      "default": false,
+      "description": "Permit shared key authorization (leave disabled to enforce Azure AD / Entra ID-only access)"
+    },
+    "tags": {
+      "type": "object",
+      "title": "Resource Tags",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

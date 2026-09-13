@@ -96,6 +96,114 @@ describe('CloudService', () => {
         }),
       ).rejects.toThrow('Invalid AWS Access Key ID format');
     });
+
+    it('should onboard an Azure account and normalize the subscription ID as account reference', async () => {
+      const mockAzureCreds = {
+        clientId: '11111111-1111-1111-1111-111111111111',
+        clientSecret: 'super-secret-client-secret-value',
+        tenantId: '22222222-2222-2222-2222-222222222222',
+        subscriptionId: '33333333-3333-3333-3333-333333333333',
+      };
+
+      (prisma.cloudAccount.create as jest.Mock).mockImplementation((args) => {
+        return Promise.resolve({
+          id: 'acc-azure-1',
+          name: args.data.name,
+          provider: args.data.provider,
+          accountReference: args.data.accountReference,
+          encryptedCredentialReference: args.data.encryptedCredentialReference,
+          ownerId: args.data.ownerId,
+          projectId: args.data.projectId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      });
+
+      const res = await cloudService.createCloudAccount('usr-admin', {
+        name: 'Azure Production',
+        provider: Provider.AZURE,
+        credentials: mockAzureCreds,
+        skipValidation: true,
+      });
+
+      expect(res.provider).toBe(Provider.AZURE);
+      expect(res.accountReference).toBe(mockAzureCreds.subscriptionId);
+
+      // Verify credentials round-trip through encryption
+      const createCall = (prisma.cloudAccount.create as jest.Mock).mock.calls[0][0];
+      const decrypted = decryptCredential(createCall.data.encryptedCredentialReference);
+      expect(decrypted.clientId).toBe(mockAzureCreds.clientId);
+      expect(decrypted.tenantId).toBe(mockAzureCreds.tenantId);
+    });
+
+    it('should reject Azure onboarding with malformed client ID', async () => {
+      await expect(
+        cloudService.createCloudAccount('usr-admin', {
+          name: 'Broken Azure',
+          provider: Provider.AZURE,
+          credentials: {
+            clientId: 'not-a-uuid',
+            clientSecret: 'some-secret-value-long-enough',
+            tenantId: '22222222-2222-2222-2222-222222222222',
+            subscriptionId: '33333333-3333-3333-3333-333333333333',
+          } as any,
+          skipValidation: true,
+        }),
+      ).rejects.toThrow('Invalid Azure Client ID format');
+    });
+
+    it('should onboard a GCP account and normalize the project ID as account reference', async () => {
+      const mockGcpCreds = {
+        projectId: 'infra-platform-prod',
+        clientEmail: 'terraform@infra-platform-prod.iam.gserviceaccount.com',
+        privateKey:
+          '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\nMzEfYyjiWA4yX0nWVZbZJkZKq0PnHnRmNhU7wW0binH0uBHzfRKhh0Oa2Y0OF9Uu\nTmncJFQCLw-----END PRIVATE KEY-----\n',
+      };
+
+      (prisma.cloudAccount.create as jest.Mock).mockImplementation((args) => {
+        return Promise.resolve({
+          id: 'acc-gcp-1',
+          name: args.data.name,
+          provider: args.data.provider,
+          accountReference: args.data.accountReference,
+          encryptedCredentialReference: args.data.encryptedCredentialReference,
+          ownerId: args.data.ownerId,
+          projectId: args.data.projectId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      });
+      (prisma.cloudAccount.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const res = await cloudService.createCloudAccount('usr-admin', {
+        name: 'GCP Production',
+        provider: Provider.GCP,
+        credentials: mockGcpCreds,
+        skipValidation: true,
+      });
+
+      expect(res.provider).toBe(Provider.GCP);
+      expect(res.accountReference).toBe(mockGcpCreds.projectId);
+
+      const createCall = (prisma.cloudAccount.create as jest.Mock).mock.calls[0][0];
+      const decrypted = decryptCredential(createCall.data.encryptedCredentialReference);
+      expect(decrypted.clientEmail).toBe(mockGcpCreds.clientEmail);
+    });
+
+    it('should reject GCP onboarding with malformed service account email', async () => {
+      await expect(
+        cloudService.createCloudAccount('usr-admin', {
+          name: 'Broken GCP',
+          provider: Provider.GCP,
+          credentials: {
+            projectId: 'infra-platform-prod',
+            clientEmail: 'not-a-service-account@gmail.com',
+            privateKey: 'not-a-private-key',
+          } as any,
+          skipValidation: true,
+        }),
+      ).rejects.toThrow('Invalid GCP Client Email format');
+    });
   });
 
   describe('Safe Account Deletion', () => {

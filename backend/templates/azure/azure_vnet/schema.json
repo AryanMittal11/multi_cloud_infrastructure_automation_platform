@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Modular VNet Template",
+  "description": "Configurable Azure Virtual Network with public and private subnets and a deny-by-default Network Security Group",
+  "type": "object",
+  "required": ["environment_name", "location"],
+  "properties": {
+    "environment_name": {
+      "type": "string",
+      "title": "Environment Name",
+      "default": "dev-network",
+      "description": "Identifier prefix applied to all VNet networking resources"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "enum": ["eastus", "westus2", "centralus", "northeurope", "westeurope", "southeastasia"],
+      "description": "Azure region where the network resources will be deployed"
+    },
+    "vnet_address_space": {
+      "type": "string",
+      "title": "VNet Address Space",
+      "default": "10.1.0.0/16",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}\\/(1[6-9]|2[0-4])$",
+      "description": "IPv4 address space for the Virtual Network (e.g. 10.1.0.0/16)"
+    },
+    "public_subnet_cidr": {
+      "type": "string",
+      "title": "Public Subnet CIDR",
+      "default": "10.1.1.0/24",
+      "description": "CIDR block for the public (workload-facing) subnet"
+    },
+    "private_subnet_cidr": {
+      "type": "string",
+      "title": "Private Subnet CIDR",
+      "default": "10.1.2.0/24",
+      "description": "CIDR block for the private (database / internal) subnet"
+    },
+    "allowed_ssh_cidr": {
+      "type": "string",
+      "title": "Allowed SSH CIDR",
+      "default": "",
+      "description": "Permitted IPv4 network block for SSH administrative access. Leave blank to disable inbound SSH."
+    },
+    "tags": {
+      "type": "object",
+      "title": "Resource Tags",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    }
+  }
+}

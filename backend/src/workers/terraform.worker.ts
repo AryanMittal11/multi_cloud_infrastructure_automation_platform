@@ -1,3 +1,6 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { prisma } from '../config/prisma';
 import { queueService } from '../services/queue';
 import { cloudService } from '../services/cloud';
@@ -9,6 +12,25 @@ import { deploymentLockManager } from '../services/deployments/deployment.lock';
 import { DeploymentJobMessage } from '../services/queue/queue.types';
 import { logger } from '../utils/logger';
 import { DeploymentStatus, Provider } from '@prisma/client';
+
+/**
+ * Ephemeral credential files written for GCP provider auth.
+ * Removed from disk as soon as the job finishes (success or failure).
+ */
+const ephemeralCredentialFiles: string[] = [];
+
+function cleanupEphemeralCredentialFiles(): void {
+  while (ephemeralCredentialFiles.length > 0) {
+    const file = ephemeralCredentialFiles.pop();
+    try {
+      if (file && fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+    } catch (err) {
+      logger.warn(`Failed to remove ephemeral credential file ${file}:`, err);
+    }
+  }
+}
 
 export class TerraformWorkerService {
   private isRunning: boolean = false;
@@ -85,7 +107,7 @@ export class TerraformWorkerService {
     });
 
     try {
-      // 4. Resolve & Decrypt Cloud Account Credentials
+      // 4. Resolve & Decrypt Cloud Account Credentials (multi-provider aware)
       let envVars: Record<string, string> = {};
       let cloudRegion = 'us-east-1';
 
@@ -94,7 +116,45 @@ export class TerraformWorkerService {
           deployment.environment.cloudAccountId,
         );
 
-        if (credentials.accessKeyId && credentials.secretAccessKey) {
+        const targetProvider =
+          deployment.template.provider || deployment.environment.cloudAccount?.provider || Provider.AWS;
+
+        if (targetProvider === Provider.AZURE) {
+          // Azure provider auth: Service Principal environment injection
+          envVars = {
+            ARM_CLIENT_ID: credentials.clientId,
+            ARM_CLIENT_SECRET: credentials.clientSecret,
+            ARM_TENANT_ID: credentials.tenantId,
+            ARM_SUBSCRIPTION_ID: credentials.subscriptionId,
+          };
+          cloudRegion = (deployment.configuration as Record<string, any>)?.location || 'eastus';
+        } else if (targetProvider === Provider.GCP) {
+          // GCP provider auth: Service Account JSON key injected via credentials file
+          const serviceAccountKey = JSON.stringify({
+            type: 'service_account',
+            project_id: credentials.projectId,
+            private_key: credentials.privateKey,
+            client_email: credentials.clientEmail,
+            auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+            token_uri: 'https://oauth2.googleapis.com/token',
+          });
+          const gcpCredFile = path.join(
+            os.tmpdir(),
+            `gcp-sa-${job.deploymentId}-${Date.now()}.json`,
+          );
+          fs.writeFileSync(gcpCredFile, serviceAccountKey, { mode: 0o600 });
+          envVars = {
+            GOOGLE_CREDENTIALS: serviceAccountKey,
+            GOOGLE_PROJECT: credentials.projectId,
+            GCLOUD_PROJECT: credentials.projectId,
+            GOOGLE_CLOUD_PROJECT: credentials.projectId,
+            CLOUDSDK_CORE_PROJECT: credentials.projectId,
+          };
+          // Register ephemeral credential file for guaranteed cleanup
+          ephemeralCredentialFiles.push(gcpCredFile);
+          cloudRegion = (deployment.configuration as Record<string, any>)?.region || 'us-east1';
+        } else {
+          // AWS provider auth
           envVars = {
             AWS_ACCESS_KEY_ID: credentials.accessKeyId,
             AWS_SECRET_ACCESS_KEY: credentials.secretAccessKey,
@@ -261,7 +321,8 @@ export class TerraformWorkerService {
         payload: { error: err.message, durationMs: Date.now() - startTime },
       });
     } finally {
-      // 8. Always release deployment lock
+      // 8. Always release deployment lock and shred ephemeral credential material
+      cleanupEphemeralCredentialFiles();
       await deploymentLockManager.releaseLock(job.deploymentId);
     }
   }

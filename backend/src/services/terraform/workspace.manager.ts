@@ -19,6 +19,17 @@ export class WorkspaceManager {
   }
 
   /**
+   * Resolves the target cloud provider from the template reference path
+   * (e.g. templates/azure/azure_vnet -> AZURE).
+   */
+  resolveProviderFromReference(templateReference: string): 'AWS' | 'AZURE' | 'GCP' {
+    const normalized = templateReference.toLowerCase();
+    if (normalized.includes('/azure/') || normalized.startsWith('azure')) return 'AZURE';
+    if (normalized.includes('/gcp/') || normalized.startsWith('gcp')) return 'GCP';
+    return 'AWS';
+  }
+
+  /**
    * Initializes an ephemeral workspace directory for a deployment.
    * Copies template HCL files and writes terraform.tfvars.json.
    */
@@ -47,7 +58,7 @@ export class WorkspaceManager {
       logger.warn(`Source template directory not found at ${sourceTemplateDir}. Generating placeholder main.tf.`);
       fs.writeFileSync(
         path.join(workspaceDir, 'main.tf'),
-        `# Generated placeholder for ${config.templateReference}\noutput "status" { value = "ready" }\n`,
+        `# Generated placeholder for ${config.templateReference}\noutput \"status\" { value = \"ready\" }\n`,
         'utf8',
       );
     }
@@ -56,10 +67,97 @@ export class WorkspaceManager {
     const tfvarsPath = path.join(workspaceDir, 'terraform.tfvars.json');
     fs.writeFileSync(tfvarsPath, JSON.stringify(config.configuration, null, 2), 'utf8');
 
-    // 3. Generate AWS provider block if not present
+    // 3. Generate provider block matching the target cloud (multi-provider aware)
     const providerPath = path.join(workspaceDir, 'provider_override.tf');
+    const provider = this.resolveProviderFromReference(config.templateReference);
+    const providerHcl = this.buildProviderBlock(provider, config);
+    fs.writeFileSync(providerPath, providerHcl.trim(), 'utf8');
+
+    logger.info(`Prepared isolated workspace at ${workspaceDir} (provider: ${provider})`);
+    return workspaceDir;
+  }
+
+  /**
+   * Builds the provider configuration block (required_providers + provider stanza)
+   * for the target cloud. Credentials are always injected via environment variables
+   * (never persisted to disk in HCL) per the Zero Secret Leakage invariant.
+   */
+  private buildProviderBlock(
+    provider: 'AWS' | 'AZURE' | 'GCP',
+    config: WorkspaceConfig,
+  ): string {
+    if (provider === 'AZURE') {
+      const location = config.region || config.configuration.location || 'eastus';
+      return `
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}
+
+# Authentication is injected via ARM_* environment variables by the worker.
+provider "azurerm" {
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+  default_tags {
+    tags = {
+      PlatformDeploymentId = "${config.deploymentId}"
+      ManagedBy            = "MultiCloudPlatform"
+    }
+  }
+}
+
+# Default Azure region used when a template does not declare an explicit location
+locals {
+  platform_default_location = "${location}"
+}
+`;
+    }
+
+    if (provider === 'GCP') {
+      const region = config.region || config.configuration.region || 'us-east1';
+      return `
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}
+
+# Authentication and project resolution are injected via
+# GOOGLE_CREDENTIALS / GOOGLE_PROJECT environment variables by the worker.
+provider "google" {
+  region = "${region}"
+}
+
+# Default GCP region used when a template does not declare an explicit region
+locals {
+  platform_default_region = "${region}"
+}
+`;
+    }
+
+    // AWS (default)
     const region = config.region || config.configuration.region || 'us-east-1';
-    const providerHcl = `
+    return `
 terraform {
   required_version = ">= 1.5.0"
   required_providers {
@@ -74,6 +172,7 @@ terraform {
   }
 }
 
+# Authentication is injected via AWS_* environment variables by the worker.
 provider "aws" {
   region = "${region}"
   default_tags {
@@ -84,10 +183,6 @@ provider "aws" {
   }
 }
 `;
-    fs.writeFileSync(providerPath, providerHcl.trim(), 'utf8');
-
-    logger.info(`Prepared isolated workspace at ${workspaceDir}`);
-    return workspaceDir;
   }
 
   /**
