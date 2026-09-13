@@ -1,11 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Navbar } from './navbar';
 import { Sidebar } from './sidebar';
 
+/** Routes that render their own chrome (marketing pages) */
+const FULL_PAGE_ROUTES = ['/'];
+
 export function Shell({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Marketing/landing pages render without the app navbar/sidebar
+  if (FULL_PAGE_ROUTES.includes(pathname)) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
