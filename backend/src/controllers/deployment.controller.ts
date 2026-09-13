@@ -92,4 +92,88 @@ export const deploymentController = {
       next(err);
     }
   },
+
+  /**
+   * GET /api/deployments/:id/resources
+   * Retrieves all provisioned resources created by this deployment.
+   */
+  getResources: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const resources = await deploymentService.getDeploymentResources(req.params.id);
+      res.status(200).json({ resources });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/deployments/:id/logs
+   * Retrieves execution logs and phase timings.
+   */
+  getLogs: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const logs = await deploymentService.getDeploymentLogs(req.params.id);
+      res.status(200).json({ logs });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * POST /api/deployments/destroy-plan
+   * Initiates an infrastructure destruction plan (terraform plan -destroy).
+   */
+  createDestroyPlan: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.userId;
+      const deployment = await deploymentService.createDestroyPlan(userId, req.body);
+      res.status(202).json({
+        message: 'Destruction plan generation initiated successfully',
+        deployment,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * POST /api/deployments/:id/destroy-plan
+   * Initiates a destruction plan targeting a specific deployment.
+   */
+  createDeploymentDestroyPlan: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.userId;
+      const deployment = await deploymentService.createDestroyPlan(userId, {
+        deploymentId: req.params.id,
+        ...req.body,
+      });
+      res.status(202).json({
+        message: 'Destruction plan generation initiated successfully',
+        deployment,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * POST /api/deployments/:id/confirm-destroy
+   * Explicit confirmation and execution of infrastructure destruction.
+   */
+  confirmDestroy: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      const deployment = await deploymentService.confirmDestroy(
+        req.params.id,
+        { userId: user.userId, role: user.role },
+        req.body,
+      );
+      res.status(200).json({
+        message: `Infrastructure destruction confirmed and queued for execution on deployment "${deployment.id}"`,
+        deployment,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

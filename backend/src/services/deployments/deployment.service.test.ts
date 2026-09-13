@@ -2,6 +2,7 @@ import { DeploymentService } from './deployment.service';
 import { prisma } from '../../config/prisma';
 import { queueService } from '../queue';
 import { templateService } from '../templates';
+import { resourceService } from '../resources';
 import { deploymentLockManager } from './deployment.lock';
 import { DeploymentStatus, OperationType, Provider, Role } from '@prisma/client';
 
@@ -41,6 +42,12 @@ jest.mock('../templates', () => ({
 jest.mock('./deployment.lock', () => ({
   deploymentLockManager: {
     getLockStatus: jest.fn(),
+  },
+}));
+
+jest.mock('../resources', () => ({
+  resourceService: {
+    getResourcesByDeployment: jest.fn(),
   },
 }));
 
@@ -489,6 +496,231 @@ describe('DeploymentService Subsystem', () => {
       ).rejects.toThrow(
         'Cannot cancel deployment in status "SUCCEEDED". Only DRAFT, PLANNING, or PLANNED deployments can be cancelled.',
       );
+    });
+  });
+
+  describe('getDeploymentResources', () => {
+    it('should retrieve resources for a valid deployment', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue({ id: 'dep-123' });
+      (resourceService.getResourcesByDeployment as jest.Mock).mockResolvedValue([
+        { id: 'res-1', resourceType: 'aws_vpc' },
+      ]);
+
+      const resources = await service.getDeploymentResources('dep-123');
+
+      expect(resources).toHaveLength(1);
+      expect(resourceService.getResourcesByDeployment).toHaveBeenCalledWith('dep-123');
+    });
+
+    it('should throw 404 if deployment not found', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.getDeploymentResources('non-existent')).rejects.toThrow(
+        'Deployment [non-existent] not found',
+      );
+    });
+  });
+
+  describe('getDeploymentLogs', () => {
+    it('should return logs for a valid deployment', async () => {
+      const mockLogData = {
+        id: 'dep-123',
+        status: DeploymentStatus.SUCCEEDED,
+        applyOutput: 'Apply complete! Resources: 1 added.',
+      };
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(mockLogData);
+
+      const logs = await service.getDeploymentLogs('dep-123');
+
+      expect(logs.id).toBe('dep-123');
+      expect(logs.applyOutput).toContain('Apply complete!');
+    });
+
+    it('should throw 404 if deployment not found', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.getDeploymentLogs('non-existent')).rejects.toThrow(
+        'Deployment [non-existent] not found',
+      );
+    });
+  });
+
+  describe('createDestroyPlan', () => {
+    const existingDeployment = {
+      id: 'dep-target-1',
+      projectId: 'proj-123',
+      environmentId: 'env-123',
+      templateId: 'tmpl-123',
+      configuration: { vpc_cidr: '10.0.0.0/16' },
+      environment: { id: 'env-123', name: 'development', projectId: 'proj-123' },
+      project: { id: 'proj-123', name: 'Proj 1' },
+      template: { id: 'tmpl-123', name: 'VPC', provider: Provider.AWS, version: '1.0.0' },
+    };
+
+    it('should create a destroy plan referencing an existing deployment', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(existingDeployment);
+      (prisma.environment.findUnique as jest.Mock).mockResolvedValue(existingDeployment.environment);
+      (deploymentLockManager.getLockStatus as jest.Mock).mockResolvedValue({
+        isLocked: false,
+        environmentId: 'env-123',
+      });
+      (prisma.deployment.create as jest.Mock).mockResolvedValue({
+        ...existingDeployment,
+        id: 'dep-destroy-plan',
+        operationType: OperationType.DESTROY,
+        status: DeploymentStatus.PLANNING,
+        user: { id: 'usr-dev', name: 'Dev', email: 'dev@test.com', role: Role.DEVELOPER },
+      });
+      (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
+      (queueService.publishJob as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.createDestroyPlan('usr-dev', {
+        deploymentId: 'dep-target-1',
+      });
+
+      expect(result.id).toBe('dep-destroy-plan');
+      expect(result.operationType).toBe(OperationType.DESTROY);
+      expect(result.status).toBe(DeploymentStatus.PLANNING);
+      expect(queueService.publishJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'PLAN',
+          operationType: OperationType.DESTROY,
+        }),
+        'PLAN',
+      );
+    });
+
+    it('should throw 404 if target deployment not found', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.createDestroyPlan('usr-dev', { deploymentId: 'non-existent' }),
+      ).rejects.toThrow('Target deployment [non-existent] not found');
+    });
+
+    it('should throw 409 if environment is currently locked', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(existingDeployment);
+      (prisma.environment.findUnique as jest.Mock).mockResolvedValue(existingDeployment.environment);
+      (deploymentLockManager.getLockStatus as jest.Mock).mockResolvedValue({
+        isLocked: true,
+        environmentId: 'env-123',
+        activeDeployment: { id: 'dep-active' },
+      });
+
+      await expect(
+        service.createDestroyPlan('usr-dev', { deploymentId: 'dep-target-1' }),
+      ).rejects.toThrow('Environment is currently locked by active deployment [dep-active]');
+    });
+  });
+
+  describe('confirmDestroy', () => {
+    const plannedDestroyDeployment = {
+      id: 'dep-destroy-planned',
+      projectId: 'proj-123',
+      environmentId: 'env-123',
+      templateId: 'tmpl-123',
+      operationType: OperationType.DESTROY,
+      status: DeploymentStatus.PLANNED,
+      environment: { id: 'env-123', name: 'development', cloudAccountId: 'acc-1' },
+      project: { id: 'proj-123', name: 'Proj 1' },
+      template: { id: 'tmpl-123', name: 'VPC', provider: Provider.AWS, version: '1.0.0' },
+      user: { id: 'usr-dev', name: 'Dev', email: 'dev@test.com', role: Role.DEVELOPER },
+    };
+
+    it('should confirm destruction with valid CONFIRM_DESTROY keyword', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(plannedDestroyDeployment);
+      (deploymentLockManager.getLockStatus as jest.Mock).mockResolvedValue({
+        isLocked: false,
+        environmentId: 'env-123',
+      });
+      (prisma.deployment.update as jest.Mock).mockResolvedValue({
+        ...plannedDestroyDeployment,
+        status: DeploymentStatus.QUEUED,
+      });
+      (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
+      (queueService.publishJob as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.confirmDestroy(
+        'dep-destroy-planned',
+        { userId: 'usr-dev', role: Role.DEVELOPER },
+        { confirmationKeyword: 'CONFIRM_DESTROY', comment: 'Decommissioning test cluster' },
+      );
+
+      expect(result.status).toBe(DeploymentStatus.QUEUED);
+      expect(queueService.publishJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'DESTROY',
+          operationType: OperationType.DESTROY,
+        }),
+        'DESTROY',
+      );
+    });
+
+    it('should throw 400 if confirmationKeyword does not match CONFIRM_DESTROY', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(plannedDestroyDeployment);
+
+      await expect(
+        service.confirmDestroy(
+          'dep-destroy-planned',
+          { userId: 'usr-dev', role: Role.DEVELOPER },
+          { confirmationKeyword: 'WRONG_KEYWORD' },
+        ),
+      ).rejects.toThrow('Infrastructure teardown requires explicit confirmation.');
+    });
+
+    it('should throw 400 if deployment operationType is not DESTROY', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue({
+        ...plannedDestroyDeployment,
+        operationType: OperationType.CREATE,
+      });
+
+      await expect(
+        service.confirmDestroy(
+          'dep-destroy-planned',
+          { userId: 'usr-dev', role: Role.DEVELOPER },
+          { confirmationKeyword: 'CONFIRM_DESTROY' },
+        ),
+      ).rejects.toThrow('does not have operationType DESTROY');
+    });
+
+    it('should throw 403 if non-admin tries to destroy production environment', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue({
+        ...plannedDestroyDeployment,
+        environment: { id: 'env-prod', name: 'production' },
+      });
+
+      await expect(
+        service.confirmDestroy(
+          'dep-destroy-planned',
+          { userId: 'usr-dev', role: Role.DEVELOPER },
+          { confirmationKeyword: 'CONFIRM_DESTROY' },
+        ),
+      ).rejects.toThrow('Tearing down production infrastructure strictly requires administrator privileges.');
+    });
+
+    it('should allow admin to destroy production environment with CONFIRM_DESTROY', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue({
+        ...plannedDestroyDeployment,
+        environment: { id: 'env-prod', name: 'production' },
+      });
+      (deploymentLockManager.getLockStatus as jest.Mock).mockResolvedValue({
+        isLocked: false,
+        environmentId: 'env-prod',
+      });
+      (prisma.deployment.update as jest.Mock).mockResolvedValue({
+        ...plannedDestroyDeployment,
+        status: DeploymentStatus.QUEUED,
+      });
+      (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
+      (queueService.publishJob as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.confirmDestroy(
+        'dep-destroy-planned',
+        { userId: 'usr-admin', role: Role.ADMIN },
+        { confirmationKeyword: 'CONFIRM_DESTROY' },
+      );
+
+      expect(result.status).toBe(DeploymentStatus.QUEUED);
     });
   });
 });

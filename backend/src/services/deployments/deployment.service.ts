@@ -3,12 +3,15 @@ import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
 import { queueService } from '../queue';
 import { templateService } from '../templates';
+import { resourceService } from '../resources';
 import { deploymentLockManager } from './deployment.lock';
 import { planParser } from './plan.parser';
 import {
   CreatePlanInput,
   ApproveDeploymentInput,
   CancelDeploymentInput,
+  CreateDestroyPlanInput,
+  ConfirmDestroyInput,
   DeploymentResponse,
 } from './deployment.types';
 
@@ -334,6 +337,253 @@ export class DeploymentService {
   }
 
   /**
+   * Generates a safe destruction preview plan (terraform plan -destroy).
+   * Validates target environment, checks concurrency locks, sets status to PLANNING
+   * with operationType DESTROY, and dispatches PLAN job to queue.
+   */
+  async createDestroyPlan(
+    userId: string,
+    input: CreateDestroyPlanInput,
+  ): Promise<DeploymentResponse> {
+    let projectId = input.projectId;
+    let environmentId = input.environmentId;
+    let templateId = input.templateId;
+    let configuration = input.configuration || {};
+
+    // 1. If targeting an existing deployment, infer missing context
+    if (input.deploymentId) {
+      const existing = await prisma.deployment.findUnique({
+        where: { id: input.deploymentId },
+        include: { environment: true, project: true, template: true },
+      });
+      if (!existing) {
+        const error: any = new Error(`Target deployment [${input.deploymentId}] not found`);
+        error.statusCode = 404;
+        throw error;
+      }
+      projectId = projectId || existing.projectId;
+      environmentId = environmentId || existing.environmentId;
+      templateId = templateId || existing.templateId;
+      configuration = Object.keys(configuration).length > 0 ? configuration : (existing.configuration as any);
+    }
+
+    if (!projectId || !environmentId || !templateId) {
+      const error: any = new Error(
+        'projectId, environmentId, and templateId (or target deploymentId) are required to generate destroy plan',
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 2. Validate Project and Environment
+    const environment = await prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environment) {
+      const error: any = new Error(`Environment [${environmentId}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (environment.projectId !== projectId) {
+      const error: any = new Error('Environment does not belong to the specified project');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 3. Concurrency Lock Guard
+    const lockStatus = await deploymentLockManager.getLockStatus(environmentId);
+    if (lockStatus.isLocked) {
+      const error: any = new Error(
+        `Environment is currently locked by active deployment [${lockStatus.activeDeployment?.id}]`,
+      );
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // 4. Persist DESTROY deployment record in PLANNING state
+    const destroyDeployment = await prisma.deployment.create({
+      data: {
+        projectId,
+        environmentId,
+        templateId,
+        userId,
+        operationType: OperationType.DESTROY,
+        status: DeploymentStatus.PLANNING,
+        configuration,
+      },
+      include: {
+        project: { select: { id: true, name: true } },
+        environment: { select: { id: true, name: true, cloudAccountId: true } },
+        template: { select: { id: true, name: true, provider: true, version: true } },
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
+    });
+
+    // 5. Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        projectId,
+        deploymentId: destroyDeployment.id,
+        action: 'DEPLOYMENT_DESTROY_PLAN_REQUESTED',
+        status: 'SUCCESS',
+        message: `Destruction preview requested for environment "${destroyDeployment.environment.name}"`,
+        metadata: {
+          templateId,
+          environmentId,
+          operationType: OperationType.DESTROY,
+          targetDeploymentId: input.deploymentId || null,
+        },
+      },
+    });
+
+    // 6. Dispatch PLAN job with operationType DESTROY
+    await queueService.publishJob(
+      {
+        deploymentId: destroyDeployment.id,
+        projectId: destroyDeployment.projectId,
+        environmentId: destroyDeployment.environmentId,
+        templateId: destroyDeployment.templateId,
+        userId,
+        operationType: OperationType.DESTROY,
+        action: 'PLAN',
+        timestamp: new Date().toISOString(),
+        attempt: 1,
+        correlationId: destroyDeployment.id,
+      },
+      'PLAN',
+    );
+
+    logger.info(
+      `Queued DESTROY PLAN job for deployment [${destroyDeployment.id}] on env [${destroyDeployment.environmentId}]`,
+    );
+
+    return this.formatDeploymentResponse(destroyDeployment);
+  }
+
+  /**
+   * Explicit confirmation and execution of infrastructure destruction.
+   * Enforces confirmationKeyword ("CONFIRM_DESTROY"), validates PLANNED status,
+   * checks production administrator role requirements, transitions to QUEUED, and dispatches DESTROY job.
+   */
+  async confirmDestroy(
+    deploymentId: string,
+    user: { userId: string; role: Role },
+    input: ConfirmDestroyInput,
+  ): Promise<DeploymentResponse> {
+    const deployment = await prisma.deployment.findUnique({
+      where: { id: deploymentId },
+      include: {
+        project: { select: { id: true, name: true } },
+        environment: { select: { id: true, name: true, cloudAccountId: true } },
+        template: { select: { id: true, name: true, provider: true, version: true } },
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
+    });
+
+    if (!deployment) {
+      const error: any = new Error(`Deployment [${deploymentId}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (deployment.operationType !== OperationType.DESTROY) {
+      const error: any = new Error(
+        `Deployment [${deploymentId}] does not have operationType DESTROY. Use approveDeployment instead.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (deployment.status !== DeploymentStatus.PLANNED) {
+      const error: any = new Error(
+        `Cannot execute destruction for deployment in status "${deployment.status}". Deployment must be in "PLANNED" status.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Enforce explicit confirmation keyword
+    if (input.confirmationKeyword !== 'CONFIRM_DESTROY') {
+      const error: any = new Error(
+        'Infrastructure teardown requires explicit confirmation. You must provide confirmationKeyword: "CONFIRM_DESTROY".',
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Production environment protection: teardown requires ADMIN
+    const isProduction = deployment.environment.name.toLowerCase() === 'production';
+    if (isProduction && user.role !== Role.ADMIN) {
+      const error: any = new Error(
+        'Tearing down production infrastructure strictly requires administrator privileges.',
+      );
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Concurrency Lock Guard
+    const lockStatus = await deploymentLockManager.getLockStatus(deployment.environmentId);
+    if (lockStatus.isLocked && lockStatus.activeDeployment?.id !== deployment.id) {
+      const error: any = new Error(
+        `Environment is currently locked by active deployment [${lockStatus.activeDeployment?.id}]`,
+      );
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // Transition status to QUEUED
+    const updated = await prisma.deployment.update({
+      where: { id: deploymentId },
+      data: { status: DeploymentStatus.QUEUED },
+      include: {
+        project: { select: { id: true, name: true } },
+        environment: { select: { id: true, name: true, cloudAccountId: true } },
+        template: { select: { id: true, name: true, provider: true, version: true } },
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
+    });
+
+    // Immutable Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: user.userId,
+        projectId: deployment.projectId,
+        deploymentId: deployment.id,
+        action: 'DEPLOYMENT_DESTROY_CONFIRMED',
+        status: 'SUCCESS',
+        message: `Infrastructure destruction confirmed by user "${user.userId}" (${user.role}) for environment "${deployment.environment.name}"`,
+        metadata: {
+          comment: input.comment || null,
+          environmentId: deployment.environmentId,
+        },
+      },
+    });
+
+    // Dispatch DESTROY job to RabbitMQ
+    await queueService.publishJob(
+      {
+        deploymentId: deployment.id,
+        projectId: deployment.projectId,
+        environmentId: deployment.environmentId,
+        templateId: deployment.templateId,
+        userId: user.userId,
+        operationType: OperationType.DESTROY,
+        action: 'DESTROY',
+        timestamp: new Date().toISOString(),
+        attempt: 1,
+        correlationId: deployment.id,
+      },
+      'DESTROY',
+    );
+
+    logger.info(`Queued DESTROY job for deployment [${deployment.id}] on env [${deployment.environmentId}]`);
+
+    return this.formatDeploymentResponse(updated);
+  }
+
+  /**
    * Retrieves a deployment by ID, incorporating parsed plan output if available.
    */
   async getDeploymentById(id: string): Promise<DeploymentResponse> {
@@ -381,6 +631,52 @@ export class DeploymentService {
     });
 
     return deployments.map((d) => this.formatDeploymentResponse(d));
+  }
+
+  /**
+   * Retrieves all provisioned resources created by a specific deployment.
+   */
+  async getDeploymentResources(deploymentId: string) {
+    const deployment = await prisma.deployment.findUnique({
+      where: { id: deploymentId },
+      select: { id: true },
+    });
+
+    if (!deployment) {
+      const error: any = new Error(`Deployment [${deploymentId}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return resourceService.getResourcesByDeployment(deploymentId);
+  }
+
+  /**
+   * Retrieves execution logs and status timings for a deployment.
+   */
+  async getDeploymentLogs(deploymentId: string) {
+    const deployment = await prisma.deployment.findUnique({
+      where: { id: deploymentId },
+      select: {
+        id: true,
+        status: true,
+        operationType: true,
+        planOutput: true,
+        applyOutput: true,
+        planTime: true,
+        applyTime: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!deployment) {
+      const error: any = new Error(`Deployment [${deploymentId}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return deployment;
   }
 
   /**

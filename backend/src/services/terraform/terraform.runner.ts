@@ -109,8 +109,16 @@ export class TerraformRunner {
   /**
    * Helper to run terraform plan
    */
-  async plan(options: TerraformExecutionOptions, planFile: string = 'tfplan'): Promise<TerraformCommandResult> {
-    return this.executeCommand(['plan', '-no-color', '-input=false', `-out=${planFile}`], options);
+  async plan(
+    options: TerraformExecutionOptions,
+    planFile: string = 'tfplan',
+    isDestroy: boolean = false,
+  ): Promise<TerraformCommandResult> {
+    const args = ['plan', '-no-color', '-input=false', `-out=${planFile}`];
+    if (isDestroy) {
+      args.push('-destroy');
+    }
+    return this.executeCommand(args, options);
   }
 
   /**
@@ -159,7 +167,12 @@ export class TerraformRunner {
     if (action === 'init') {
       output = `Initializing the backend...\nInitializing provider plugins...\nTerraform has been successfully initialized!`;
     } else if (action === 'plan') {
-      output = `Terraform will perform the following actions:\n  + create\nPlan: 3 to add, 0 to change, 0 to destroy.`;
+      const isDestroy = args.includes('-destroy');
+      if (isDestroy) {
+        output = `Terraform will perform the following actions:\n\n  # aws_vpc.main will be destroyed\n  - resource "aws_vpc" "main" {\n      - cidr_block = "10.0.0.0/16"\n    }\n\nPlan: 0 to add, 0 to change, 1 to destroy.`;
+      } else {
+        output = `Terraform will perform the following actions:\n  + create\nPlan: 3 to add, 0 to change, 0 to destroy.`;
+      }
     } else if (action === 'apply') {
       output = `Apply complete! Resources: 3 added, 0 changed, 0 destroyed.`;
       // Write simulated state file

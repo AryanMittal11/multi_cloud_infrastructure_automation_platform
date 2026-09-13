@@ -22,6 +22,19 @@ const cancelDeploymentSchema = z.object({
   reason: z.string().optional(),
 });
 
+const createDestroyPlanSchema = z.object({
+  projectId: z.string().uuid().optional(),
+  environmentId: z.string().uuid().optional(),
+  templateId: z.string().uuid().optional(),
+  deploymentId: z.string().uuid().optional(),
+  configuration: z.record(z.any()).optional(),
+});
+
+const confirmDestroySchema = z.object({
+  confirmationKeyword: z.string().min(1, 'confirmationKeyword is required'),
+  comment: z.string().optional(),
+});
+
 // All deployment routes require authentication
 deploymentRouter.use(authenticateToken);
 
@@ -31,6 +44,14 @@ deploymentRouter.post(
   requireDeveloper,
   validateBody(createPlanSchema),
   deploymentController.createPlan,
+);
+
+// Initiate safe destruction preview
+deploymentRouter.post(
+  '/destroy-plan',
+  requireDeveloper,
+  validateBody(createDestroyPlanSchema),
+  deploymentController.createDestroyPlan,
 );
 
 // List deployments (supports ?projectId, ?environmentId, ?status)
@@ -52,5 +73,26 @@ deploymentRouter.post(
   deploymentController.cancel,
 );
 
+// Initiate destruction plan for specific deployment
+deploymentRouter.post(
+  '/:id/destroy-plan',
+  requireDeveloper,
+  deploymentController.createDeploymentDestroyPlan,
+);
+
+// Explicit destruction confirmation gate
+deploymentRouter.post(
+  '/:id/confirm-destroy',
+  requireDeveloper,
+  validateBody(confirmDestroySchema),
+  deploymentController.confirmDestroy,
+);
+
 // Get single deployment by ID with plan output summary
 deploymentRouter.get('/:id', requireViewer, deploymentController.getById);
+
+// Get provisioned infrastructure resources for a deployment
+deploymentRouter.get('/:id/resources', requireViewer, deploymentController.getResources);
+
+// Get execution logs and phase timings
+deploymentRouter.get('/:id/logs', requireViewer, deploymentController.getLogs);

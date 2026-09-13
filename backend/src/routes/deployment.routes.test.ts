@@ -16,6 +16,10 @@ jest.mock('../services/deployments', () => {
       listDeployments: jest.fn(),
       approveDeployment: jest.fn(),
       cancelDeployment: jest.fn(),
+      getDeploymentResources: jest.fn(),
+      getDeploymentLogs: jest.fn(),
+      createDestroyPlan: jest.fn(),
+      confirmDestroy: jest.fn(),
     },
   };
 });
@@ -205,6 +209,123 @@ describe('Deployment HTTP Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('cancelled successfully');
       expect(res.body.deployment.status).toBe(DeploymentStatus.CANCELLED);
+    });
+  });
+
+  describe('GET /api/deployments/:id/resources', () => {
+    it('should reject unauthenticated request with 401', async () => {
+      const res = await request(app).get('/api/deployments/dep-1/resources');
+      expect(res.status).toBe(401);
+    });
+
+    it('should allow VIEWER to fetch deployment resources with 200', async () => {
+      (deploymentService.getDeploymentResources as jest.Mock).mockResolvedValue([
+        { id: 'res-1', resourceType: 'aws_vpc' },
+      ]);
+
+      const res = await request(app)
+        .get('/api/deployments/dep-1/resources')
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.resources).toHaveLength(1);
+    });
+  });
+
+  describe('GET /api/deployments/:id/logs', () => {
+    it('should reject unauthenticated request with 401', async () => {
+      const res = await request(app).get('/api/deployments/dep-1/logs');
+      expect(res.status).toBe(401);
+    });
+
+    it('should allow VIEWER to fetch deployment logs with 200', async () => {
+      (deploymentService.getDeploymentLogs as jest.Mock).mockResolvedValue({
+        id: 'dep-1',
+        status: DeploymentStatus.SUCCEEDED,
+        applyOutput: 'Apply succeeded!',
+      });
+
+      const res = await request(app)
+        .get('/api/deployments/dep-1/logs')
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.logs.applyOutput).toBe('Apply succeeded!');
+    });
+  });
+
+  describe('POST /api/deployments/destroy-plan', () => {
+    it('should reject unauthenticated request with 401', async () => {
+      const res = await request(app).post('/api/deployments/destroy-plan').send({});
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject VIEWER with 403', async () => {
+      const res = await request(app)
+        .post('/api/deployments/destroy-plan')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .send({});
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should allow DEVELOPER to initiate destroy plan with 202', async () => {
+      (deploymentService.createDestroyPlan as jest.Mock).mockResolvedValue({
+        id: 'dep-destroy-1',
+        operationType: OperationType.DESTROY,
+        status: DeploymentStatus.PLANNING,
+      });
+
+      const res = await request(app)
+        .post('/api/deployments/destroy-plan')
+        .set('Authorization', `Bearer ${devToken}`)
+        .send({});
+
+      expect(res.status).toBe(202);
+      expect(res.body.deployment.operationType).toBe(OperationType.DESTROY);
+    });
+  });
+
+  describe('POST /api/deployments/:id/confirm-destroy', () => {
+    it('should reject unauthenticated request with 401', async () => {
+      const res = await request(app)
+        .post('/api/deployments/dep-1/confirm-destroy')
+        .send({ confirmationKeyword: 'CONFIRM_DESTROY' });
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject VIEWER with 403', async () => {
+      const res = await request(app)
+        .post('/api/deployments/dep-1/confirm-destroy')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .send({ confirmationKeyword: 'CONFIRM_DESTROY' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should reject request missing confirmationKeyword with 400', async () => {
+      const res = await request(app)
+        .post('/api/deployments/dep-1/confirm-destroy')
+        .set('Authorization', `Bearer ${devToken}`)
+        .send({});
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should allow DEVELOPER to confirm destruction with 200', async () => {
+      (deploymentService.confirmDestroy as jest.Mock).mockResolvedValue({
+        id: 'dep-1',
+        operationType: OperationType.DESTROY,
+        status: DeploymentStatus.QUEUED,
+      });
+
+      const res = await request(app)
+        .post('/api/deployments/dep-1/confirm-destroy')
+        .set('Authorization', `Bearer ${devToken}`)
+        .send({ confirmationKeyword: 'CONFIRM_DESTROY', comment: 'Retiring infra' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.deployment.status).toBe(DeploymentStatus.QUEUED);
     });
   });
 });

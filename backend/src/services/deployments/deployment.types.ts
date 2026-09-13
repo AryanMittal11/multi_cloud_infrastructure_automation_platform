@@ -18,6 +18,19 @@ export interface CancelDeploymentInput {
   reason?: string;
 }
 
+export interface CreateDestroyPlanInput {
+  deploymentId?: string;
+  projectId?: string;
+  environmentId?: string;
+  templateId?: string;
+  configuration?: Record<string, any>;
+}
+
+export interface ConfirmDestroyInput {
+  confirmationKeyword: string;
+  comment?: string;
+}
+
 export interface ResourcePlanAction {
   address: string;
   type: string;

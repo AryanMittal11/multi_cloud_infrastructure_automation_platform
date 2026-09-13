@@ -3,17 +3,34 @@ import { prisma } from '../../config/prisma';
 import { ParsedResourceItem } from '../terraform/terraform.types';
 import { logger } from '../../utils/logger';
 
+export interface ResourceFilter {
+  projectId?: string;
+  environmentId?: string;
+  deploymentId?: string;
+  provider?: Provider;
+  status?: ResourceStatus;
+  resourceType?: string;
+}
+
 export class ResourceService {
   /**
    * Synchronizes parsed Terraform state resources with the PostgreSQL Resource inventory.
+   * Purges previous stale records for this deployment to mirror exact state after apply.
    */
   async recordProvisionedResources(
     deploymentId: string,
     provider: Provider,
     parsedResources: ParsedResourceItem[],
-  ): Promise<void> {
+  ) {
+    // 1. Purge previous stale records for this deployment to avoid duplicate or orphaned resources
+    await prisma.resource.deleteMany({
+      where: { deploymentId },
+    });
+
+    // 2. Persist newly provisioned resources
+    const createdResources = [];
     for (const res of parsedResources) {
-      await prisma.resource.create({
+      const created = await prisma.resource.create({
         data: {
           deploymentId,
           provider,
@@ -25,9 +42,11 @@ export class ResourceService {
           dependencies: res.dependencies,
         },
       });
+      createdResources.push(created);
     }
 
     logger.info(`Recorded ${parsedResources.length} provisioned resource(s) for deployment [${deploymentId}]`);
+    return createdResources;
   }
 
   /**
@@ -49,6 +68,62 @@ export class ResourceService {
     return prisma.resource.findMany({
       where: { deploymentId },
       orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * Retrieves a single resource by its unique identifier.
+   */
+  async getResourceById(id: string) {
+    return prisma.resource.findUnique({
+      where: { id },
+      include: {
+        deployment: {
+          select: {
+            id: true,
+            projectId: true,
+            environmentId: true,
+            templateId: true,
+            status: true,
+            operationType: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Lists resources matching flexible filtering criteria (project, environment, provider, status).
+   */
+  async listResources(filter?: ResourceFilter) {
+    const where: any = {};
+
+    if (filter?.status) where.status = filter.status;
+    if (filter?.provider) where.provider = filter.provider;
+    if (filter?.resourceType) where.resourceType = filter.resourceType;
+    if (filter?.deploymentId) where.deploymentId = filter.deploymentId;
+
+    if (filter?.environmentId || filter?.projectId) {
+      where.deployment = {};
+      if (filter.environmentId) where.deployment.environmentId = filter.environmentId;
+      if (filter.projectId) where.deployment.projectId = filter.projectId;
+    }
+
+    return prisma.resource.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        deployment: {
+          select: {
+            id: true,
+            projectId: true,
+            environmentId: true,
+            templateId: true,
+            status: true,
+            operationType: true,
+          },
+        },
+      },
     });
   }
 }

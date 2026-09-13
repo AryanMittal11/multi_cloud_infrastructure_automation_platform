@@ -138,7 +138,8 @@ export class TerraformWorkerService {
       if (job.action === 'PLAN') {
         logger.info(`Executing Terraform PLAN for deployment [${job.deploymentId}]`);
         await terraformRunner.init(execOptions);
-        const planResult = await terraformRunner.plan(execOptions);
+        const isDestroy = job.operationType === 'DESTROY';
+        const planResult = await terraformRunner.plan(execOptions, 'tfplan', isDestroy);
 
         if (!planResult.success) {
           throw new Error(`Terraform plan failed with exit code ${planResult.exitCode}`);
