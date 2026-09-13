@@ -77,11 +77,11 @@ export function Navbar({ onToggleMobileSidebar, isMobileSidebarOpen }: NavbarPro
                   MultiCloud
                 </span>
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-indigo-950/70 border border-indigo-700/50 text-indigo-300 font-mono">
-                  v1.6
+                  v2.0
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-normal hidden sm:block">
-                Infrastructure Automation Platform
+                Design, Deploy & Manage Multi-Cloud Infrastructure
               </p>
             </div>
           </Link>

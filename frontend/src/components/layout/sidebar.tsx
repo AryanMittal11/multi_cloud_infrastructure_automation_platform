@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
+  DraftingCompass,
+  Workflow,
   FolderGit2,
   Cloud,
   Layers,
@@ -30,6 +32,20 @@ const navItems = [
     description: 'Telemetry & platform overview',
   },
   {
+    name: 'Visual Designer',
+    href: '/designer',
+    icon: DraftingCompass,
+    badge: 'NEW',
+    description: 'Design → Terraform → Deploy',
+  },
+  {
+    name: 'Architectures',
+    href: '/architectures',
+    icon: Workflow,
+    badge: null,
+    description: 'Saved visual designs',
+  },
+  {
     name: 'Projects',
     href: '/projects',
     icon: FolderGit2,
@@ -47,8 +63,8 @@ const navItems = [
     name: 'Template Catalog',
     href: '/templates',
     icon: Layers,
-    badge: 'AWS Core',
-    description: 'Modular IaC archetypes',
+    badge: null,
+    description: 'AWS, Azure & GCP modules',
   },
   {
     name: 'Deployments',

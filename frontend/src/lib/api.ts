@@ -354,4 +354,67 @@ export const api = {
       return request<{ auditLogs: AuditLog[] }>(`/audit-logs${query ? `?${query}` : ''}`);
     },
   },
+
+  designs: {
+    list: () => request<{ designs: DesignSummary[] }>('/designs'),
+    get: (id: string) => request<{ design: ArchitectureDesign }>(`/designs/${id}`),
+    create: (data: { name: string; description?: string; cloudProvider?: string; nodes?: CanvasNode[]; edges?: CanvasEdge[] }) =>
+      request<{ design: ArchitectureDesign }>('/designs', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<{ name: string; description: string; cloudProvider: string; nodes: CanvasNode[]; edges: CanvasEdge[] }>) =>
+      request<{ design: ArchitectureDesign }>(`/designs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) => request<{ success: boolean }>(`/designs/${id}`, { method: 'DELETE' }),
+  },
 };
+
+// ==========================================
+// Visual Designer Types (Brainboard-style canvas)
+// ==========================================
+
+export interface DesignSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  cloudProvider: string;
+  nodeCount: number;
+  edgeCount: number;
+  updatedAt?: string;
+}
+
+export interface ArchitectureDesign {
+  id: string;
+  name: string;
+  description?: string | null;
+  cloudProvider: string;
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CanvasNode {
+  id: string;
+  kind: 'network' | 'compute' | 'database' | 'storage' | 'kubernetes';
+  position: { x: number; y: number };
+  data: {
+    kind: CanvasNode['kind'];
+    label: string;
+    provider: 'AWS' | 'AZURE' | 'GCP';
+    templateRef: string;
+    config: Record<string, any>;
+    monthlyCost?: number;
+    notes?: string;
+  };
+}
+
+export interface CanvasEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}

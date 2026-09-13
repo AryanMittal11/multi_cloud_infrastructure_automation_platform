@@ -80,6 +80,7 @@ model User {
   deployments   Deployment[]
   auditLogs     AuditLog[]
   notifications Notification[]
+  designs       ArchitectureDesign[]
 
   @@map("users")
 }
@@ -233,4 +234,22 @@ model Notification {
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@map("notifications")
+}
+
+// Visual designer canvas state (Brainboard-style architecture workspace)
+model ArchitectureDesign {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  cloudProvider String   @default("AWS") // AWS | AZURE | GCP | MULTI
+  ownerId       String
+  nodes         Json     @default("[]") // Canvas resource nodes
+  edges         Json     @default("[]") // Dependency edges between nodes
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("architecture_designs")
 }

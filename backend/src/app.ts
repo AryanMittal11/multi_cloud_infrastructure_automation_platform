@@ -12,6 +12,7 @@ import { deploymentLockRouter } from './routes/deployment.lock.routes';
 import { deploymentRouter } from './routes/deployment.routes';
 import { resourceRouter } from './routes/resource.routes';
 import { auditRouter } from './routes/audit.routes';
+import { designRouter } from './routes/design.routes';
 
 export const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/deployments/locks', deploymentLockRouter);
 app.use('/api/deployments', deploymentRouter);
 app.use('/api/resources', resourceRouter);
 app.use('/api/audit-logs', auditRouter);
+app.use('/api/designs', designRouter);
 
 // Centralized error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
