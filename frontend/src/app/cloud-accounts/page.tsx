@@ -229,9 +229,9 @@ export default function CloudAccountsPage() {
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>Failed to fetch cloud accounts: {(error as Error).message}</span>
             </div>
-          ) : data?.accounts && data.accounts.length > 0 ? (
+          ) : data?.cloudAccounts && data.cloudAccounts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {data.accounts.map((account: CloudAccount) => {
+              {data.cloudAccounts.map((account: CloudAccount) => {
                 const cfg = getProviderConfig(account.provider);
                 return (
                   <div

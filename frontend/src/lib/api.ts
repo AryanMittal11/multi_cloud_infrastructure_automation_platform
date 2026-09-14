@@ -252,8 +252,8 @@ export const api = {
   },
 
   cloudAccounts: {
-    list: () => request<{ accounts: CloudAccount[] }>('/cloud-accounts'),
-    get: (id: string) => request<{ account: CloudAccount }>(`/cloud-accounts/${id}`),
+    list: () => request<{ cloudAccounts: CloudAccount[] }>('/cloud-accounts'),
+    get: (id: string) => request<{ cloudAccount: CloudAccount }>(`/cloud-accounts/${id}`),
     create: (data: {
       name: string;
       provider: 'AWS' | 'AZURE' | 'GCP';
@@ -261,7 +261,7 @@ export const api = {
       credentials: Record<string, string>;
       projectId?: string;
     }) =>
-      request<{ account: CloudAccount }>('/cloud-accounts', {
+      request<{ cloudAccount: CloudAccount }>('/cloud-accounts', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

@@ -43,4 +43,5 @@ designRouter.get('/', requireViewer, designController.list);
 designRouter.get('/:id', requireViewer, designController.getById);
 designRouter.post('/', requireDeveloper, designController.create);
 designRouter.put('/:id', requireDeveloper, designController.update);
-designRouter.delete('/:id', requireAdmin, designController.delete);
+// Ownership (owner-only) is enforced in DesignService.deleteDesign; any developer may remove their own design.
+designRouter.delete('/:id', requireDeveloper, designController.delete);

@@ -1,0 +1,1 @@
+C:/Program Files/PostgreSQL/16/bin/postgres.exe "-D" "D:\GitRepo\multi_cloud_infrastructure_automation_platform-master\.local-infra\pgdata" "-p" "5433"
