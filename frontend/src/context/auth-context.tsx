@@ -9,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role?: string) => Promise<void>;
-  quickLogin: (role: 'ADMIN' | 'DEVELOPER' | 'VIEWER') => Promise<void>;
+  quickLogin: (role: 'DEVELOPER' | 'VIEWER') => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const quickLogin = async (role: 'ADMIN' | 'DEVELOPER' | 'VIEWER') => {
+  const quickLogin = async (role: 'DEVELOPER' | 'VIEWER') => {
     setIsLoading(true);
     const roleLower = role.toLowerCase();
     const email = `${roleLower}@multicloud.local`;

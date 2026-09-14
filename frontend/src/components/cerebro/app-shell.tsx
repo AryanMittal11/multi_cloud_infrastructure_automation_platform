@@ -20,6 +20,7 @@ import {
   Rocket,
   ScrollText,
   Server,
+  Users,
   Waypoints,
   X,
 } from 'lucide-react';
@@ -84,6 +85,11 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   },
 ];
 
+/** Admin-only nav items (site owner) */
+export const ADMIN_NAV_ITEMS: NavItem[] = [
+  { label: 'User Management', href: '/users', icon: Users, match: starts('/users') },
+];
+
 /* ============================================================
    Breadcrumbs
    ============================================================ */
@@ -122,6 +128,8 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <div className="flex flex-col h-full">
@@ -174,6 +182,33 @@ function SidebarContent({
             })}
           </div>
         ))}
+
+        {/* Admin-only nav items (site owner) */}
+        {isAdmin && ADMIN_NAV_ITEMS.length > 0 && (
+          <div>
+            {!collapsed && (
+              <p className="side-label">Admin</p>
+            )}
+            {collapsed && <div className="h-3" />}
+            {ADMIN_NAV_ITEMS.map((item) => {
+              const active = item.match(pathname);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={`side-link ${active ? 'active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
+                  title={collapsed ? item.label : undefined}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <Icon size={16} />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* foot: system status */}
@@ -365,7 +400,7 @@ function Topbar({
                 <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{user?.name ?? 'Not signed in'}</p>
                 <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>{user?.email ?? ''}</p>
                 {user && (
-                  <span className="chip mt-1 inline-flex" style={{ fontSize: 10 }}>{user.role}</span>
+                  <span className="chip mt-1 inline-flex" style={{ fontSize: 10 }}>{user.role === 'ADMIN' ? 'Site Owner' : user.role}</span>
                 )}
               </div>
               {user ? (

@@ -4,7 +4,7 @@ import { designService, DesignInput } from '../services/designs';
 export const designController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const designs = await designService.listDesigns(req.user!.userId);
+      const designs = await designService.listDesigns(req.user!.userId, req.user!.role);
       res.status(200).json({ designs });
     } catch (err) {
       next(err);
@@ -13,7 +13,7 @@ export const designController = {
 
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const design = await designService.getDesignById(req.params.id, req.user!.userId);
+      const design = await designService.getDesignById(req.params.id, req.user!.userId, req.user!.role);
       res.status(200).json({ design });
     } catch (err) {
       next(err);
@@ -34,6 +34,7 @@ export const designController = {
       const design = await designService.updateDesign(
         req.params.id,
         req.user!.userId,
+        req.user!.role,
         req.body as Partial<DesignInput>,
       );
       res.status(200).json({ design });
@@ -44,7 +45,7 @@ export const designController = {
 
   delete: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await designService.deleteDesign(req.params.id, req.user!.userId);
+      const result = await designService.deleteDesign(req.params.id, req.user!.userId, req.user!.role);
       res.status(200).json(result);
     } catch (err) {
       next(err);

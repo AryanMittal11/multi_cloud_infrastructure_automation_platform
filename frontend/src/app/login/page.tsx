@@ -8,8 +8,8 @@ import { AuthLayout } from '../../components/auth/auth-layout';
 import { AlertCircle, Loader2, LogIn, ShieldCheck } from 'lucide-react';
 
 const DEMO_CREDENTIALS = [
-  { role: 'ADMIN', email: 'admin@multicloud.local', password: 'AdminPassword123!', note: 'full access · seeds showcase artifacts' },
-  { role: 'DEVELOPER', email: 'dev@multicloud.local', password: 'DevPassword123!', note: 'plan & apply' },
+  { role: 'ADMIN', label: 'Site Owner', email: 'admin@multicloud.local', password: 'AdminPassword123!', note: 'full platform access · manage users & cloud accounts' },
+  { role: 'DEVELOPER', label: 'Developer', email: 'dev@multicloud.local', password: 'DevPassword123!', note: 'plan, deploy & manage infrastructure' },
 ];
 
 export default function LoginPage() {
@@ -117,7 +117,7 @@ export default function LoginPage() {
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             >
               <span className="flex items-center justify-between">
-                <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{c.role}</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{c.label}</span>
                 <span className="text-[10px]" style={{ color: 'var(--accent)' }}>use →</span>
               </span>
               <span className="block mono text-[10.5px] mt-0.5" style={{ color: 'var(--ink-muted)' }}>

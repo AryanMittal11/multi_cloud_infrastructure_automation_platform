@@ -1,4 +1,5 @@
 import { prisma } from '../../config/prisma';
+import { Role } from '@prisma/client';
 import { logger } from '../../utils/logger';
 
 export interface DesignNodeInput {
@@ -33,11 +34,13 @@ export interface DesignInput {
 
 export class DesignService {
   /**
-   * Lists all designs owned by the user, newest first.
+   * Lists designs. Admin (site owner) sees ALL designs; others see only their own.
    */
-  async listDesigns(userId: string) {
+  async listDesigns(userId: string, role: Role) {
+    const where = role === Role.ADMIN ? {} : { ownerId: userId };
     const designs = await prisma.architectureDesign.findMany({
-      where: { ownerId: userId },
+      where,
+      include: { owner: { select: { id: true, name: true, email: true } } },
       orderBy: { updatedAt: 'desc' },
     });
 
@@ -46,11 +49,15 @@ export class DesignService {
 
   /**
    * Retrieves a single design by ID with full canvas state.
+   * Admin can access any design; others only their own.
    */
-  async getDesignById(id: string, userId: string) {
-    const design = await prisma.architectureDesign.findUnique({ where: { id } });
+  async getDesignById(id: string, userId: string, role: Role) {
+    const design = await prisma.architectureDesign.findUnique({
+      where: { id },
+      include: { owner: { select: { id: true, name: true, email: true } } },
+    });
 
-    if (!design || design.ownerId !== userId) {
+    if (!design || (role !== Role.ADMIN && design.ownerId !== userId)) {
       const error: any = new Error('Design not found');
       error.statusCode = 404;
       throw error;
@@ -63,6 +70,7 @@ export class DesignService {
       cloudProvider: design.cloudProvider,
       nodes: (design.nodes as unknown as DesignNodeInput[]) || [],
       edges: (design.edges as unknown as DesignEdgeInput[]) || [],
+      owner: design.owner,
       createdAt: design.createdAt,
       updatedAt: design.updatedAt,
     };
@@ -105,11 +113,12 @@ export class DesignService {
 
   /**
    * Updates an existing design (rename, re-provider, canvas state).
+   * Admin can update any design; others only their own.
    */
-  async updateDesign(id: string, userId: string, input: Partial<DesignInput>) {
+  async updateDesign(id: string, userId: string, role: Role, input: Partial<DesignInput>) {
     const existing = await prisma.architectureDesign.findUnique({ where: { id } });
 
-    if (!existing || existing.ownerId !== userId) {
+    if (!existing || (role !== Role.ADMIN && existing.ownerId !== userId)) {
       const error: any = new Error('Design not found');
       error.statusCode = 404;
       throw error;
@@ -130,12 +139,12 @@ export class DesignService {
   }
 
   /**
-   * Deletes a design owned by the user.
+   * Deletes a design. Admin can delete any; others only their own.
    */
-  async deleteDesign(id: string, userId: string) {
+  async deleteDesign(id: string, userId: string, role: Role) {
     const existing = await prisma.architectureDesign.findUnique({ where: { id } });
 
-    if (!existing || existing.ownerId !== userId) {
+    if (!existing || (role !== Role.ADMIN && existing.ownerId !== userId)) {
       const error: any = new Error('Design not found');
       error.statusCode = 404;
       throw error;
@@ -164,6 +173,7 @@ export class DesignService {
       cloudProvider: design.cloudProvider,
       nodeCount: Array.isArray(design.nodes) ? design.nodes.length : 0,
       edgeCount: Array.isArray(design.edges) ? design.edges.length : 0,
+      owner: design.owner || null,
       updatedAt: design.updatedAt,
     };
   }

@@ -6,20 +6,29 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  // 1. Seed Users
-  const passwordHash = await bcrypt.hash('AdminPassword123!', 10);
-  const devPasswordHash = await bcrypt.hash('DevPassword123!', 10);
+  // ==========================================
+  // 1. Seed Admin (Site Owner)
+  // The admin is the platform owner — there should only ever be ONE.
+  // Credentials: admin@multicloud.local / AdminPassword123!
+  // ==========================================
+  const adminPasswordHash = await bcrypt.hash('AdminPassword123!', 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@multicloud.local' },
     update: {},
     create: {
-      name: 'Platform Administrator',
+      name: 'Site Owner',
       email: 'admin@multicloud.local',
-      passwordHash,
+      passwordHash: adminPasswordHash,
       role: Role.ADMIN,
     },
   });
+
+  // ==========================================
+  // 2. Seed Demo Developer (team user)
+  // Credentials: dev@multicloud.local / DevPassword123!
+  // ==========================================
+  const devPasswordHash = await bcrypt.hash('DevPassword123!', 10);
 
   const developer = await prisma.user.upsert({
     where: { email: 'dev@multicloud.local' },
@@ -32,7 +41,9 @@ async function main() {
     },
   });
 
-  console.log(`✅ Seeded users: ${admin.email} (ADMIN), ${developer.email} (DEVELOPER)`);
+  console.log(`✅ Seeded users:`);
+  console.log(`   👑 Site Owner:  ${admin.email}  (ADMIN)   — password: AdminPassword123!`);
+  console.log(`   🔧 Developer:   ${developer.email}  (DEVELOPER) — password: DevPassword123!`);
 
   // 2. Seed Default Project
   const project = await prisma.project.upsert({

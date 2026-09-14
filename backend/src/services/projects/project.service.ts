@@ -1,4 +1,5 @@
 import { prisma } from '../../config/prisma';
+import { Role } from '@prisma/client';
 import { maskSecret } from '../../utils/crypto';
 import {
   CreateProjectInput,
@@ -100,7 +101,7 @@ export class ProjectService {
   /**
    * Updates project details (name, description).
    */
-  async updateProject(id: string, userId: string, input: UpdateProjectInput): Promise<ProjectResponse> {
+  async updateProject(id: string, userId: string, role: Role, input: UpdateProjectInput): Promise<ProjectResponse> {
     const project = await prisma.project.findUnique({ where: { id } });
     if (!project) {
       const error: any = new Error('Project not found');
@@ -132,7 +133,7 @@ export class ProjectService {
   /**
    * Deletes a project and its associated environments.
    */
-  async deleteProject(id: string, userId: string): Promise<{ success: boolean; message: string }> {
+  async deleteProject(id: string, userId: string, role: Role): Promise<{ success: boolean; message: string }> {
     const project = await prisma.project.findUnique({
       where: { id },
       include: {

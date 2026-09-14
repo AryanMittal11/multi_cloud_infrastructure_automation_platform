@@ -8,9 +8,8 @@ import { AuthLayout } from '../../components/auth/auth-layout';
 import { AlertCircle, Loader2, UserPlus } from 'lucide-react';
 
 const ROLE_OPTIONS = [
-  { value: 'DEVELOPER', label: 'Developer', note: 'Plan, request approval, and apply changes' },
-  { value: 'ADMIN', label: 'Admin', note: 'Full access — accounts, approvals, users' },
-  { value: 'VIEWER', label: 'Viewer', note: 'Read-only access to the platform' },
+  { value: 'DEVELOPER', label: 'Developer', note: 'Plan, deploy, and manage infrastructure resources' },
+  { value: 'VIEWER', label: 'Viewer', note: 'Read-only access to view platform resources' },
 ];
 
 export default function RegisterPage() {

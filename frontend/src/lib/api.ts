@@ -9,6 +9,15 @@ export interface User {
   updatedAt?: string;
 }
 
+export interface UserWithCounts extends User {
+  _count?: {
+    projects?: number;
+    deployments?: number;
+    designs?: number;
+    cloudAccounts?: number;
+  };
+}
+
 export interface Environment {
   id: string;
   name: string;
@@ -393,6 +402,20 @@ export const api = {
         body: JSON.stringify(data),
       }),
     delete: (id: string) => request<{ success: boolean }>(`/designs/${id}`, { method: 'DELETE' }),
+  },
+
+  users: {
+    list: () => request<{ users: UserWithCounts[] }>('/users'),
+    get: (id: string) => request<{ user: UserWithCounts }>(`/users/${id}`),
+    updateRole: (id: string, role: 'DEVELOPER' | 'VIEWER') =>
+      request<{ user: User; message: string }>(`/users/${id}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      }),
+    delete: (id: string) =>
+      request<{ message: string }>(`/users/${id}`, {
+        method: 'DELETE',
+      }),
   },
 };
 

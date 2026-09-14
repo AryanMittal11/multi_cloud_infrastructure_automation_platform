@@ -19,6 +19,14 @@ export class AuthService {
   }): Promise<AuthResult> {
     const normalizedEmail = input.email.trim().toLowerCase();
 
+    // 0. Block self-registration as ADMIN — admin is the site owner,
+    //    created exclusively via the seed script.
+    if (input.role === Role.ADMIN) {
+      const error: any = new Error('Admin accounts cannot be self-registered. Contact the site owner.');
+      error.statusCode = 403;
+      throw error;
+    }
+
     // 1. Verify user does not already exist
     const existing = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -33,13 +41,14 @@ export class AuthService {
     // 2. Hash password with bcrypt
     const passwordHash = await bcrypt.hash(input.password, 10);
 
-    // 3. Persist user in database
+    // 3. Persist user in database (role is limited to DEVELOPER or VIEWER)
+    const safeRole = input.role === Role.VIEWER ? Role.VIEWER : Role.DEVELOPER;
     const user = await prisma.user.create({
       data: {
         name: input.name.trim(),
         email: normalizedEmail,
         passwordHash,
-        role: input.role || Role.DEVELOPER,
+        role: safeRole,
       },
     });
 

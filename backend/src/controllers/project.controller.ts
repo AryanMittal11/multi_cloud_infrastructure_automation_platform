@@ -51,7 +51,8 @@ export const projectController = {
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.userId;
-      const project = await projectService.updateProject(req.params.id, userId, req.body);
+      const role = req.user!.role;
+      const project = await projectService.updateProject(req.params.id, userId, role, req.body);
       res.status(200).json({
         message: `Project "${project.name}" updated successfully`,
         project,
@@ -67,7 +68,8 @@ export const projectController = {
   delete: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.userId;
-      const result = await projectService.deleteProject(req.params.id, userId);
+      const role = req.user!.role;
+      const result = await projectService.deleteProject(req.params.id, userId, role);
       res.status(200).json(result);
     } catch (err) {
       next(err);
