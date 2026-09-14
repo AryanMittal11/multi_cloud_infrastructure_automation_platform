@@ -1,22 +1,26 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
-  AlertTriangle,
   ArrowRight,
-  GitBranch,
-  LayoutDashboard,
-  LineChart,
+  Cloud,
+  DollarSign,
+  FolderGit2,
+  Library,
   Moon,
-  Play,
-  Radio,
+  PenTool,
   RefreshCw,
-  Settings as SettingsIcon,
-  Workflow,
+  Rocket,
+  ScrollText,
+  Server,
+  Waypoints,
+  Boxes,
 } from 'lucide-react';
-import { pipelines, deployments, alerts, anomalies, environments } from '../../lib/cerebro/mock-data';
+import { api } from '../../lib/api';
+import { timeAgo } from '../../lib/format';
 
 interface PaletteItem {
   id: string;
@@ -25,7 +29,7 @@ interface PaletteItem {
   sub: string;
   icon: React.ReactNode;
   keywords?: string;
-  action: () => void;
+  href: string;
 }
 
 export function usePalette() {
@@ -34,6 +38,7 @@ export function usePalette() {
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,56 +66,74 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     }
   }, [open]);
 
+  // Live platform datasets (only fetched while the palette is open)
+  const { data: deploymentsData } = useQuery({
+    queryKey: ['palette-deployments'],
+    queryFn: () => api.deployments.list(),
+    enabled: open,
+  });
+  const { data: designsData } = useQuery({
+    queryKey: ['palette-designs'],
+    queryFn: () => api.designs.list(),
+    enabled: open,
+  });
+
   const flat = useMemo<PaletteItem[]>(() => {
-    const go = (href: string) => () => {
-      router.push(href);
-      onClose();
-    };
     const items: PaletteItem[] = [];
 
-    // navigation
+    // navigation — the real platform surfaces
     const nav = [
-      { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={13} /> },
-      { label: 'Pipelines', href: '/dashboard/pipelines', icon: <GitBranch size={13} /> },
-      { label: 'Deployments', href: '/dashboard/deployments', icon: <Workflow size={13} /> },
-      { label: 'Anomalies', href: '/dashboard/anomalies', icon: <Activity size={13} /> },
-      { label: 'Alerts', href: '/dashboard/alerts', icon: <AlertTriangle size={13} /> },
-      { label: 'Environments', href: '/dashboard/environments', icon: <Radio size={13} /> },
-      { label: 'Analytics', href: '/dashboard/analytics', icon: <LineChart size={13} /> },
-      { label: 'Settings', href: '/dashboard/settings', icon: <SettingsIcon size={13} /> },
+      { label: 'Dashboard', href: '/dashboard', icon: <Boxes size={13} /> },
+      { label: 'Projects', href: '/projects', icon: <FolderGit2 size={13} /> },
+      { label: 'Template Catalog', href: '/templates', icon: <Library size={13} /> },
+      { label: 'Visual Designer', href: '/designer', icon: <PenTool size={13} /> },
+      { label: 'Saved Designs', href: '/architectures', icon: <Library size={13} /> },
+      { label: 'Deployments', href: '/deployments', icon: <Rocket size={13} /> },
+      { label: 'Resources', href: '/resources', icon: <Server size={13} /> },
+      { label: 'Topology', href: '/topology', icon: <Waypoints size={13} /> },
+      { label: 'Costs', href: '/costs', icon: <DollarSign size={13} /> },
+      { label: 'Cloud Accounts', href: '/cloud-accounts', icon: <Cloud size={13} /> },
+      { label: 'Audit Logs', href: '/audit-logs', icon: <ScrollText size={13} /> },
     ];
     nav.forEach((n) =>
       items.push({
         id: `nav-${n.href}`,
         group: 'Navigation',
         title: n.label,
-        sub: n.href.replace('/dashboard', '~'),
+        sub: n.href,
         icon: n.icon,
-        action: go(n.href),
+        href: n.href,
       })
     );
 
     // quick actions
     items.push(
       {
-        id: 'qa-run',
+        id: 'qa-wizard',
         group: 'Actions',
-        title: 'Run pipeline…',
-        sub: 'trigger on main',
-        icon: <Play size={13} />,
-        keywords: 'trigger deploy build',
-        action: go('/dashboard/pipelines'),
+        title: 'New deployment…',
+        sub: 'launch the deployment wizard',
+        icon: <Rocket size={13} />,
+        keywords: 'create deploy plan apply',
+        href: '/deployments/wizard',
+      },
+      {
+        id: 'qa-design',
+        group: 'Actions',
+        title: 'Design infrastructure…',
+        sub: 'open the visual canvas',
+        icon: <PenTool size={13} />,
+        keywords: 'draw architecture canvas',
+        href: '/designer',
       },
       {
         id: 'qa-refresh',
         group: 'Actions',
         title: 'Refresh data',
-        sub: 're-fetch demo dataset',
+        sub: 're-fetch from the control plane',
         icon: <RefreshCw size={13} />,
         keywords: 'reload sync',
-        action: () => {
-          window.location.reload();
-        },
+        href: pathname,
       },
       {
         id: 'qa-theme',
@@ -119,81 +142,38 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         sub: 'dark / light',
         icon: <Moon size={13} />,
         keywords: 'dark light appearance',
-        action: () => {
-          const cur = document.documentElement.getAttribute('data-theme') ?? 'dark';
-          document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
-          window.localStorage.setItem('cerebro-theme', cur === 'dark' ? 'light' : 'dark');
-        },
+        href: pathname,
       }
     );
 
-    // pipelines
-    pipelines.forEach((p) =>
-      items.push({
-        id: `pipe-${p.id}`,
-        group: 'Pipelines',
-        title: p.name,
-        sub: `${p.repo} · ${p.env}`,
-        icon: <GitBranch size={13} />,
-        keywords: `${p.repo} ${p.env} ${p.lastStatus}`,
-        action: go(`/dashboard/pipelines/${p.id}`),
-      })
-    );
-
-    // deployments
-    deployments.forEach((d) =>
+    // live deployments
+    (deploymentsData?.deployments ?? []).slice(0, 8).forEach((d: any) =>
       items.push({
         id: `dep-${d.id}`,
         group: 'Deployments',
-        title: `${d.version} → ${d.env}`,
-        sub: `${d.id} · ${d.commit}`,
-        icon: <Workflow size={13} />,
-        keywords: `${d.status} ${d.author} ${d.commit}`,
-        action: go(`/dashboard/deployments/${d.id}`),
+        title: `${d.template?.name ?? 'deployment'} · ${d.status}`,
+        sub: `${d.project?.name ?? ''} · ${timeAgo(d.createdAt)}`,
+        icon: <Rocket size={13} />,
+        keywords: `${d.status}`,
+        href: `/deployments/${d.id}`,
       })
     );
 
-    // anomalies
-    anomalies.forEach((a) =>
+    // saved designs
+    (designsData?.designs ?? []).slice(0, 6).forEach((s: any) =>
       items.push({
-        id: `anom-${a.id}`,
-        group: 'Anomalies',
-        title: a.title,
-        sub: `${a.id} · ${a.severity} · ${a.service}`,
-        icon: <Activity size={13} />,
-        keywords: `${a.state} ${a.metric}`,
-        action: go(`/dashboard/anomalies/${a.id}`),
-      })
-    );
-
-    // alerts
-    alerts.forEach((a) =>
-      items.push({
-        id: `alg-${a.id}`,
-        group: 'Alerts',
-        title: a.title,
-        sub: `${a.id} · ${a.severity} · ${a.status}`,
-        icon: <AlertTriangle size={13} />,
-        keywords: `${a.service} ${a.source}`,
-        action: go(`/dashboard/alerts/${a.id}`),
-      })
-    );
-
-    // environments
-    environments.forEach((e) =>
-      items.push({
-        id: `env-${e.id}`,
-        group: 'Environments',
-        title: e.name,
-        sub: `${e.region} · ${e.currentVersion}`,
-        icon: <Radio size={13} />,
-        keywords: `${e.key} ${e.provider}`,
-        action: go(`/dashboard/environments/${e.id}`),
+        id: `dsn-${s.id}`,
+        group: 'Designs',
+        title: s.name,
+        sub: `${s.cloudProvider} · ${s.nodeCount} nodes`,
+        icon: <PenTool size={13} />,
+        keywords: 'design canvas',
+        href: `/designer`,
       })
     );
 
     return items;
-  }, [router, onClose]);
+  }, [deploymentsData, designsData, pathname]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -215,6 +195,23 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   useEffect(() => setSelected(0), [query]);
 
+  const run = (item: PaletteItem) => {
+    if (item.id === 'qa-theme') {
+      const cur = document.documentElement.getAttribute('data-theme') ?? 'dark';
+      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+      window.localStorage.setItem('cerebro-theme', cur === 'dark' ? 'light' : 'dark');
+      onClose();
+      return;
+    }
+    if (item.id === 'qa-refresh') {
+      onClose();
+      router.refresh();
+      return;
+    }
+    onClose();
+    router.push(item.href);
+  };
+
   // keyboard
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -225,7 +222,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       setSelected((s) => Math.max(s - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      filtered[selected]?.action();
+      filtered[selected] && run(filtered[selected]);
     } else if (e.key === 'Escape') {
       onClose();
     }
@@ -258,7 +255,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search projects, runs, actions…"
+            placeholder="Search pages, deployments, designs…"
             autoComplete="off"
             spellCheck={false}
             aria-label="Search"
@@ -279,12 +276,20 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 idx++;
                 const sel = idx === selected;
                 return (
-                  <button
+                  <Link
                     key={it.id}
+                    href={it.href}
+                    onClick={() => (it.id === 'qa-theme' ? run(it) : undefined)}
                     className={`palette-item ${sel ? 'selected' : ''}`}
                     data-selected={sel}
                     onMouseEnter={() => setSelected(idx)}
-                    onClick={it.action}
+                    onMouseDown={(e) => {
+                      // theme toggle and refresh are actions, not navigation
+                      if (it.id === 'qa-theme' || it.id === 'qa-refresh') {
+                        e.preventDefault();
+                        run(it);
+                      }
+                    }}
                     role="option"
                     aria-selected={sel}
                   >
@@ -292,7 +297,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     <span className="pi-title">{it.title}</span>
                     <span className="pi-sub">{it.sub}</span>
                     {sel && <ArrowRight size={12} style={{ color: 'var(--ink-muted)' }} />}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -306,7 +311,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           <span className="flex items-center gap-1">
             <span className="kbd">↵</span> select
           </span>
-          <span className="palette-hint mono">actions</span>
+          <span className="palette-hint mono">cloudweave</span>
         </div>
       </div>
     </div>

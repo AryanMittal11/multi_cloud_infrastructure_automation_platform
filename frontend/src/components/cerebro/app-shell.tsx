@@ -3,31 +3,33 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
-  AlertTriangle,
   Bell,
   Boxes,
   ChevronDown,
   ChevronLeft,
-  Copy,
-  GitBranch,
-  LayoutDashboard,
+  Cloud,
+  DollarSign,
+  FolderGit2,
+  Layers,
   Library,
-  LineChart,
+  LogOut,
   Menu,
   Moon,
   PenTool,
-  Radio,
   Rocket,
-  Settings as SettingsIcon,
+  ScrollText,
+  Server,
   Sun,
-  Workflow,
+  Waypoints,
   X,
 } from 'lucide-react';
-import { Dropdown, MenuItem } from './ui-kit';
-import { notifications, timeAgo } from '../../lib/cerebro/mock-data';
-import { CommandPalette, usePalette } from './command-palette';
+import { Dropdown } from './ui-kit';
+import { api, AuditLog } from '../../lib/api';
+import { useAuth } from '../../context/auth-context';
+import { timeAgo } from '../../lib/format';
+import { CommandPalette } from './command-palette';
 
 /* ============================================================
    Palette open context — lets the topbar button open it
@@ -37,14 +39,13 @@ const PaletteCtx = createContext<{ open: () => void }>({ open: () => {} });
 export const usePaletteOpener = () => useContext(PaletteCtx);
 
 /* ============================================================
-   Navigation model
+   Navigation model — the real platform surfaces (PDF §12)
    ============================================================ */
 
 export interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ size?: number | string }>;
-  badge?: number;
   match: (path: string) => boolean;
 }
 
@@ -53,30 +54,34 @@ const starts = (href: string) => (path: string) => path === href || path.startsW
 
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    label: 'Workspace',
+    label: 'Overview',
     items: [
-      { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, match: eq('/dashboard') },
-      { label: 'Pipelines', href: '/dashboard/pipelines', icon: GitBranch, match: starts('/dashboard/pipelines') },
-      { label: 'Deployments', href: '/dashboard/deployments', icon: Workflow, match: starts('/dashboard/deployments') },
-      { label: 'Anomalies', href: '/dashboard/anomalies', icon: Activity, match: starts('/dashboard/anomalies') },
-      { label: 'Alerts', href: '/dashboard/alerts', icon: AlertTriangle, badge: 4, match: starts('/dashboard/alerts') },
+      { label: 'Dashboard', href: '/dashboard', icon: Boxes, match: eq('/dashboard') },
     ],
   },
   {
-    label: 'Manage',
+    label: 'Deliver',
     items: [
-      { label: 'Environments', href: '/dashboard/environments', icon: Radio, match: starts('/dashboard/environments') },
-      { label: 'Analytics', href: '/dashboard/analytics', icon: LineChart, match: starts('/dashboard/analytics') },
-      { label: 'Settings', href: '/dashboard/settings', icon: SettingsIcon, match: starts('/dashboard/settings') },
+      { label: 'Projects', href: '/projects', icon: FolderGit2, match: starts('/projects') },
+      { label: 'Template Catalog', href: '/templates', icon: Library, match: starts('/templates') },
+      { label: 'Visual Designer', href: '/designer', icon: PenTool, match: starts('/designer') },
+      { label: 'Saved Designs', href: '/architectures', icon: Layers, match: starts('/architectures') },
+      { label: 'Deployments', href: '/deployments', icon: Rocket, match: starts('/deployments') },
     ],
   },
   {
-    label: 'Platform',
+    label: 'Operate',
     items: [
-      { label: 'Projects', href: '/projects', icon: Boxes, match: eq('/projects') },
-      { label: 'Visual Designer', href: '/designer', icon: PenTool, match: eq('/designer') },
-      { label: 'Live Deployments', href: '/deployments', icon: Rocket, match: eq('/deployments') },
-      { label: 'Template Catalog', href: '/templates', icon: Library, match: eq('/templates') },
+      { label: 'Resources', href: '/resources', icon: Server, match: starts('/resources') },
+      { label: 'Topology', href: '/topology', icon: Waypoints, match: starts('/topology') },
+      { label: 'Costs', href: '/costs', icon: DollarSign, match: starts('/costs') },
+    ],
+  },
+  {
+    label: 'Trust',
+    items: [
+      { label: 'Cloud Accounts', href: '/cloud-accounts', icon: Cloud, match: starts('/cloud-accounts') },
+      { label: 'Audit Logs', href: '/audit-logs', icon: ScrollText, match: starts('/audit-logs') },
     ],
   },
 ];
@@ -85,23 +90,12 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
    Breadcrumbs
    ============================================================ */
 
-const CRUMB_NAMES: Record<string, string> = {
-  dashboard: 'overview',
-  pipelines: 'pipelines',
-  deployments: 'deployments',
-  anomalies: 'anomalies',
-  alerts: 'alerts',
-  environments: 'environments',
-  analytics: 'analytics',
-  settings: 'settings',
-};
-
 function useCrumbs(): string[] {
   const pathname = usePathname();
   return useMemo(() => {
     const parts = pathname.split('/').filter(Boolean);
-    if (parts[0] === 'dashboard' && parts.length === 1) return ['overview'];
-    return parts.map((p) => CRUMB_NAMES[p] ?? p);
+    if (parts[0] === 'dashboard' && parts.length === 1) return ['dashboard'];
+    return parts;
   }, [pathname]);
 }
 
@@ -155,12 +149,7 @@ function SidebarContent({
           </svg>
         </span>
         {!collapsed && (
-          <>
-            <span className="font-semibold text-[15px] tracking-tight">cloudweave</span>
-            <span className="chip" style={{ marginLeft: 'auto', height: 20, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              demo
-            </span>
-          </>
+          <span className="font-semibold text-[15px] tracking-tight">cloudweave</span>
         )}
       </Link>
 
@@ -186,9 +175,6 @@ function SidebarContent({
                 >
                   <Icon size={16} />
                   {!collapsed && <span>{item.label}</span>}
-                  {!collapsed && item.badge ? (
-                    <span className="side-count">{item.badge}</span>
-                  ) : null}
                 </Link>
               );
             })}
@@ -205,7 +191,7 @@ function SidebarContent({
           <span className="dot dot-success flex-none" />
           {!collapsed && (
             <span className="mono text-[11px] truncate" style={{ color: 'var(--ink-muted)' }}>
-              system · healthy
+              control plane · live
             </span>
           )}
         </div>
@@ -230,8 +216,21 @@ function Topbar({
   const crumbs = useCrumbs();
   const { open } = usePaletteOpener();
   const { theme, toggle } = useTheme();
+  const { user, logout } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
-  const unread = notifications.filter((n) => n.unread).length;
+
+  // Real notifications: latest audit-trail entries
+  const { data: auditData } = useQuery({
+    queryKey: ['audit-notifications'],
+    queryFn: () => api.auditLogs.list({ limit: 6 }),
+    refetchInterval: 30000,
+    enabled: !!user,
+  });
+  const auditLogs: AuditLog[] = auditData?.auditLogs ?? [];
+
+  const initials = user
+    ? user.name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
 
   return (
     <header
@@ -259,7 +258,7 @@ function Topbar({
         {crumbs.map((c, i) => (
           <span key={i} className="flex items-center gap-2 min-w-0">
             {i > 0 && <span style={{ color: 'var(--ink-faint)' }}>/</span>}
-            <span className={`truncate ${i === crumbs.length - 1 ? '' : ''}`} style={{ color: i === crumbs.length - 1 ? 'var(--ink)' : 'var(--ink-muted)' }}>
+            <span className="truncate" style={{ color: i === crumbs.length - 1 ? 'var(--ink)' : 'var(--ink-muted)' }}>
               {c}
             </span>
           </span>
@@ -298,73 +297,54 @@ function Topbar({
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-        {/* notifications */}
+        {/* notifications (live audit trail) */}
         <div className="relative">
           <button
             className="icon-btn"
             onClick={() => setNotifOpen(!notifOpen)}
-            aria-label={`Notifications${unread ? ` (${unread} unread)` : ''}`}
+            aria-label="Recent activity"
             aria-expanded={notifOpen}
           >
             <Bell size={16} />
-            {unread > 0 && (
-              <span
-                className="absolute rounded-full num"
-                style={{
-                  top: 2,
-                  right: 2,
-                  minWidth: 14,
-                  height: 14,
-                  padding: '0 3px',
-                  background: 'var(--fail)',
-                  color: '#fff',
-                  fontSize: 9,
-                  fontFamily: 'var(--font-mono)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid var(--bg)',
-                }}
-              >
-                {unread}
-              </span>
-            )}
           </button>
           {notifOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} aria-hidden />
               <div
-                className="absolute right-0 z-50 mt-1.5 w-[340px] max-h-[440px] overflow-y-auto rounded-[var(--r-md)] shadow-2xl"
+                className="absolute right-0 z-50 mt-1.5 w-[360px] max-h-[440px] overflow-y-auto rounded-[var(--r-md)] shadow-2xl"
                 style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)', animation: 'palette-in 160ms var(--ease-out)' }}
                 role="menu"
-                aria-label="Notifications"
+                aria-label="Recent activity"
               >
                 <div className="flex items-center justify-between px-4 py-3 border-b text-sm font-semibold" style={{ borderColor: 'var(--border)' }}>
-                  Notifications
-                  <span className="chip">{unread} new</span>
+                  Recent activity
+                  <Link href="/audit-logs" onClick={() => setNotifOpen(false)} className="chip">view all</Link>
                 </div>
-                {notifications.map((n) => (
-                  <div
+                {auditLogs.length === 0 && (
+                  <p className="px-4 py-6 text-xs text-center" style={{ color: 'var(--ink-muted)' }}>
+                    No activity recorded yet.
+                  </p>
+                )}
+                {auditLogs.map((n) => (
+                  <Link
                     key={n.id}
+                    href={n.deploymentId ? `/deployments/${n.deploymentId}` : '/audit-logs'}
+                    onClick={() => setNotifOpen(false)}
                     className="flex gap-3 px-4 py-3 border-b last:border-b-0"
-                    style={{
-                      borderColor: 'var(--border-faint)',
-                      background: n.unread ? 'var(--accent-soft)' : undefined,
-                    }}
+                    style={{ borderColor: 'var(--border-faint)' }}
                   >
                     <span
                       className="w-1.5 h-1.5 rounded-full mt-1.5 flex-none"
                       style={{
-                        background:
-                          n.tone === 'success' ? 'var(--success)' : n.tone === 'fail' ? 'var(--fail)' : n.tone === 'warn' ? 'var(--warn)' : 'var(--accent)',
+                        background: n.status === 'SUCCESS' ? 'var(--success)' : n.status === 'FAILURE' ? 'var(--fail)' : 'var(--accent)',
                       }}
                     />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{n.title}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--ink-muted)' }}>{n.sub}</p>
-                      <p className="mono text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>{timeAgo(n.at)}</p>
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{n.action}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--ink-muted)' }}>{n.message ?? ''}</p>
+                      <p className="mono text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>{timeAgo(n.timestamp)}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </>
@@ -383,9 +363,9 @@ function Topbar({
                 className="avatar w-[26px] h-[26px] rounded-full flex items-center justify-center text-[10px] font-semibold uppercase"
                 style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
               >
-                du
+                {initials}
               </span>
-              <span className="hidden lg:inline font-medium">Demo User</span>
+              <span className="hidden lg:inline font-medium">{user?.name ?? 'Guest'}</span>
               <ChevronDown size={13} style={{ color: 'var(--ink-muted)' }} />
             </span>
           )}
@@ -393,12 +373,25 @@ function Topbar({
           {(close) => (
             <>
               <div className="px-3 py-2 border-b mb-1" style={{ borderColor: 'var(--border-faint)' }}>
-                <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Demo User</p>
-                <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>demo@cloudweave.io</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{user?.name ?? 'Not signed in'}</p>
+                <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>{user?.email ?? ''}</p>
+                {user && (
+                  <span className="chip mt-1 inline-flex" style={{ fontSize: 10 }}>{user.role}</span>
+                )}
               </div>
-              <MenuItem icon={<SettingsIcon size={14} />} label="Workspace settings" onClick={close} />
-              <MenuItem icon={<Copy size={14} />} label="Copy demo API key" sub="cerebro_sk_…demo" onClick={close} />
-              <MenuItem icon={<X size={14} />} label="Sign out" onClick={close} />
+              {user ? (
+                <button
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-[var(--r-sm)]"
+                  style={{ color: 'var(--ink-secondary)' }}
+                  onClick={() => { logout(); close(); }}
+                >
+                  <LogOut size={14} /> Sign out
+                </button>
+              ) : (
+                <Link href="/projects" className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-[var(--r-sm)]" style={{ color: 'var(--ink-secondary)' }}>
+                  <Cloud size={14} /> Sign in to manage
+                </Link>
+              )}
             </>
           )}
         </Dropdown>
@@ -415,10 +408,10 @@ function Tabbar() {
   const pathname = usePathname();
   const { open } = usePaletteOpener();
   const items = [
-    { label: 'Home', href: '/dashboard', icon: LayoutDashboard, active: pathname === '/dashboard' },
-    { label: 'Pipelines', href: '/dashboard/pipelines', icon: GitBranch, active: pathname.startsWith('/dashboard/pipelines') },
-    { label: 'Deploys', href: '/dashboard/deployments', icon: Workflow, active: pathname.startsWith('/dashboard/deployments') },
-    { label: 'Alerts', href: '/dashboard/alerts', icon: AlertTriangle, active: pathname.startsWith('/dashboard/alerts') },
+    { label: 'Home', href: '/dashboard', icon: Boxes, active: pathname === '/dashboard' },
+    { label: 'Design', href: '/designer', icon: PenTool, active: pathname.startsWith('/designer') },
+    { label: 'Deploys', href: '/deployments', icon: Rocket, active: pathname.startsWith('/deployments') },
+    { label: 'Costs', href: '/costs', icon: DollarSign, active: pathname.startsWith('/costs') },
   ];
   return (
     <nav
@@ -446,10 +439,13 @@ function Tabbar() {
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 26px rgba(45,108,232,0.45)',
         }}
         onClick={open}
-        aria-label="Run pipeline"
-        title="Run pipeline"
+        aria-label="Search"
+        title="Search"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z" /></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
       </button>
       {items.slice(2).map((it) => (
         <TabItem key={it.href} {...it} />

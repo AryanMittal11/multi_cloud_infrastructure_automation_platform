@@ -450,6 +450,7 @@ function DesignerInner() {
         onClose={() => setDeployOpen(false)}
         designName={designName}
         nodeCount={nodes.length}
+        templateRef={nodes[0]?.data?.templateRef ?? null}
       />
 
       {/* Mobile fallback note */}

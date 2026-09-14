@@ -13,6 +13,8 @@ import { deploymentRouter } from './routes/deployment.routes';
 import { resourceRouter } from './routes/resource.routes';
 import { auditRouter } from './routes/audit.routes';
 import { designRouter } from './routes/design.routes';
+import { costRouter } from './routes/cost.routes';
+import { visualizationRouter } from './routes/visualization.routes';
 import { terraformWorker } from './workers/terraform.worker';
 import { queueService } from './services/queue';
 
@@ -55,6 +57,8 @@ app.use('/api/deployments', deploymentRouter);
 app.use('/api/resources', resourceRouter);
 app.use('/api/audit-logs', auditRouter);
 app.use('/api/designs', designRouter);
+app.use('/api/costs', costRouter);
+app.use('/api/topology', visualizationRouter);
 
 // Centralized error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

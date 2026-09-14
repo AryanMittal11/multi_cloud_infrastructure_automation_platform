@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { queueService } from '../services/queue';
 import { cloudService } from '../services/cloud';
 import { evaluatePlanPolicy } from '../services/policies/policy.evaluator';
+import { estimateTemplateCost, estimateDeploymentCost } from '../services/costs';
 import { workspaceManager } from '../services/terraform/workspace.manager';
 import { terraformRunner } from '../services/terraform/terraform.runner';
 import { stateParser } from '../services/terraform/state.parser';
@@ -213,6 +214,14 @@ export class TerraformWorkerService {
           job.operationType,
         );
 
+        // Cost estimate for the proposed change (PDF flow step 8)
+        const costEstimate = estimateTemplateCost({
+          templateName: deployment.template.name,
+          provider: (deployment.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
+          configuration: (deployment.configuration as Record<string, unknown>) || {},
+          region: ((deployment.configuration as Record<string, unknown>)?.['region'] as string) ?? null,
+        });
+
         await prisma.deployment.update({
           where: { id: job.deploymentId },
           data: {
@@ -220,6 +229,7 @@ export class TerraformWorkerService {
             planOutput: accumulatedLogs,
             planTime: new Date(),
             policyEvaluation: policyEvaluation as unknown as Prisma.InputJsonValue,
+            costEstimate: costEstimate as unknown as Prisma.InputJsonValue,
           },
         });
 
@@ -247,12 +257,21 @@ export class TerraformWorkerService {
           parsedState.resources,
         );
 
+        // Post-apply cost estimate from the actual provisioned resources (PDF flow step 15)
+        const appliedCostEstimate = estimateDeploymentCost({
+          deploymentId: job.deploymentId,
+          provider: (deployment.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
+          region: ((deployment.configuration as Record<string, unknown>)?.['region'] as string) ?? null,
+          resources: parsedState.resources.map((r) => ({ resourceType: r.type, name: r.name })),
+        });
+
         await prisma.deployment.update({
           where: { id: job.deploymentId },
           data: {
             status: DeploymentStatus.SUCCEEDED,
             applyOutput: accumulatedLogs,
             applyTime: new Date(),
+            costEstimate: appliedCostEstimate as unknown as Prisma.InputJsonValue,
           },
         });
 

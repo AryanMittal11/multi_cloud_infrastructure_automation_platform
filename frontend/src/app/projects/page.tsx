@@ -38,6 +38,24 @@ export default function ProjectsPage() {
     enabled: !!user,
   });
 
+  // Cloud accounts for environment binding (PDF 5.2 — accounts associate with environments)
+  const { data: accountsData } = useQuery({
+    queryKey: ['cloud-accounts'],
+    queryFn: () => api.cloudAccounts.list(),
+    enabled: !!user,
+  });
+  const accounts = accountsData?.cloudAccounts ?? [];
+
+  // Bind / unbind a cloud account on an environment
+  const bindMutation = useMutation({
+    mutationFn: (input: { projectId: string; environmentId: string; cloudAccountId: string | null }) =>
+      api.projects.bindCloudAccount(input.projectId, input.environmentId, input.cloudAccountId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+  });
+
   // Create Project mutation
   const createMutation = useMutation({
     mutationFn: (newProject: {
@@ -175,27 +193,48 @@ export default function ProjectsPage() {
                     </p>
                   </div>
 
-                  {/* Environments pills */}
+                  {/* Environments with cloud-account binding (PDF 5.2) */}
                   <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Environments
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {project.environments && project.environments.length > 0 ? (
-                        project.environments.map((env) => (
-                          <span
-                            key={env.id}
-                            className={`text-[11px] font-medium px-2 py-0.5 rounded-lg border ${getEnvBadgeColor(
-                              env.name
-                            )}`}
-                          >
-                            {env.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-slate-500 italic">No environments</span>
-                      )}
-                    </div>
+                    {project.environments && project.environments.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {project.environments.map((env) => (
+                          <div key={env.id} className="flex items-center gap-2">
+                            <span
+                              className={`text-[11px] font-medium px-2 py-0.5 rounded-lg border flex-none ${getEnvBadgeColor(
+                                env.name
+                              )}`}
+                            >
+                              {env.name}
+                            </span>
+                            <select
+                              value={env.cloudAccountId ?? ''}
+                              onChange={(e) =>
+                                bindMutation.mutate({
+                                  projectId: project.id,
+                                  environmentId: env.id,
+                                  cloudAccountId: e.target.value || null,
+                                })
+                              }
+                              disabled={bindMutation.isPending}
+                              className="flex-1 min-w-0 text-[11px] px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                              aria-label={`Cloud account for ${env.name}`}
+                            >
+                              <option value="">No cloud account bound</option>
+                              {accounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.provider} · {a.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-500 italic">No environments</span>
+                    )}
                   </div>
 
                   {/* Footer metadata */}

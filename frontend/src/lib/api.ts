@@ -249,6 +249,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    bindCloudAccount: (projectId: string, environmentId: string, cloudAccountId: string | null) =>
+      request<{ environment: Environment }>(`/projects/${projectId}/environments/${environmentId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ cloudAccountId }),
+      }),
   },
 
   cloudAccounts: {
@@ -359,6 +364,21 @@ export const api = {
     },
   },
 
+  costs: {
+    estimate: (data: { templateName: string; provider: 'AWS' | 'AZURE' | 'GCP'; configuration?: Record<string, any>; region?: string | null }) =>
+      request<{ estimate: CostEstimate }>('/costs/estimate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    summary: (projectId?: string) =>
+      request<CostSummary>(`/costs/summary${projectId ? `?projectId=${projectId}` : ''}`),
+  },
+
+  topology: {
+    get: (projectId?: string) =>
+      request<{ graph: TopologyGraph; note: string }>(`/topology${projectId ? `?projectId=${projectId}` : ''}`),
+  },
+
   designs: {
     list: () => request<{ designs: DesignSummary[] }>('/designs'),
     get: (id: string) => request<{ design: ArchitectureDesign }>(`/designs/${id}`),
@@ -379,6 +399,75 @@ export const api = {
 // ==========================================
 // Visual Designer Types (Brainboard-style canvas)
 // ==========================================
+
+export interface CostLineItem {
+  resourceType: string;
+  label: string;
+  quantity: number;
+  unit: string;
+  unitMonthlyUsd: number;
+  monthlyUsd: number;
+  basis: string;
+}
+
+export interface CostEstimate {
+  scope: 'template' | 'deployment';
+  scopeId: string;
+  provider: 'AWS' | 'AZURE' | 'GCP' | null;
+  region: string | null;
+  currency: 'USD';
+  monthlyTotalUsd: number;
+  lineItems: CostLineItem[];
+  assumptions: { label: string; value: string }[];
+  source: string;
+  computedAt: string;
+}
+
+export interface CostSummaryProject {
+  projectId: string;
+  projectName: string;
+  monthlyTotalUsd: number;
+  deployments: {
+    deploymentId: string;
+    environmentName: string | null;
+    estimate: CostEstimate;
+  }[];
+}
+
+export interface CostSummary {
+  currency: 'USD';
+  source: string;
+  label: string;
+  monthlyTotalUsd: number;
+  projects: CostSummaryProject[];
+  computedAt: string;
+}
+
+export type TopologyNodeKind = 'network' | 'compute' | 'database' | 'storage' | 'loadbalancer' | 'cluster' | 'other';
+
+export interface TopologyNode {
+  id: string;
+  label: string;
+  kind: TopologyNodeKind;
+  provider: 'AWS' | 'AZURE' | 'GCP';
+  resourceType: string;
+  status: string;
+  providerResourceId: string | null;
+  deploymentId: string;
+}
+
+export interface TopologyEdge {
+  id: string;
+  source: string;
+  target: string;
+  kind: 'declared' | 'inferred';
+}
+
+export interface TopologyGraph {
+  nodes: TopologyNode[];
+  edges: TopologyEdge[];
+  unlinkedCount: number;
+}
 
 export interface DesignSummary {
   id: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Rocket, X, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '../../lib/api';
@@ -10,10 +10,11 @@ interface DeployDialogProps {
   onClose: () => void;
   designName: string;
   nodeCount: number;
-  templateId?: string | null;
+  /** Primary template reference of the design (e.g. `templates/aws/aws_ec2_web`). */
+  templateRef?: string | null;
 }
 
-export function DeployDialog({ open, onClose, designName, nodeCount, templateId }: DeployDialogProps) {
+export function DeployDialog({ open, onClose, designName, nodeCount, templateRef }: DeployDialogProps) {
   const queryClient = useQueryClient();
   const [projectId, setProjectId] = useState('');
   const [environmentId, setEnvironmentId] = useState('');
@@ -25,18 +26,47 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateId 
     enabled: open,
   });
 
+  // Resolve the backend template from the design's template reference
+  const { data: templatesData, isLoading: templatesLoading } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => api.templates.list(),
+    enabled: open,
+  });
+
+  const resolvedTemplate = useMemo(
+    () => templatesData?.templates.find((t) => t.templateReference === templateRef) ?? null,
+    [templatesData, templateRef]
+  );
+
+  // Seed configuration defaults from the template's JSONSchema
+  const defaultConfig = useMemo(() => {
+    const initial: Record<string, any> = {};
+    if (resolvedTemplate?.inputSchema?.properties) {
+      Object.entries(resolvedTemplate.inputSchema.properties).forEach(([key, prop]: [string, any]) => {
+        if (prop.default !== undefined) initial[key] = prop.default;
+      });
+    }
+    return initial;
+  }, [resolvedTemplate]);
+
   const projects = projectsData?.projects || [];
   const selectedProject = projects.find((p) => p.id === projectId);
   const environments = selectedProject?.environments || [];
 
   const deployMutation = useMutation({
     mutationFn: async () => {
-      if (!templateId) throw new Error('This design has no mapped template to deploy yet');
+      if (!resolvedTemplate) {
+        throw new Error(
+          templateRef
+            ? `No catalog template matches "${templateRef}" — sync the template catalog first.`
+            : 'Add a node to the canvas so the design maps to a deployable template.'
+        );
+      }
       const res = await api.deployments.createPlan({
         projectId,
         environmentId,
-        templateId: templateId!,
-        configuration: {},
+        templateId: resolvedTemplate.id,
+        configuration: defaultConfig,
       });
       return res;
     },
@@ -55,7 +85,7 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateId 
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center space-x-2.5">
             <Rocket className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-sm font-bold text-white">Deploy "{designName}"</h3>
+            <h3 className="text-sm font-bold text-white">Deploy &quot;{designName}&quot;</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-4 h-4" />
@@ -73,6 +103,16 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateId 
           <div className="flex justify-between">
             <span>Canvas resources</span>
             <span className="text-slate-200 font-mono">{nodeCount}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Primary template</span>
+            {templatesLoading ? (
+              <span className="text-slate-500">resolving…</span>
+            ) : resolvedTemplate ? (
+              <span className="text-indigo-300 font-semibold">{resolvedTemplate.name}</span>
+            ) : (
+              <span className="text-rose-400">no matching template</span>
+            )}
           </div>
           <div className="flex justify-between">
             <span>Flow</span>
@@ -133,7 +173,7 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateId 
               }
               deployMutation.mutate();
             }}
-            disabled={deployMutation.isPending}
+            disabled={deployMutation.isPending || !resolvedTemplate}
             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 disabled:opacity-50 flex items-center space-x-2"
           >
             {deployMutation.isPending ? (
@@ -158,9 +198,7 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateId 
         {deployMutation.isSuccess && (
           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>
-              Plan queued — track it on the Deployments page.
-            </span>
+            <span>Plan queued — track it on the Deployments page.</span>
           </div>
         )}
       </div>

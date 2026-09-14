@@ -54,6 +54,21 @@ const STATUS_TONE: Record<string, Tone> = {
   ticket: 'warn',
   info: 'muted',
   completed: 'success',
+  // platform (backend) statuses
+  SUCCEEDED: 'success',
+  SUCCESS: 'success',
+  FAILURE: 'fail',
+  FAILED: 'fail',
+  RUNNING: 'run',
+  PLANNING: 'run',
+  PLANNED: 'accent',
+  QUEUED: 'muted',
+  CANCELLED: 'muted',
+  ACTIVE: 'success',
+  PROVISIONING: 'run',
+  DESTROYING: 'run',
+  DESTROYED: 'muted',
+  PENDING: 'muted',
 };
 
 export function StatusBadge({ status, pulse }: { status: string; pulse?: boolean }) {
@@ -548,7 +563,7 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
   );
 }
 
-import { timeAgo } from '../../lib/cerebro/mock-data';
+import { timeAgo } from '../../lib/format';
 
 /* ============================================================
    FilterBar

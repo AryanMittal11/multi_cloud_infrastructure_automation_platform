@@ -1,0 +1,348 @@
+MULTI-CLOUD INFRASTRUCTURE AUTOMATION
+                         PLATFORM
+
+    Technical Architecture & Implementation Document -- Synchronized with the Project
+                                                   Explanation
+
+1. Implementation Scope & Source of Truth
+
+This document is the technical companion to the Complete Project Explanation. The
+conceptual document defines WHAT the platform does; this document defines HOW it is
+implemented. The architecture below is designed to support the full product scope, while the
+implementation order starts with a practical AWS-first MVP.
+
+2. Recommended Technology Stack
+
+Frontend: Next.js, TypeScript, Tailwind CSS, TanStack Query, React Flow -- web application,
+API state, infrastructure graph.
+
+Backend: Node.js, Express.js, TypeScript -- REST API, authentication, business logic,
+orchestration.
+
+Data Access: Prisma -- ORM/database access.
+
+Database: PostgreSQL -- users, cloud accounts, projects, templates, deployments, resources,
+audit, notifications, and state.
+
+Queue: RabbitMQ -- asynchronous infrastructure jobs.
+
+Workers: Node.js/TypeScript worker service -- consumes jobs and controls infrastructure
+execution.
+
+Infrastructure as Code: Terraform -- provider-specific infrastructure generation, plan, apply,
+and destruction.
+
+Cloud: AWS, Azure, GCP -- target cloud environments; AWS is the initial implementation target.
+
+Containers: Docker, Docker Compose -- containerization and local development.
+
+CI/CD: GitHub Actions -- tests, builds, image publishing, and deployment automation.
+
+Orchestration: Kubernetes -- production-style application/worker deployment.
+
+Reverse Proxy: NGINX -- routing and TLS boundary.
+
+Observability: Prometheus, Grafana, Loki -- metrics, dashboards, and centralized logs.
+Security: JWT, RBAC, HTTPS, encryption, rate limiting -- authentication, authorization, and
+protection.
+Notifications: Email; optional Slack/Discord/Telegram -- event notifications.
+Advanced: AI API, scheduler/cron -- failure assistance and scheduled workflows.
+
+3. Technical Architecture
+
+Browser
+ HTTPS
+Next.js Frontend
+ REST API
+Express Backend
+ Auth / RBAC
+ Users
+ Projects / Environments / Cloud Accounts
+ Templates / Configuration
+ Costs
+ Policy Engine
+ Deployments / Approval
+ Resources / Dependencies
+ Audit
+ Notifications
+
+   
+    PostgreSQL
+   
+    RabbitMQ
+
+            
+        Terraform Worker
+            
+        AWS / Azure / GCP
+Observability: Prometheus  Grafana; application/worker logs  Loki
+Delivery: GitHub  GitHub Actions  Docker  Kubernetes  NGINX
+The frontend never directly provisions cloud infrastructure. All privileged operations are
+authorized and executed through the backend and worker layer.
+
+4. Express Backend Structure
+
+backend/
+ src/
+  app.ts
+  config/
+  middleware/
+  routes/
+  controllers/
+  services/
+   auth/
+   users/
+   projects/
+   cloud/
+   templates/
+   deployments/
+   terraform/
+   policies/
+   costs/
+   resources/
+   visualization/
+
+   notifications/
+
+  workers/
+
+   terraform.worker.ts
+
+  templates/
+
+   aws/
+
+   azure/
+
+   gcp/
+
+  utils/
+
+ prisma/
+
+ terraform/
+
+ package.json
+
+5. Core Deployment Technical Flow
+
+1. Frontend sends a deployment request to Express.
+2. Express authenticates the user and checks RBAC.
+3. Backend validates project, environment, cloud account, template, and configuration
+
+     inputs.
+4. Template service resolves the provider-specific template/module.
+5. Terraform configuration is generated from validated inputs.
+6. Terraform plan is created.
+7. Policy engine evaluates the proposed changes.
+8. Cost service provides an estimate where supported.
+9. Plan, policy results, and cost estimate are returned for review.
+10. Authorized user explicitly approves the deployment.
+11. Backend creates/persists a deployment record and publishes a RabbitMQ job.
+12. Terraform worker consumes the job and retrieves authoritative configuration using the
+
+     deployment identity.
+13. Worker executes Terraform in an isolated environment.
+14. Worker captures logs, status, outputs, resource identifiers, and relationship information
+
+     where available.
+15. Deployment state is persisted in PostgreSQL.
+16. Dashboard reads deployment/resource state through the API.
+17. Monitoring and notification services react to relevant events.
+18. Audit records are written throughout the lifecycle.
+6. Modification & Destruction Flow
+
+Modification uses the same controlled lifecycle:
+
+Request  Validate  Plan  Policy/Cost  Review  Approval  Queue  Apply  Track  Audit
+
+Destruction adds a mandatory explicit confirmation:
+
+Destroy Request  Permission Check  Destructive Plan  Policy Check  Review  Explicit
+Confirmation  Queue  Terraform Destroy  Track  Audit
+
+The implementation must not expose a direct delete endpoint that bypasses these controls.
+
+7. Database Model
+
+· User(id, name, email, password/authProvider, role, createdAt)
+
+· CloudAccount(id, provider, accountReference, encryptedCredentialReference,
+owner/project)
+
+· Project(id, name, owner, environment, cloudAccount)
+
+· Template(id, name, provider, version, inputSchema, templateReference)
+
+· Deployment(id, project, template, user, operationType, status, planTime, applyTime,
+executionReference)
+
+· Resource(id, deployment, provider, resourceType, providerResourceId, status, outputs,
+dependencies)
+
+· AuditLog(id, user, action, deployment, timestamp, status, message, metadata)
+
+· Notification(id, user/project, channel, eventType, configuration, deliveryStatus)
+
+operationType should distinguish operations such as CREATE, MODIFY, and DESTROY.
+Resource dependency information is optional/implementation-dependent but supports the
+visualization module.
+
+8. Terraform & Provider Strategy
+
+· Keep common orchestration logic in the backend.
+· Keep provider-specific resource mappings in separate Terraform modules/templates.
+· AWS templates/modules
+· Azure templates/modules
+· GCP templates/modules
+· Common deployment lifecycle
+· Provider-specific resource mapping
+· Do not force identical resource types across providers when their capabilities differ.
+9. Queue, Worker & Concurrency Design
+
+· RabbitMQ holds deployment jobs so API requests remain responsive.
+· Jobs carry a deployment identity; the worker retrieves authoritative configuration.
+· State transitions: QUEUED  RUNNING  SUCCEEDED / FAILED / CANCELLED.
+· Deployment locking prevents conflicting operations on the same project/environment.
+· Retries are controlled and partial failures are handled explicitly.
+· Execution logs and failure reasons are persisted.
+· Worker execution is isolated from the normal web request process.
+
+10. Security Architecture
+
+· HTTPS in production.
+· JWT authentication with secure token/cookie handling.
+· RBAC enforced in backend middleware/services, not only in the frontend.
+· Cloud credentials encrypted at rest.
+· Prefer short-lived provider identities or role assumption where supported.
+· Least-privilege cloud permissions.
+· Never expose secrets in logs or frontend responses.
+· Schema/allowlist validation for template inputs.
+· Rate limiting on public/API endpoints.
+· Terraform runs in isolated workers.
+· Audit security-sensitive operations.
+
+11. Monitoring, Notifications & Visualization
+
+· Prometheus collects application/platform metrics.
+· Grafana provides operational dashboards.
+· Loki centralizes application and worker logs.
+· Track API health, queue depth, deployment duration, and success/failure rate.
+· Notification service handles deployment success/failure and other configured events.
+· React Flow renders resource dependency information returned by the backend.
+· Monitoring and visualization are implemented where the corresponding integrations/data
+
+     are available.
+
+12. CI/CD & Runtime Delivery
+
+· GitHub Actions runs tests and builds application/worker artifacts.
+· Docker packages services for repeatable deployment.
+· Kubernetes runs the production-style frontend/backend/worker workloads.
+· NGINX provides the routing/TLS boundary.
+· Health checks verify service readiness and deployment health.
+· Observability components collect metrics and logs.
+13. Recommended Implementation Order
+
+Phase 1 -- Core AWS MVP
+
+· Express + TypeScript
+· PostgreSQL + Prisma
+· Authentication/RBAC
+· Projects/environments/cloud accounts
+· Template catalog and validation
+· Terraform AWS templates
+· RabbitMQ worker
+· Deployment plan  approval  apply flow
+· Resource/deployment dashboard
+· Audit history
+· Safe destruction workflow
+
+Phase 2 -- Multi-Cloud
+
+· Azure
+· GCP
+· Cross-cloud template mappings
+
+Phase 3 -- Differentiators
+
+· Policy engine
+· Cost estimation
+· Dependency visualization
+
+Phase 4 -- DevOps & Observability
+
+· Docker
+· GitHub Actions
+· Kubernetes
+· NGINX
+· Prometheus/Grafana/Loki
+· Notifications
+
+Phase 5 -- Advanced
+
+· AI assistant
+· Drift detection
+· Scheduling
+· Collaboration
+· Versioning/controlled rollback
+· Cost prediction
+14. Feature-to-Module Mapping
+
+Authentication/RBAC  Auth middleware/services + User model
+
+Cloud accounts  Cloud service + CloudAccount model
+
+Projects/environments  Project service + Project model
+
+Templates  Template service + provider template directories
+
+Planning  Terraform service/worker
+
+Policy checks  Policy service
+
+Cost estimation  Cost service
+
+Approval  Deployment service + authorization rules
+
+Async execution  RabbitMQ + Terraform worker
+
+Resource tracking  Resource service/model
+
+Dependency visualization  Resource relationships + visualization service + React Flow
+
+Monitoring  Prometheus/Grafana integrations
+
+Notifications  Notification service
+
+Audit  Audit service/model
+
+Safe destruction  Deployment operationType=DESTROY + explicit confirmation + Terraform
+destroy
+
+15. Important Technical Invariants
+
+· Frontend permissions are for UX only; backend authorization is authoritative.
+· Every infrastructure operation has a persistent deployment identity.
+· Terraform execution occurs outside the normal synchronous API request.
+· Plan and apply are separate stages.
+· Destructive operations require explicit confirmation.
+· Cloud secrets are never returned to the frontend or written to normal logs.
+· Only one conflicting operation may run for a given project/environment at a time.
+· Provider-specific infrastructure is isolated from common orchestration logic.
+· Cost estimates are labelled as estimates and are not represented as guaranteed billing.
+· Advanced features must not become prerequisites for the core AWS provisioning lifecycle.
+16. Final Recommended Stack
+
+Next.js + TypeScript + Tailwind CSS + TanStack Query + React Flow
+Node.js + Express.js + TypeScript + Prisma
+PostgreSQL
+RabbitMQ + Node.js/TypeScript worker service
+Terraform
+AWS + Azure + GCP
+Docker + Docker Compose + GitHub Actions + Kubernetes + NGINX
+Prometheus + Grafana + Loki
+JWT + RBAC + HTTPS + encrypted secrets + rate limiting
+Optional advanced: AI assistant + scheduling + drift detection + versioning/controlled rollback
+End of Technical Architecture & Implementation Document
+

@@ -9,6 +9,7 @@ import { useAuth } from '../../../context/auth-context';
 import { ExecutionStatusPipeline } from '../../../components/deployments/execution-status-pipeline';
 import { LogTerminal } from '../../../components/deployments/log-terminal';
 import { ResourceTable } from '../../../components/deployments/resource-table';
+import { PolicyReviewPanel, CostReviewPanel } from '../../../components/deployments/plan-diff-view';
 import { SafeDestructionModal } from '../../../components/deployments/safe-destruction-modal';
 import { ConfirmApplyModal } from '../../../components/deployments/confirm-apply-modal';
 import {
@@ -238,6 +239,10 @@ export default function DeploymentMonitoringPage() {
         resources={resourcesData?.resources || []}
         isLoading={resourcesLoading}
       />
+
+      {/* Policy + cost review panels from the plan/apply record */}
+      <PolicyReviewPanel policyEvaluation={deployment.policyEvaluation} />
+      <CostReviewPanel costEstimate={deployment.costEstimate} />
 
       {/* 3. Real-time Log Terminal View */}
       <div className="space-y-3">

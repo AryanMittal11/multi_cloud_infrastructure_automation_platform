@@ -1,1 +1,1 @@
-export const visualizationService = { name: 'visualizationService' };
+export * from './topology.builder';

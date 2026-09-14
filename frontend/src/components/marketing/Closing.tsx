@@ -206,7 +206,7 @@ const FOOTER_COLS = [
       { label: 'Visual Designer', href: '/designer' },
       { label: 'Dashboard', href: '/dashboard' },
       { label: 'Template Catalog', href: '/templates' },
-      { label: 'Deployments', href: '/dashboard/deployments' },
+      { label: 'Deployments', href: '/deployments' },
     ],
   },
   {

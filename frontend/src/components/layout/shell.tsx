@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { usePathname } from 'next/navigation';
-import { Navbar } from './navbar';
-import { Sidebar } from './sidebar';
 import { AppShell } from '../cerebro/app-shell';
 import { ToastProvider } from '../cerebro/ui-kit';
 
@@ -11,7 +9,6 @@ import { ToastProvider } from '../cerebro/ui-kit';
 const FULL_PAGE_ROUTES = ['/'];
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
 
   // Marketing/landing pages render without the app navbar/sidebar
@@ -19,30 +16,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // New cloudweave dashboard app shell (persistent across dashboard sections)
-  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
-    return (
-      <ToastProvider>
-        <AppShell>{children}</AppShell>
-      </ToastProvider>
-    );
-  }
-
+  // cloudweave app shell (persistent across all platform sections)
   return (
-    <div className="min-h-screen text-[var(--ink)] flex flex-col" style={{ background: 'var(--bg)' }}>
-      <Navbar
-        onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        isMobileSidebarOpen={isMobileSidebarOpen}
-      />
-      <div className="flex-1 flex">
-        <Sidebar
-          isMobileOpen={isMobileSidebarOpen}
-          onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        />
-        <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          {children}
-        </main>
-      </div>
-    </div>
+    <ToastProvider>
+      <AppShell>{children}</AppShell>
+    </ToastProvider>
   );
 }

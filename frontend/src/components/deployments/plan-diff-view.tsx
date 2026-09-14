@@ -22,6 +22,77 @@ interface PlanDiffViewProps {
   policyEvaluation?: any;
 }
 
+/** Policy evaluation panel — shared with the deployment detail page. */
+export function PolicyReviewPanel({ policyEvaluation }: { policyEvaluation: any }) {
+  if (!policyEvaluation) return null;
+  return (
+    <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+          <ShieldCheck className="w-4 h-4 text-indigo-400" />
+          <span>Policy Evaluation</span>
+        </h4>
+        <span
+          className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+            policyEvaluation.passed
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+          }`}
+        >
+          {policyEvaluation.passed ? 'PASS' : 'REVIEW REQUIRED'} · {policyEvaluation.evaluator ?? 'policy'}
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {(policyEvaluation.results ?? []).map((r: any, i: number) => (
+          <div key={i} className="flex items-start space-x-2 text-xs p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+            <span className={r.passed ? 'text-emerald-400' : 'text-amber-400'}>{r.passed ? '✓' : '!'}</span>
+            <div>
+              <p className="font-mono font-semibold text-slate-200">{r.rule}</p>
+              <p className="text-slate-400">{r.message}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Cost estimate panel — shared with the deployment detail page. */
+export function CostReviewPanel({ costEstimate }: { costEstimate: any }) {
+  if (!costEstimate || costEstimate.monthlyTotalUsd === undefined) return null;
+  return (
+    <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+          <DollarSign className="w-4 h-4 text-emerald-400" />
+          <span>Estimated Cost</span>
+        </h4>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+          {costEstimate.source ?? 'estimate'}
+        </span>
+      </div>
+      <div className="flex items-end justify-between">
+        <p className="text-2xl font-bold text-white">
+          ${costEstimate.monthlyTotalUsd.toFixed(2)}
+          <span className="text-xs font-normal text-slate-400 ml-1">/month est.</span>
+        </p>
+        {costEstimate.region && <span className="chip">{costEstimate.region}</span>}
+      </div>
+      <div className="space-y-1">
+        {(costEstimate.lineItems ?? []).map((li: any) => (
+          <div key={li.resourceType} className="flex justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800">
+            <span className="text-slate-400">{li.label} × {li.quantity} {li.unit}</span>
+            <span className="font-mono text-slate-200">${li.monthlyUsd.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[10.5px] text-slate-500">
+        Labelled estimate — not a bill. {(costEstimate.assumptions ?? []).map((a: any) => a.value).join(' · ')}
+      </p>
+    </div>
+  );
+}
+
 export function PlanDiffView({
   planOutput,
   configuration,
@@ -167,6 +238,12 @@ export function PlanDiffView({
               )}
             </div>
           </div>
+
+          {/* Policy evaluation (PDF flow step 8 — presented for review) */}
+          {policyEvaluation && <PolicyReviewPanel policyEvaluation={policyEvaluation} />}
+
+          {/* Cost estimate (PDF flow step 9 — presented for review) */}
+          {costEstimate?.monthlyTotalUsd !== undefined && <CostReviewPanel costEstimate={costEstimate} />}
         </div>
       )}
 
