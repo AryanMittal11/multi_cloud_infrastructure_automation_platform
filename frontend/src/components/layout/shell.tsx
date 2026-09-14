@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './navbar';
 import { Sidebar } from './sidebar';
+import { AppShell } from '../cerebro/app-shell';
+import { ToastProvider } from '../cerebro/ui-kit';
 
 /** Routes that render their own chrome (marketing pages) */
 const FULL_PAGE_ROUTES = ['/'];
@@ -17,8 +19,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // New CerebrOps dashboard app shell (persistent across dashboard sections)
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    return (
+      <ToastProvider>
+        <AppShell>{children}</AppShell>
+      </ToastProvider>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen text-[var(--ink)] flex flex-col" style={{ background: 'var(--bg)' }}>
       <Navbar
         onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         isMobileSidebarOpen={isMobileSidebarOpen}

@@ -1,22 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Space_Grotesk,
+  JetBrains_Mono,
+  Instrument_Serif,
+} from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-sg",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jb",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Multi-Cloud Infrastructure Automation Platform",
-  description: "Unified orchestration, planning, and safe deployment across AWS, Azure, and GCP",
+  title: "CerebrOps — Multi-Cloud Infrastructure Platform",
+  description:
+    "Design, deploy, and observe multi-cloud infrastructure across AWS, Azure, and GCP with governed pipelines, anomaly detection, and alerts.",
 };
 
 export default function RootLayout({
@@ -25,8 +39,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} h-full antialiased`}
+    >
+      <body className="min-h-full">
         <Providers>{children}</Providers>
       </body>
     </html>
