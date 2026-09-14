@@ -34,7 +34,7 @@ export default function SettingsPage() {
   const { push } = useToast();
   const [tab, setTab] = useState('general');
 
-  const [wsName, setWsName] = useState('CerebrOps Platform');
+  const [wsName, setWsName] = useState('cloudweave platform');
   const [defaultBranch, setDefaultBranch] = useState('main');
   const [autoApproveStaging, setAutoApproveStaging] = useState(true);
   const [autoRollback, setAutoRollback] = useState(true);
@@ -148,7 +148,7 @@ export default function SettingsPage() {
       {tab === 'notifications' && (
         <Panel title="Notifications" subtitle="routing and escalation preferences">
           <div className="p-4">
-            <SetRow k="Slack notifications" d="Deliver ticket-severity events to #cerebrops-alerts.">
+            <SetRow k="Slack notifications" d="Deliver ticket-severity events to #cloudweave-alerts.">
               <Switch on={slackNotifs} onChange={setSlackNotifs} label="Slack notifications" />
             </SetRow>
             <SetRow k="Daily email digest" d="Summary of runs, deploys, and detector activity at 09:00 local.">
@@ -169,8 +169,8 @@ export default function SettingsPage() {
           <Panel title="Integrations" subtitle="connected services for CI, paging, and repositories">
             <div className="p-4 grid gap-3 md:grid-cols-2">
               {[
-                { name: 'GitHub', detail: 'cerebrops org · 6 repos · webhooks active', icon: <Plug size={14} /> },
-                { name: 'Slack', detail: '#cerebrops-alerts · ticket+ severity', icon: <Plug size={14} /> },
+                { name: 'GitHub', detail: 'cloudweave org · 6 repos · webhooks active', icon: <Plug size={14} /> },
+                { name: 'Slack', detail: '#cloudweave-alerts · ticket+ severity', icon: <Plug size={14} /> },
                 { name: 'PagerDuty', detail: 'on-call primary rotation', icon: <Plug size={14} /> },
                 { name: 'Opsgenie', detail: 'SLO burn routing', icon: <Plug size={14} /> },
                 { name: 'Infracost', detail: 'plan cost checks on PRs', icon: <Plug size={14} /> },

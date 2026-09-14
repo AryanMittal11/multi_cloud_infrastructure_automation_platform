@@ -215,7 +215,7 @@ export default function OverviewPage() {
       <Panel
         title="Control-plane log"
         subtitle="last 8 events"
-        actions={<span className="chip">tail -f cerebrops.log</span>}
+        actions={<span className="chip">tail -f cloudweave.log</span>}
       >
         <div className="log-viewer" style={{ border: 'none', borderRadius: 0 }}>
           <div className="log-body" style={{ maxHeight: 240 }}>

@@ -28,7 +28,7 @@ const instrumentSerif = Instrument_Serif({
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "CerebrOps — Multi-Cloud Infrastructure Platform",
+  title: "cloudweave — multi-cloud infrastructure platform",
   description:
     "Design, deploy, and observe multi-cloud infrastructure across AWS, Azure, and GCP with governed pipelines, anomaly detection, and alerts.",
 };

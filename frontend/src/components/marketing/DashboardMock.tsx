@@ -85,7 +85,7 @@ export function DashboardMock({ state = 'overview' }: { state?: 'overview' | 'de
                 <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
               </svg>
             </span>
-            <span className="text-[12px] font-semibold">CerebrOps</span>
+            <span className="text-[12px] font-semibold">cloudweave</span>
           </div>
           {NAV.map((item) => (
             <div

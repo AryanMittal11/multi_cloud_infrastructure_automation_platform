@@ -75,7 +75,7 @@ export default function PipelineDetailPage({ params }: { params: Promise<{ id: s
   const meta = pipeline ?? {
     id: activeRun.pipelineId,
     name: activeRun.pipelineName,
-    repo: `cerebrops/${activeRun.pipelineId}`,
+    repo: `cloudweave/${activeRun.pipelineId}`,
     provider: 'aws' as const,
     defaultBranch: 'main',
     lastStatus: activeRun.status,

@@ -212,7 +212,7 @@ export function Designer() {
               <span className="browser-dot" />
               <span className="browser-dot" />
               <span className="browser-dot" />
-              <span className="browser-url">cerebrops.app/designer</span>
+              <span className="browser-url">cloudweave.app/designer</span>
               <span className="w-[46px]" />
             </div>
             <div style={{ height: 'clamp(300px, 34vw, 440px)' }}>

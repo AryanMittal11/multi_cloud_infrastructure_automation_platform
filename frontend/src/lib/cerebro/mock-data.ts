@@ -70,7 +70,7 @@ export const pipelines: Pipeline[] = [
   {
     id: 'gateway-api',
     name: 'gateway-api',
-    repo: 'cerebrops/gateway',
+    repo: 'cloudweave/gateway',
     provider: 'aws',
     defaultBranch: 'main',
     lastStatus: 'failed',
@@ -86,7 +86,7 @@ export const pipelines: Pipeline[] = [
   {
     id: 'web-dashboard',
     name: 'web-dashboard',
-    repo: 'cerebrops/web-dashboard',
+    repo: 'cloudweave/web-dashboard',
     provider: 'aws',
     defaultBranch: 'main',
     lastStatus: 'running',
@@ -102,7 +102,7 @@ export const pipelines: Pipeline[] = [
   {
     id: 'cerebro-core',
     name: 'cerebro-core',
-    repo: 'cerebrops/core',
+    repo: 'cloudweave/core',
     provider: 'azure',
     defaultBranch: 'main',
     lastStatus: 'success',
@@ -118,7 +118,7 @@ export const pipelines: Pipeline[] = [
   {
     id: 'worker-fleet',
     name: 'worker-fleet',
-    repo: 'cerebrops/worker-fleet',
+    repo: 'cloudweave/worker-fleet',
     provider: 'gcp',
     defaultBranch: 'main',
     lastStatus: 'success',
@@ -134,7 +134,7 @@ export const pipelines: Pipeline[] = [
   {
     id: 'edge-proxy',
     name: 'edge-proxy',
-    repo: 'cerebrops/edge-proxy',
+    repo: 'cloudweave/edge-proxy',
     provider: 'aws',
     defaultBranch: 'main',
     lastStatus: 'cancelled',
@@ -150,7 +150,7 @@ export const pipelines: Pipeline[] = [
   {
     id: 'infra-baseline',
     name: 'infra-baseline',
-    repo: 'cerebrops/infra',
+    repo: 'cloudweave/infra',
     provider: 'gcp',
     defaultBranch: 'main',
     lastStatus: 'success',
@@ -357,13 +357,13 @@ export function getPipeline(id: string): Pipeline | undefined {
    ============================================================ */
 
 const SVC_GATEWAY = [
-  { name: 'gateway-api', kind: 'compute' as const, provider: 'aws' as const, status: 'healthy' as const, endpoint: 'https://api.cerebrops.io' },
+  { name: 'gateway-api', kind: 'compute' as const, provider: 'aws' as const, status: 'healthy' as const, endpoint: 'https://api.cloudweave.io' },
   { name: 'rds-postgres-14', kind: 'database' as const, provider: 'aws' as const, status: 'healthy' as const },
   { name: 'edge-cdn', kind: 'network' as const, provider: 'aws' as const, status: 'healthy' as const },
 ];
 
 const SVC_DASH = [
-  { name: 'web-dashboard', kind: 'compute' as const, provider: 'aws' as const, status: 'healthy' as const, endpoint: 'https://app.cerebrops.io' },
+  { name: 'web-dashboard', kind: 'compute' as const, provider: 'aws' as const, status: 'healthy' as const, endpoint: 'https://app.cloudweave.io' },
   { name: 's3-assets', kind: 'storage' as const, provider: 'aws' as const, status: 'healthy' as const },
 ];
 
@@ -390,7 +390,7 @@ export const deployments: Deployment[] = [
     timeline: [
       { label: 'Queued', detail: 'auto-approved (low-risk change)', at: iso(0.85 * hr), state: 'success', actor: 'pipeline' },
       { label: 'Terraform plan', detail: '3 to add, 0 to change, 0 to destroy', at: iso(0.84 * hr), state: 'success', actor: 'worker' },
-      { label: 'Canary 10%', detail: 'api.cerebrops.io cohort c-2', at: iso(0.8 * hr), state: 'success', actor: 'deployer' },
+      { label: 'Canary 10%', detail: 'api.cloudweave.io cohort c-2', at: iso(0.8 * hr), state: 'success', actor: 'deployer' },
       { label: 'Canary 100%', detail: 'rolled to all targets', at: iso(0.55 * hr), state: 'success', actor: 'deployer' },
       { label: 'Health checks', detail: '4 checks, 3 pass · 1 warn', at: iso(0.4 * hr), state: 'success', actor: 'watchdog' },
     ],
@@ -803,7 +803,7 @@ export const environments: Environment[] = [
     approvalRequired: true,
     locked: false,
     services: [
-      { name: 'gateway-api', kind: 'compute', provider: 'aws', status: 'degraded', endpoint: 'https://api.cerebrops.io' },
+      { name: 'gateway-api', kind: 'compute', provider: 'aws', status: 'degraded', endpoint: 'https://api.cloudweave.io' },
       { name: 'rds-postgres-14', kind: 'database', provider: 'aws', status: 'healthy' },
       { name: 'edge-proxy', kind: 'network', provider: 'aws', status: 'healthy' },
       { name: 's3-assets', kind: 'storage', provider: 'aws', status: 'healthy' },
@@ -837,7 +837,7 @@ export const environments: Environment[] = [
     approvalRequired: false,
     locked: false,
     services: [
-      { name: 'web-dashboard', kind: 'compute', provider: 'aws', status: 'healthy', endpoint: 'https://staging.cerebrops.io' },
+      { name: 'web-dashboard', kind: 'compute', provider: 'aws', status: 'healthy', endpoint: 'https://staging.cloudweave.io' },
       { name: 'worker-fleet', kind: 'compute', provider: 'gcp', status: 'healthy' },
       { name: 'cloud-sql-15', kind: 'database', provider: 'gcp', status: 'healthy' },
       { name: 'gcs-artifacts', kind: 'storage', provider: 'gcp', status: 'healthy' },

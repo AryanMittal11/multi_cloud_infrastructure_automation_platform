@@ -242,7 +242,7 @@ export function Footer() {
                   <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
                 </svg>
               </span>
-              <span className="font-semibold tracking-tight" style={{ color: 'var(--ink)' }}>CerebrOps</span>
+              <span className="font-semibold tracking-tight" style={{ color: 'var(--ink)' }}>cloudweave</span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed max-w-xs" style={{ color: 'var(--ink-muted)' }}>
               Visual multi-cloud infrastructure with a governed deploy pipeline. Deterministic
@@ -267,7 +267,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-7 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'var(--border-faint)' }}>
-          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>© 2026 CerebrOps. Demo workspace — data resets on reload.</span>
+          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>© 2026 cloudweave. Demo workspace — data resets on reload.</span>
           <div className="flex items-center gap-5 text-xs" style={{ color: 'var(--ink-faint)' }}>
             <span>Terms</span>
             <span>Privacy</span>

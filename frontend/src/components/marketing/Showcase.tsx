@@ -120,7 +120,7 @@ export function Showcase() {
                   <span className="browser-dot" />
                   <span className="browser-dot" />
                   <span className="browser-dot" />
-                  <span className="browser-url">cerebrops.app/dashboard</span>
+                  <span className="browser-url">cloudweave.app/dashboard</span>
                   <span className="w-[46px]" />
                 </div>
                 <div style={{ height: 'clamp(300px, 36vw, 470px)' }} className="relative">

@@ -74,7 +74,7 @@ export function Navbar({ onToggleMobileSidebar, isMobileSidebarOpen }: NavbarPro
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-base tracking-tight text-white group-hover:text-indigo-300 transition-colors">
-                  MultiCloud
+                  cloudweave
                 </span>
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-indigo-950/70 border border-indigo-700/50 text-indigo-300 font-mono">
                   v2.0

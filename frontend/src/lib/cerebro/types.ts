@@ -1,5 +1,5 @@
 /* ============================================================
-   CerebrOps domain types
+   cloudweave domain types
    ============================================================ */
 
 export type Provider = 'aws' | 'azure' | 'gcp';

@@ -116,7 +116,7 @@ export function Hero() {
           }`}
           style={{ color: 'var(--ink-muted)' }}
         >
-          Design infrastructure visually. CerebrOps writes production-ready Terraform as you
+          Design infrastructure visually. cloudweave writes production-ready Terraform as you
           draw, then ships it through a governed pipeline — plans reviewed, approvals recorded,
           drift caught.
         </p>
@@ -160,7 +160,7 @@ export function Hero() {
               <span className="browser-dot" />
               <span className="browser-dot" />
               <span className="browser-dot" />
-              <span className="browser-url">cerebrops.app/dashboard</span>
+              <span className="browser-url">cloudweave.app/dashboard</span>
               <span className="w-[46px]" />
             </div>
             <div style={{ height: 'clamp(320px, 44vw, 560px)' }}>

@@ -143,7 +143,7 @@ function SidebarContent({
         onClick={onNavigate}
         className={`flex items-center gap-2.5 h-[52px] flex-none px-4 border-b ${collapsed ? 'justify-center px-0' : ''}`}
         style={{ borderColor: 'var(--border-faint)', color: 'var(--ink)' }}
-        title="CerebrOps"
+        title="cloudweave"
       >
         <span
           className="w-[26px] h-[26px] rounded-[8px] flex items-center justify-center flex-none"
@@ -156,7 +156,7 @@ function SidebarContent({
         </span>
         {!collapsed && (
           <>
-            <span className="font-semibold text-[15px] tracking-tight">CerebrOps</span>
+            <span className="font-semibold text-[15px] tracking-tight">cloudweave</span>
             <span className="chip" style={{ marginLeft: 'auto', height: 20, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               demo
             </span>
@@ -394,7 +394,7 @@ function Topbar({
             <>
               <div className="px-3 py-2 border-b mb-1" style={{ borderColor: 'var(--border-faint)' }}>
                 <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Demo User</p>
-                <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>demo@cerebrops.io</p>
+                <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>demo@cloudweave.io</p>
               </div>
               <MenuItem icon={<SettingsIcon size={14} />} label="Workspace settings" onClick={close} />
               <MenuItem icon={<Copy size={14} />} label="Copy demo API key" sub="cerebro_sk_…demo" onClick={close} />

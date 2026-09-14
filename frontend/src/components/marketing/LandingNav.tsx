@@ -59,7 +59,7 @@ export function LandingNav() {
               <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
             </svg>
           </span>
-          <span className="font-semibold tracking-tight text-[15px]" style={{ color: 'var(--ink)' }}>CerebrOps</span>
+          <span className="font-semibold tracking-tight text-[15px]" style={{ color: 'var(--ink)' }}>cloudweave</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-0.5">

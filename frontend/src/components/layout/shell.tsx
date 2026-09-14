@@ -19,7 +19,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // New CerebrOps dashboard app shell (persistent across dashboard sections)
+  // New cloudweave dashboard app shell (persistent across dashboard sections)
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     return (
       <ToastProvider>
