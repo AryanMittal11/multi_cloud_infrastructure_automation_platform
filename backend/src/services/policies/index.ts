@@ -1,1 +1,2 @@
-export const policiesService = { name: 'policiesService' };
+export { evaluatePlanPolicy, policyEvaluator } from './policy.evaluator';
+export type { PolicyEvaluation, PolicyRuleResult, PolicySeverity } from './policy.evaluator';

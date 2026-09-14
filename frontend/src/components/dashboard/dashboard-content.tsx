@@ -168,7 +168,7 @@ export default function DashboardContent() {
     },
     {
       title: 'Onboard a cloud account',
-      desc: `${accountsData?.accounts?.length ?? 0} connected`,
+      desc: `${accountsData?.cloudAccounts?.length ?? 0} connected`,
       href: '/cloud-accounts',
       icon: Cloud,
       accent: 'from-amber-600/20 to-orange-600/10 border-amber-500/30 text-amber-300',

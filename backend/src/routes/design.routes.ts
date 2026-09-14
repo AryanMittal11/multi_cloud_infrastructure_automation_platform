@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { designController } from '../controllers/design.controller';
-import { authenticateToken, requireAdmin, requireDeveloper, requireViewer } from '../middleware';
+import { authenticateToken, requireDeveloper, requireViewer } from '../middleware';
 
 export const designRouter = Router();
 

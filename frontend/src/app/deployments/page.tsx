@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Deployment } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
 import { SafeDestructionModal } from '../../components/deployments/safe-destruction-modal';
+import { ConfirmApplyModal } from '../../components/deployments/confirm-apply-modal';
 import Link from 'next/link';
 import {
   PlayCircle,
@@ -29,6 +30,7 @@ export default function DeploymentsPage() {
 
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
   const [destroyTarget, setDestroyTarget] = useState<Deployment | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<Deployment | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['deployments'],
@@ -38,8 +40,10 @@ export default function DeploymentsPage() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (deploymentId: string) => api.deployments.approve(deploymentId),
+    mutationFn: (input: { id: string; confirmationKeyword?: string }) =>
+      api.deployments.approve(input.id, { confirmationKeyword: input.confirmationKeyword }),
     onSuccess: () => {
+      setConfirmTarget(null);
       queryClient.invalidateQueries({ queryKey: ['deployments'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
@@ -183,7 +187,11 @@ export default function DeploymentsPage() {
 
                     {deployment.status === 'PLANNED' && (
                       <button
-                        onClick={() => approveMutation.mutate(deployment.id)}
+                        onClick={() =>
+                          deployment.operationType === 'DESTROY'
+                            ? setConfirmTarget(deployment)
+                            : approveMutation.mutate({ id: deployment.id })
+                        }
                         disabled={approveMutation.isPending}
                         className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all"
                       >
@@ -231,6 +239,17 @@ export default function DeploymentsPage() {
           deployment={destroyTarget}
           isOpen={!!destroyTarget}
           onClose={() => setDestroyTarget(null)}
+        />
+      )}
+
+      {/* Destructive approval confirmation */}
+      {confirmTarget && (
+        <ConfirmApplyModal
+          deployment={confirmTarget}
+          isPending={approveMutation.isPending}
+          error={approveMutation.error ? (approveMutation.error as Error).message : null}
+          onConfirm={() => approveMutation.mutate({ id: confirmTarget.id, confirmationKeyword: 'CONFIRM_APPLY' })}
+          onClose={() => setConfirmTarget(null)}
         />
       )}
 

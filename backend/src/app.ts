@@ -13,17 +13,34 @@ import { deploymentRouter } from './routes/deployment.routes';
 import { resourceRouter } from './routes/resource.routes';
 import { auditRouter } from './routes/audit.routes';
 import { designRouter } from './routes/design.routes';
+import { terraformWorker } from './workers/terraform.worker';
+import { queueService } from './services/queue';
 
 export const app = express();
 
-// Security and utility middleware
-app.use(helmet());
+// CORS: comma-separated whitelist via CORS_ORIGIN; in development, any
+// http(s)://localhost[:port] origin is accepted so the frontend can run on
+// any dev port without re-configuring the control plane.
+const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // non-browser clients (curl, tests)
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (
+        env.NODE_ENV === 'development' &&
+        /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, false); // no CORS headers → browser blocks
+    },
     credentials: true,
   }),
 );
+
+// Security and utility middleware
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -56,4 +73,33 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(env.PORT, () => {
     console.log(`🚀 Multi-Cloud Platform Control Plane running on http://localhost:${env.PORT}`);
   });
+
+  // Single-node resilience: when no broker is reachable and inline fallback is
+  // enabled, run the Terraform worker inside the API process so published jobs
+  // (in-memory fallback queue) are actually consumed. With RabbitMQ connected,
+  // the dedicated worker process owns execution, so we stay out of the way.
+  if (env.INLINE_WORKER_FALLBACK) {
+    // Idempotent: terraformWorker.start() is guarded by its own isRunning flag.
+    let inlineWorkerAnnounced = false;
+    const ensureInlineWorker = async () => {
+      await queueService.initialize();
+      const status = await queueService.getStatus();
+      if (status.mode === 'in-memory-fallback') {
+        await terraformWorker.start();
+        if (!inlineWorkerAnnounced) {
+          inlineWorkerAnnounced = true;
+          console.log('🔧 Inline Terraform worker active (no broker detected).');
+        }
+      }
+    };
+
+    ensureInlineWorker().catch((err) =>
+      console.error('Inline worker startup failed:', err),
+    );
+    // Re-check periodically so a broker outage later in life still gets covered.
+    const brokerPoll = setInterval(() => {
+      ensureInlineWorker().catch(() => {});
+    }, 30_000);
+    brokerPoll.unref();
+  }
 }

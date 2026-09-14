@@ -122,9 +122,9 @@ function DeploymentWizardContent() {
 
   // Approval mutation
   const approveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (confirmationKeyword?: string) => {
       if (!activeDeploymentId) throw new Error('No deployment to approve');
-      return api.deployments.approve(activeDeploymentId);
+      return api.deployments.approve(activeDeploymentId, { confirmationKeyword });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deployments'] });

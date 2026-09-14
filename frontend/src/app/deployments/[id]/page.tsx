@@ -10,6 +10,7 @@ import { ExecutionStatusPipeline } from '../../../components/deployments/executi
 import { LogTerminal } from '../../../components/deployments/log-terminal';
 import { ResourceTable } from '../../../components/deployments/resource-table';
 import { SafeDestructionModal } from '../../../components/deployments/safe-destruction-modal';
+import { ConfirmApplyModal } from '../../../components/deployments/confirm-apply-modal';
 import {
   ArrowLeft,
   Terminal,
@@ -73,10 +74,14 @@ export default function DeploymentMonitoringPage() {
     },
   });
 
+  const [showConfirmApply, setShowConfirmApply] = useState(false);
+
   // Approve mutation if deployment is in PLANNED state
   const approveMutation = useMutation({
-    mutationFn: () => api.deployments.approve(deploymentId),
+    mutationFn: (confirmationKeyword?: string) =>
+      api.deployments.approve(deploymentId, { confirmationKeyword }),
     onSuccess: () => {
+      setShowConfirmApply(false);
       queryClient.invalidateQueries({ queryKey: ['deployment-detail', deploymentId] });
       queryClient.invalidateQueries({ queryKey: ['deployments'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
@@ -176,7 +181,11 @@ export default function DeploymentMonitoringPage() {
 
           {deployment.status === 'PLANNED' && (
             <button
-              onClick={() => approveMutation.mutate()}
+              onClick={() =>
+                deployment.operationType === 'DESTROY'
+                  ? setShowConfirmApply(true)
+                  : approveMutation.mutate(undefined)
+              }
               disabled={!isOperator || approveMutation.isPending}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50"
             >
@@ -243,6 +252,17 @@ export default function DeploymentMonitoringPage() {
           status={deployment.status}
         />
       </div>
+
+      {/* Destructive approval confirmation */}
+      {showConfirmApply && (
+        <ConfirmApplyModal
+          deployment={deployment}
+          isPending={approveMutation.isPending}
+          error={approveMutation.error ? (approveMutation.error as Error).message : null}
+          onConfirm={() => approveMutation.mutate('CONFIRM_APPLY')}
+          onClose={() => setShowConfirmApply(false)}
+        />
+      )}
     </div>
   );
 }

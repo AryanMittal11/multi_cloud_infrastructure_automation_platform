@@ -85,22 +85,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     const roleLower = role.toLowerCase();
     const email = `${roleLower}@multicloud.local`;
-    const password = `${role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}Pass123!`;
-    const name = `${role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()} Operator`;
+    const capitalized = `${role.charAt(0).toUpperCase()}${role.slice(1).toLowerCase()}`;
+    const name = `${capitalized} Operator`;
+    // Deterministic demo credentials: the quick-login convention first, then
+    // the seed-script convention (e.g. "AdminPassword123!"), so persona
+    // switching works whether or not the database was seeded.
+    const candidatePasswords = [`${capitalized}Pass123!`, `${capitalized}Password123!`];
+    const isBadCredentialError = (err: any) =>
+      err?.status === 401 || err?.message?.includes('Invalid email or password');
 
     try {
-      // First try to login
-      try {
-        await login(email, password);
-        return;
-      } catch (loginErr: any) {
-        // If login fails (user doesn't exist yet), register user automatically
-        if (loginErr?.status === 401 || loginErr?.message?.includes('Invalid email or password')) {
-          await register(name, email, password, role);
+      for (const password of candidatePasswords) {
+        try {
+          await login(email, password);
           return;
+        } catch (loginErr: any) {
+          if (!isBadCredentialError(loginErr)) throw loginErr;
+          // try next candidate password
         }
-        throw loginErr;
       }
+      // User does not exist yet — register with deterministic demo credentials
+      await register(name, email, candidatePasswords[0], role);
     } finally {
       setIsLoading(false);
     }

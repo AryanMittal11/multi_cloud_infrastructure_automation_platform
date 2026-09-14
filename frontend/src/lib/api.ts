@@ -304,9 +304,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    approve: (id: string) =>
+    approve: (
+      id: string,
+      data?: { confirmationKeyword?: string; comment?: string }
+    ) =>
       request<{ deployment: Deployment; message: string }>(`/deployments/${id}/approve`, {
         method: 'POST',
+        body: JSON.stringify(data || {}),
       }),
     createDestroyPlan: (id: string) =>
       request<{ deployment: Deployment; message: string }>(`/deployments/${id}/destroy-plan`, {

@@ -2,8 +2,10 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { prisma } from '../config/prisma';
+import { Prisma } from '@prisma/client';
 import { queueService } from '../services/queue';
 import { cloudService } from '../services/cloud';
+import { evaluatePlanPolicy } from '../services/policies/policy.evaluator';
 import { workspaceManager } from '../services/terraform/workspace.manager';
 import { terraformRunner } from '../services/terraform/terraform.runner';
 import { stateParser } from '../services/terraform/state.parser';
@@ -205,12 +207,19 @@ export class TerraformWorkerService {
           throw new Error(`Terraform plan failed with exit code ${planResult.exitCode}`);
         }
 
+        // Built-in guardrails evaluation (deterministic, config-based)
+        const policyEvaluation = evaluatePlanPolicy(
+          (deployment.configuration as Record<string, unknown>) || {},
+          job.operationType,
+        );
+
         await prisma.deployment.update({
           where: { id: job.deploymentId },
           data: {
             status: DeploymentStatus.PLANNED,
             planOutput: accumulatedLogs,
             planTime: new Date(),
+            policyEvaluation: policyEvaluation as unknown as Prisma.InputJsonValue,
           },
         });
 

@@ -13,6 +13,15 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   CREDENTIAL_ENCRYPTION_KEY: z.string().min(32, 'CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters'),
   RABBITMQ_URL: z.string().default('amqp://guest:guest@localhost:5672'),
+  /**
+   * When true (or when RabbitMQ is unreachable), the API process runs the
+   * Terraform worker inline so deployments complete on single-node installs
+   * without a message broker. Set to "false" in multi-process deployments.
+   */
+  INLINE_WORKER_FALLBACK: z
+    .string()
+    .default('true')
+    .transform((val) => val !== 'false'),
   TERRAFORM_WORKSPACE_DIR: z.string().default('./terraform_workspaces'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
 });
