@@ -60,12 +60,12 @@ function ChartTooltip({ active, payload, label, unit }: any) {
 
 export function Sparkline({ data, color }: { data: number[]; color?: string }) {
   const points = data.map((v, i) => ({ i, v }));
+  // fixed size — the stat-spark slot is 72x28 and display:none on small screens,
+  // where a ResponsiveContainer would measure 0x0 and spam console warnings
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={points} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
-        <Line type="monotone" dataKey="v" stroke={color ?? 'var(--accent)'} strokeWidth={1.5} dot={false} isAnimationActive={false} />
-      </LineChart>
-    </ResponsiveContainer>
+    <LineChart width={72} height={28} data={points} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+      <Line type="monotone" dataKey="v" stroke={color ?? 'var(--accent)'} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+    </LineChart>
   );
 }
 

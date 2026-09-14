@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Play, RefreshCw } from 'lucide-react';
-import { PageHeader } from '../../../components/cerebro/app-shell';
-import { StatusBadge, Panel, StatTile, Segmented, Timeline, useToast } from '../../../components/cerebro/ui-kit';
-import { Sparkline, ThroughputChart, BarsChart } from '../../../components/cerebro/charts';
+import { PageHeader } from '../../components/cerebro/app-shell';
+import { StatusBadge, Panel, StatTile, Segmented, Timeline, useToast } from '../../components/cerebro/ui-kit';
+import { Sparkline, ThroughputChart, BarsChart } from '../../components/cerebro/charts';
 import {
   overviewMetrics,
   pipelines,
@@ -15,8 +15,9 @@ import {
   recentLogs,
   timeAgo,
   formatDuration,
-} from '../../../lib/cerebro/mock-data';
-import type { PipelineStatus } from '../../../lib/cerebro/types';
+  getRun,
+} from '../../lib/cerebro/mock-data';
+import type { PipelineStatus } from '../../lib/cerebro/types';
 
 const KIND_ICON: Record<string, string> = {
   pipeline: '⚙',
@@ -37,8 +38,8 @@ export default function OverviewPage() {
   const { push } = useToast();
   const [range, setRange] = useState<'24h' | '7d'>('24h');
   const running = pipelines.filter((p) => p.lastStatus === 'running');
-  const rail = (running[0] ?? pipelines[0]);
-  const railRun = rail.stages;
+  const rail = running[0] ?? pipelines[0];
+  const railRun = getRun(rail.lastRunId)?.stages ?? rail.stages.map((s, i) => ({ ...s, status: i === 0 ? rail.lastStatus : 'queued', durationSec: 0, seq: i }));
 
   return (
     <div>

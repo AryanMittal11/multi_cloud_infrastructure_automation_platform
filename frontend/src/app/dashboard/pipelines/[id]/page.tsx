@@ -3,7 +3,7 @@
 import React, { use, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Play, RotateCw } from 'lucide-react';
+import { ArrowLeft, GitBranch, Play, RotateCw } from 'lucide-react';
 import { PageHeader } from '../../../../components/cerebro/app-shell';
 import { Panel, StatusBadge, Tabs, useToast, EmptyState } from '../../../../components/cerebro/ui-kit';
 import { getPipeline, getRun, runsForPipeline, formatDuration, timeAgo, clockTime } from '../../../../lib/cerebro/mock-data';
@@ -20,19 +20,22 @@ function logsFor(run: PipelineRun, stageKey?: string) {
   };
   push(0, 'info', `[${run.id}] ${stage ? `stage ${stage.key} started` : 'pipeline triggered'} (${name})`);
   push(0.2, 'debug', 'agent: executor-7f3a attached, image digest sha256:9c41…');
-  if (!stage || stage.status === 'success') {
+  // when viewing "all" stages, narrate the run's overall outcome:
+  // success -> green story, failed -> story ending at the first failed stage
+  const focus = stage ?? (run.status === 'failed' ? run.stages.find((s) => s.status === 'failed') : undefined) ?? run.stages[run.stages.length - 1];
+  if (focus.status === 'success' || run.status === 'success') {
     push(0.4, 'info', `checkout: ${run.branch}@${run.commit}`);
     push(1.1, 'ok', `${name}: all checks green`);
     push(1.2, 'info', `artifacts uploaded (${(2 + (run.durationSec % 7)).toFixed(0)} MB)`);
     push(1.3, 'ok', `${name}: completed`);
-  } else if (stage.status === 'failed') {
+  } else if (focus.status === 'failed') {
     push(0.4, 'info', `checkout: ${run.branch}@${run.commit}`);
     push(0.9, 'info', 'running test matrix: 4 workers');
     push(1.4, 'warn', 'worker-3: retrying flaky suite (attempt 2/3)');
     push(1.8, 'error', 'FAIL src/webhooks/backpressure.test.ts — expected 200, received 503');
     push(1.85, 'error', 'quorum lost: 3 of 4 workers reporting failures');
     push(1.9, 'error', `${name}: FAILED — exit code 1`);
-  } else if (stage.status === 'running') {
+  } else if (focus.status === 'running') {
     push(0.4, 'info', `checkout: ${run.branch}@${run.commit}`);
     push(0.7, 'info', `${name}: executing (elapsed ${formatDuration(Math.round((Date.now() - new Date(base).getTime()) / 1000))})`);
     push(0.8, 'debug', 'stream: 1,204 lines/min');
