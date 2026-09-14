@@ -3,21 +3,30 @@
 import React from 'react';
 import { LandingNav } from '../components/marketing/LandingNav';
 import { Hero } from '../components/marketing/Hero';
-import { Features, DesignerShowcase, Pipeline, Integrations } from '../components/marketing/Features';
-import { Testimonials, FAQ, FinalCTA, Footer } from '../components/marketing/Closing';
+import { Showcase } from '../components/marketing/Showcase';
+import { MultiCloud, Designer, Capabilities, TechMarquee } from '../components/marketing/Features';
+import { ForTeams, FAQ, FinalCTA, Footer } from '../components/marketing/Closing';
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-[#05070d] text-slate-100 overflow-x-clip">
+    <div className="relative min-h-screen overflow-x-clip" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
       <LandingNav />
-      <Hero />
-      <Features />
-      <DesignerShowcase />
-      <Pipeline />
-      <Integrations />
-      <Testimonials />
-      <FAQ />
-      <FinalCTA />
+      <main>
+        <Hero />
+        <div className="break-section" />
+        <Showcase />
+        <div className="break-section" />
+        <MultiCloud />
+        <div className="break-section" />
+        <Designer />
+        <div className="break-section" />
+        <Capabilities />
+        <TechMarquee />
+        <div className="break-section" />
+        <ForTeams />
+        <FAQ />
+        <FinalCTA />
+      </main>
       <Footer />
     </div>
   );

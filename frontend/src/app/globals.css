@@ -1090,6 +1090,134 @@ table.data tr.clickable { cursor: pointer; }
 }
 
 /* ============================================================
+   Marketing display typography (Brainboard-scale editorial)
+   ============================================================ */
+.display-hero {
+  font-size: clamp(52px, 8.5vw, 118px);
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.display-xl {
+  font-size: clamp(36px, 4.6vw, 60px);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.display-lg {
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+/* wide editorial container */
+.container-wide {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4vw, 64px);
+}
+
+/* page section rhythm */
+.mkt-section { padding-block: var(--sp-9); }
+.break-section { height: var(--sp-7); }
+
+/* quiet card — replaces glass-card lift for most surfaces */
+.quiet-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  transition: border-color var(--dur) var(--ease-out);
+}
+.quiet-card:hover { border-color: var(--border-strong); }
+
+/* browser frame around product visuals */
+.browser-frame {
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.browser-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 40px;
+  padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.browser-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+}
+.browser-url {
+  flex: 1;
+  max-width: 340px;
+  margin-inline: auto;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  border: 1px solid var(--border-faint);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* sticky showcase step swap */
+.showcase-step {
+  animation: step-in 480ms var(--ease-out);
+}
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+/* display serif italic accent word */
+.serif-it {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* product mocks on the landing page */
+.dash-mock {
+  border-radius: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  .dash-mock .mock-stats { grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-mock .mock-duo { grid-template-columns: 1fr !important; }
+  .dash-mock .mock-side { display: none !important; }
+  .dash-mock .mock-code { display: none !important; }
+}
+
+/* dot-grid CTA box */
+.cta-box {
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: center;
+  padding-block: clamp(48px, 7vw, 88px);
+}
+[data-theme="light"] .cta-box {
+  background-image: radial-gradient(rgba(16, 18, 24, 0.08) 1px, transparent 1px);
+}
+
+/* ============================================================
    Marketing page styles (landing) — preserved
    ============================================================ */
 html { scroll-behavior: smooth; }

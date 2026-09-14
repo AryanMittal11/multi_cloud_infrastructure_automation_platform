@@ -2,19 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Cloud, ArrowRight } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 
 const LINKS = [
-  { label: 'Platform', href: '#platform' },
+  { label: 'Showcase', href: '#showcase' },
+  { label: 'Multi-cloud', href: '#multicloud' },
   { label: 'Designer', href: '#designer' },
-  { label: 'Integrations', href: '#integrations' },
-  { label: 'Security', href: '#security' },
+  { label: 'Platform', href: '#platform' },
   { label: 'FAQ', href: '#faq' },
 ];
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -28,37 +29,54 @@ export function LandingNav() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = drawer ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [drawer]);
+
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-[#05070d]/85 backdrop-blur-xl border-b border-white/[0.06]'
-          : 'bg-transparent border-b border-transparent'
+        scrolled ? 'border-b' : 'border-b border-transparent'
       }`}
+      style={{
+        background: scrolled ? 'color-mix(in srgb, var(--bg) 86%, transparent)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(14px)' : undefined,
+        WebkitBackdropFilter: scrolled ? 'blur(14px)' : undefined,
+        borderColor: scrolled ? 'var(--border-faint)' : 'transparent',
+      }}
     >
-      {/* Scroll progress hairline */}
-      <div
-        className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 transition-[width] duration-150"
-        style={{ width: `${progress * 100}%`, opacity: scrolled ? 1 : 0 }}
-      />
-
-      <nav className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
+      <nav className="container-wide h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-            <Cloud className="w-4 h-4 text-white" strokeWidth={2.2} />
+          <span
+            className="w-7 h-7 rounded-[8px] flex items-center justify-center transition-transform group-hover:scale-105"
+            style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent-strong)" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M12 2a10 10 0 1 0 10 10" />
+              <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
+            </svg>
           </span>
-          <span className="font-bold tracking-tight text-white">MultiCloud</span>
-          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/10 text-slate-300 font-mono">
-            v2.0
-          </span>
+          <span className="font-semibold tracking-tight text-[15px]" style={{ color: 'var(--ink)' }}>CerebrOps</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-0.5">
           {LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="px-3.5 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+              className="px-3.5 py-2 rounded-[var(--r-sm)] text-[13px] font-medium transition-colors"
+              style={{ color: 'var(--ink-muted)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--ink)';
+                e.currentTarget.style.background = 'var(--surface-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ink-muted)';
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
               {link.label}
             </a>
@@ -68,19 +86,73 @@ export function LandingNav() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/dashboard"
-            className="hidden sm:inline-flex px-3.5 py-2 rounded-lg text-[13px] font-medium text-slate-300 hover:text-white transition-colors"
+            className="hidden sm:inline-flex h-9 items-center px-4 text-[13px] font-medium rounded-full transition-colors"
+            style={{ color: 'var(--ink-secondary)' }}
           >
             Sign in
           </Link>
           <Link
             href="/dashboard"
-            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-[#05070d] text-[13px] font-semibold hover:bg-indigo-50 transition-colors shadow-lg shadow-white/10"
+            className="group hidden sm:inline-flex items-center gap-1.5 h-9 px-4 rounded-full text-[13px] font-semibold text-white transition-all"
+            style={{ background: 'linear-gradient(180deg, #5b96ff 0%, var(--accent) 55%, #2c6ce8 100%)' }}
           >
-            Start building
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            Launch
+            <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
           </Link>
+          <button
+            className="icon-btn md:hidden"
+            onClick={() => setDrawer(!drawer)}
+            aria-label={drawer ? 'Close menu' : 'Open menu'}
+            aria-expanded={drawer}
+          >
+            {drawer ? <X size={17} /> : <Menu size={17} />}
+          </button>
         </div>
       </nav>
+
+      {/* scroll progress hairline */}
+      <div
+        className="absolute bottom-0 left-0 h-px transition-[width] duration-150"
+        style={{ width: `${progress * 100}%`, opacity: scrolled ? 1 : 0, background: 'var(--accent)' }}
+      />
+
+      {/* mobile drawer */}
+      <div
+        className="fixed inset-0 z-40 md:hidden transition-opacity duration-300"
+        style={{
+          background: 'var(--bg)',
+          opacity: drawer ? 1 : 0,
+          pointerEvents: drawer ? 'auto' : 'none',
+        }}
+      >
+        <div className="pt-24 px-6 flex flex-col gap-1">
+          {LINKS.map((link, i) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setDrawer(false)}
+              className="py-4 border-b text-2xl font-semibold tracking-tight transition-all"
+              style={{
+                borderColor: 'var(--border-faint)',
+                color: 'var(--ink)',
+                opacity: drawer ? 1 : 0,
+                transform: drawer ? 'translateY(0)' : 'translateY(12px)',
+                transitionDelay: `${i * 50}ms`,
+              }}
+            >
+              {link.label}
+            </a>
+          ))}
+          <Link
+            href="/dashboard"
+            onClick={() => setDrawer(false)}
+            className="btn btn-primary mt-8 justify-center"
+          >
+            Open the dashboard
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+      </div>
     </header>
   );
 }
