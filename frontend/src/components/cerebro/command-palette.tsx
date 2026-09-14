@@ -10,7 +10,6 @@ import {
   DollarSign,
   FolderGit2,
   Library,
-  Moon,
   PenTool,
   RefreshCw,
   Rocket,
@@ -134,15 +133,6 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         icon: <RefreshCw size={13} />,
         keywords: 'reload sync',
         href: pathname,
-      },
-      {
-        id: 'qa-theme',
-        group: 'Actions',
-        title: 'Toggle theme',
-        sub: 'dark / light',
-        icon: <Moon size={13} />,
-        keywords: 'dark light appearance',
-        href: pathname,
       }
     );
 
@@ -196,13 +186,6 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   useEffect(() => setSelected(0), [query]);
 
   const run = (item: PaletteItem) => {
-    if (item.id === 'qa-theme') {
-      const cur = document.documentElement.getAttribute('data-theme') ?? 'dark';
-      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
-      window.localStorage.setItem('cerebro-theme', cur === 'dark' ? 'light' : 'dark');
-      onClose();
-      return;
-    }
     if (item.id === 'qa-refresh') {
       onClose();
       router.refresh();
@@ -279,13 +262,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   <Link
                     key={it.id}
                     href={it.href}
-                    onClick={() => (it.id === 'qa-theme' ? run(it) : undefined)}
                     className={`palette-item ${sel ? 'selected' : ''}`}
                     data-selected={sel}
                     onMouseEnter={() => setSelected(idx)}
                     onMouseDown={(e) => {
-                      // theme toggle and refresh are actions, not navigation
-                      if (it.id === 'qa-theme' || it.id === 'qa-refresh') {
+                      // refresh is an action, not navigation
+                      if (it.id === 'qa-refresh') {
                         e.preventDefault();
                         run(it);
                       }

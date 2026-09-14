@@ -130,7 +130,7 @@ export function Hero() {
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-2 h-12 px-7 rounded-full text-sm font-semibold text-white transition-all"
-            style={{ background: 'linear-gradient(180deg, #5b96ff 0%, var(--accent) 55%, #2c6ce8 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 28px rgba(45,108,232,0.35)' }}
+            style={{ background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 28px rgba(38,87,201,0.32)' }}
           >
             Open the dashboard
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -173,7 +173,7 @@ export function Hero() {
             style={{
               maxWidth: 1120,
               height: 120,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.5), transparent 80%)',
+              background: 'linear-gradient(180deg, rgba(18, 22, 30, 0.16), transparent 80%)',
               maskImage: 'linear-gradient(180deg, black, transparent 85%)',
               WebkitMaskImage: 'linear-gradient(180deg, black, transparent 85%)',
               transform: 'perspective(600px) rotateX(58deg) scale(0.96)',

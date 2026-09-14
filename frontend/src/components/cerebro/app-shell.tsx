@@ -16,12 +16,10 @@ import {
   Library,
   LogOut,
   Menu,
-  Moon,
   PenTool,
   Rocket,
   ScrollText,
   Server,
-  Sun,
   Waypoints,
   X,
 } from 'lucide-react';
@@ -100,20 +98,16 @@ function useCrumbs(): string[] {
 }
 
 /* ============================================================
-   Theme
+   Theme — light is the single theme; normalize any stale override
    ============================================================ */
 
-function useTheme() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+function useLightTheme() {
   useEffect(() => {
-    const stored = window.localStorage.getItem('cerebro-theme');
-    if (stored === 'light' || stored === 'dark') setTheme(stored);
+    if (document.documentElement.getAttribute('data-theme')) {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    window.localStorage.removeItem('cerebro-theme');
   }, []);
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    window.localStorage.setItem('cerebro-theme', theme);
-  }, [theme]);
-  return { theme, toggle: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')) };
 }
 
 /* ============================================================
@@ -215,7 +209,7 @@ function Topbar({
 }) {
   const crumbs = useCrumbs();
   const { open } = usePaletteOpener();
-  const { theme, toggle } = useTheme();
+  useLightTheme();
   const { user, logout } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -290,11 +284,6 @@ function Topbar({
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
-        </button>
-
-        {/* theme */}
-        <button className="icon-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}>
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
         {/* notifications (live audit trail) */}
@@ -388,8 +377,8 @@ function Topbar({
                   <LogOut size={14} /> Sign out
                 </button>
               ) : (
-                <Link href="/projects" className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-[var(--r-sm)]" style={{ color: 'var(--ink-secondary)' }}>
-                  <Cloud size={14} /> Sign in to manage
+                <Link href="/login" className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-[var(--r-sm)]" style={{ color: 'var(--ink-secondary)' }}>
+                  <Cloud size={14} /> Sign in
                 </Link>
               )}
             </>
@@ -433,7 +422,7 @@ function Tabbar() {
         className="tab-fab self-center w-[50px] h-[50px] flex-none rounded-full flex items-center justify-center"
         style={{
           marginTop: -18,
-          background: 'linear-gradient(180deg, #5b96ff 0%, var(--accent) 55%, #2c6ce8 100%)',
+          background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)',
           color: '#fff',
           border: '3px solid var(--bg)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 26px rgba(45,108,232,0.45)',

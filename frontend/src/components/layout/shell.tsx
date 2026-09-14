@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { AppShell } from '../cerebro/app-shell';
 import { ToastProvider } from '../cerebro/ui-kit';
 
-/** Routes that render their own chrome (marketing pages) */
-const FULL_PAGE_ROUTES = ['/'];
+/** Routes that render their own chrome (marketing + auth pages) */
+const FULL_PAGE_ROUTES = ['/', '/login', '/register'];
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

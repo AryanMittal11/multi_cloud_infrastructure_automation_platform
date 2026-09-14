@@ -113,11 +113,11 @@ export default function DashboardPage() {
         <Panel className="mb-5">
           <EmptyState
             icon={<ShieldCheck size={22} />}
-            title="Authentication required"
-            body="Open Projects and connect an operator persona to bring this dashboard live."
+            title="Sign in to view your platform"
+            body="Authenticate to see deployments, resources, topology, and costs — or use the demo admin to explore a pre-provisioned showcase."
             action={
-              <Link href="/projects" className="btn-primary">
-                Go to Projects
+              <Link href="/login" className="btn-primary">
+                Sign in
               </Link>
             }
           />

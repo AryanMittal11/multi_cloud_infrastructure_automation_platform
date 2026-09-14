@@ -21,7 +21,7 @@ import { PageHeader } from '../../components/cerebro/app-shell';
 import { Panel, EmptyState, Skeleton } from '../../components/cerebro/ui-kit';
 
 const KIND_COLOR: Record<TopologyNodeKind, string> = {
-  network: '#5b96ff',
+  network: '#2f6bde',
   compute: '#43c463',
   database: '#e8a13c',
   storage: '#9a7bf7',

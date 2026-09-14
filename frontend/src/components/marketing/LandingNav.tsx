@@ -94,7 +94,7 @@ export function LandingNav() {
           <Link
             href="/dashboard"
             className="group hidden sm:inline-flex items-center gap-1.5 h-9 px-4 rounded-full text-[13px] font-semibold text-white transition-all"
-            style={{ background: 'linear-gradient(180deg, #5b96ff 0%, var(--accent) 55%, #2c6ce8 100%)' }}
+            style={{ background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)' }}
           >
             Launch
             <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />

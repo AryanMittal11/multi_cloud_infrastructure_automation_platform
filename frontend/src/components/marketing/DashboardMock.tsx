@@ -134,7 +134,7 @@ export function DashboardMock({ state = 'overview' }: { state?: 'overview' | 'de
               </div>
               <div className="flex gap-1.5">
                 <span className="h-[22px] px-2.5 rounded-full text-[9px] font-semibold flex items-center" style={{ border: '1px solid var(--border-strong)', background: 'var(--surface-2)' }}>Refresh</span>
-                <span className="h-[22px] px-2.5 rounded-full text-[9px] font-semibold flex items-center text-white" style={{ background: 'linear-gradient(180deg,#5b96ff,var(--accent) 55%,#2c6ce8)' }}>Run</span>
+                <span className="h-[22px] px-2.5 rounded-full text-[9px] font-semibold flex items-center text-white" style={{ background: 'linear-gradient(180deg,#3f80f0,var(--accent) 60%,#2657c9)' }}>Run</span>
               </div>
             </div>
 

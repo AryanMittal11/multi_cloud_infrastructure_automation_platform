@@ -5,6 +5,7 @@ import { Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { env } from '../../config/env';
 import { AuthResult, AuthTokens, AuthUser, TokenPayload, RefreshTokenPayload } from './auth.types';
+import { showcaseService } from '../showcase';
 
 export class AuthService {
   /**
@@ -92,6 +93,11 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
+
+    // 4. First-admin convenience: prepare demo artifacts (idempotent, never blocks login)
+    if (user.role === Role.ADMIN) {
+      await showcaseService.prepareShowcaseForAdmin(user.id);
+    }
 
     return {
       user: {
