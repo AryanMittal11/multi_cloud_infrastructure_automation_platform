@@ -207,25 +207,20 @@ export function Showcase() {
                   <span className="w-[46px]" />
                 </div>
                 <div style={{ height: 'clamp(300px, 36vw, 470px)' }} className="relative">
-                  {step.mock === 'catalog' && <CatalogMock />}
-                  {step.mock !== 'catalog' && (
-                    <>
-                      {(['overview', 'design', 'plan', 'approved'] as const).map((s) => (
-                        <div
-                          key={s}
-                          className="absolute inset-0 transition-all duration-500"
-                          style={{
-                            opacity: step.mock === s ? 1 : 0,
-                            transform: step.mock === s ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.99)',
-                            pointerEvents: 'none',
-                          }}
-                          aria-hidden={step.mock !== s}
-                        >
-                          <DashboardMock state={s} />
-                        </div>
-                      ))}
-                    </>
-                  )}
+                  {(['overview', 'catalog', 'design', 'plan', 'approved'] as const).map((s) => (
+                    <div
+                      key={s}
+                      className="absolute inset-0 transition-all duration-500"
+                      style={{
+                        opacity: step.mock === s ? 1 : 0,
+                        transform: step.mock === s ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.99)',
+                        pointerEvents: 'none',
+                      }}
+                      aria-hidden={step.mock !== s}
+                    >
+                      {s === 'catalog' ? <CatalogMock /> : <DashboardMock state={s} />}
+                    </div>
+                  ))}
                 </div>
               </div>
 
