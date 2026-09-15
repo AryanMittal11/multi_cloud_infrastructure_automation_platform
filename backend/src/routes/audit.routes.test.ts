@@ -19,6 +19,11 @@ describe('Audit Logs HTTP Routes', () => {
     env.JWT_SECRET,
   );
 
+  const devToken = jwt.sign(
+    { userId: 'usr-dev', email: 'dev@example.com', role: Role.DEVELOPER },
+    env.JWT_SECRET,
+  );
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -29,7 +34,7 @@ describe('Audit Logs HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should return 200 with list of audit logs for authorized VIEWER', async () => {
+    it('should return 200 with list of audit logs for DEVELOPER', async () => {
       const mockLogs = [
         {
           id: 'log-1',
@@ -47,7 +52,7 @@ describe('Audit Logs HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/audit-logs')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.auditLogs).toHaveLength(1);
@@ -59,7 +64,7 @@ describe('Audit Logs HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/audit-logs?status=SUCCESS&action=DEPLOYMENT_APPLY&limit=10')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(prisma.auditLog.findMany).toHaveBeenCalledWith(

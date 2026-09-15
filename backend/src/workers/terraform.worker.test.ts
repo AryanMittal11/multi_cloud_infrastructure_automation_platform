@@ -76,6 +76,7 @@ jest.mock('../services/resources/resource.service', () => ({
   resourceService: {
     recordProvisionedResources: jest.fn().mockResolvedValue(undefined),
     markResourcesDestroyed: jest.fn().mockResolvedValue(undefined),
+    markResourcesDestroyedByTarget: jest.fn().mockResolvedValue(3),
   },
 }));
 
@@ -163,6 +164,48 @@ describe('TerraformWorkerService', () => {
     expect(prisma.deployment.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'dep-2' },
+        data: expect.objectContaining({ status: DeploymentStatus.SUCCEEDED }),
+      }),
+    );
+  });
+
+  it('should execute a DESTROY action scoped to the original deployment target, not the destroy record', async () => {
+    const mockDeployment = {
+      id: 'dep-destroy-1',
+      projectId: 'proj-1',
+      environmentId: 'env-1',
+      template: { templateReference: 'templates/aws/aws_vpc', provider: Provider.AWS },
+      environment: { cloudAccountId: 'acc-1' },
+      configuration: { vpc_cidr: '10.0.0.0/16' },
+    };
+
+    (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(mockDeployment);
+
+    const job: DeploymentJobMessage = {
+      deploymentId: 'dep-destroy-1',
+      projectId: 'proj-1',
+      environmentId: 'env-1',
+      templateId: 'tmpl-1',
+      userId: 'usr-admin',
+      operationType: OperationType.DESTROY,
+      action: 'DESTROY',
+      timestamp: new Date().toISOString(),
+      attempt: 1,
+    };
+
+    await worker.handleJob(job);
+
+    expect(terraformRunner.destroy).toHaveBeenCalled();
+    // Regression: teardown must mark the ORIGINAL create deployment's rows
+    // (same project/env/template) — not the destroy deployment's own id.
+    expect(resourceService.markResourcesDestroyedByTarget).toHaveBeenCalledWith({
+      projectId: 'proj-1',
+      environmentId: 'env-1',
+      templateId: 'tmpl-1',
+    });
+    expect(prisma.deployment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'dep-destroy-1' },
         data: expect.objectContaining({ status: DeploymentStatus.SUCCEEDED }),
       }),
     );

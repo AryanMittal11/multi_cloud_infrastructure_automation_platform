@@ -88,12 +88,12 @@ describe('Project HTTP Routes', () => {
   });
 
   describe('GET /api/projects', () => {
-    it('should allow VIEWER to list projects', async () => {
+    it('should allow DEVELOPER to list projects', async () => {
       (prisma.project.findMany as jest.Mock).mockResolvedValue([]);
 
       const res = await request(app)
         .get('/api/projects')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('projects');

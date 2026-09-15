@@ -12,3 +12,6 @@ costRouter.post('/estimate', requireDeveloper, costController.estimate);
 
 // Monthly rollup across active deployments, optionally per project
 costRouter.get('/summary', requireDeveloper, costController.summary);
+
+// Heuristic optimization recommendations + projected spend
+costRouter.get('/optimizations', requireDeveloper, costController.optimizations);

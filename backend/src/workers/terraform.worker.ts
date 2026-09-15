@@ -307,8 +307,14 @@ export class TerraformWorkerService {
           throw new Error(`Terraform destroy failed with exit code ${destroyResult.exitCode}`);
         }
 
-        // Mark resources as destroyed
-        await resourceService.markResourcesDestroyed(job.deploymentId);
+        // Mark resources as destroyed — a DESTROY deployment owns no resource
+        // rows itself; the provisioned rows live under the original CREATE
+        // deployment(s) of the same project/env/template, so scope by target.
+        await resourceService.markResourcesDestroyedByTarget({
+          projectId: job.projectId,
+          environmentId: job.environmentId,
+          templateId: job.templateId,
+        });
 
         await prisma.deployment.update({
           where: { id: job.deploymentId },

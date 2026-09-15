@@ -388,6 +388,8 @@ export const api = {
       }),
     summary: (projectId?: string) =>
       request<CostSummary>(`/costs/summary${projectId ? `?projectId=${projectId}` : ''}`),
+    optimizations: (projectId?: string) =>
+      request<CostOptimizations>(`/costs/optimizations${projectId ? `?projectId=${projectId}` : ''}`),
   },
 
   topology: {
@@ -481,6 +483,31 @@ export interface CostSummary {
   label: string;
   monthlyTotalUsd: number;
   projects: CostSummaryProject[];
+  computedAt: string;
+}
+
+export interface CostRecommendation {
+  id: string;
+  deploymentId: string | null;
+  projectName: string | null;
+  environmentName: string | null;
+  rule: string;
+  severity: 'info' | 'warning' | 'opportunity';
+  title: string;
+  detail: string;
+  steps: string[];
+  estimatedMonthlySavingsUsd: number;
+}
+
+export interface CostOptimizations {
+  currency: 'USD';
+  currentMonthlyUsd: number;
+  projectedMonthlyUsd: number;
+  totalEstimatedMonthlySavingsUsd: number;
+  savingsPct: number;
+  recommendations: CostRecommendation[];
+  source: string;
+  label: string;
   computedAt: string;
 }
 

@@ -24,6 +24,11 @@ describe('Template HTTP Routes', () => {
     env.JWT_SECRET,
   );
 
+  const devToken = jwt.sign(
+    { userId: 'usr-dev', email: 'dev@example.com', role: Role.DEVELOPER },
+    env.JWT_SECRET,
+  );
+
   const adminToken = jwt.sign(
     { userId: 'usr-admin', email: 'admin@example.com', role: Role.ADMIN },
     env.JWT_SECRET,
@@ -39,7 +44,7 @@ describe('Template HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should allow authenticated users to list templates', async () => {
+    it('should allow DEVELOPER to list templates', async () => {
       (prisma.template.findMany as jest.Mock).mockResolvedValue([
         {
           id: 'tmpl-1',
@@ -56,7 +61,7 @@ describe('Template HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/templates')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.templates).toHaveLength(1);
@@ -80,7 +85,7 @@ describe('Template HTTP Routes', () => {
 
       const res = await request(app)
         .post('/api/templates/tmpl-1/validate')
-        .set('Authorization', `Bearer ${viewerToken}`)
+        .set('Authorization', `Bearer ${devToken}`)
         .send({
           configuration: {
             server_name: 'frontend-app',
@@ -107,7 +112,7 @@ describe('Template HTTP Routes', () => {
 
       const res = await request(app)
         .post('/api/templates/tmpl-1/validate')
-        .set('Authorization', `Bearer ${viewerToken}`)
+        .set('Authorization', `Bearer ${devToken}`)
         .send({
           configuration: {}, // Missing required server_name
         });

@@ -27,7 +27,7 @@ cloudRouter.use(authenticateToken);
 
 cloudRouter.post(
   '/',
-  requireDeveloper,
+  requireAdmin,
   validateBody(createCloudAccountSchema),
   cloudController.create,
 );

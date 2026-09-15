@@ -45,12 +45,12 @@ describe('Deployment Lock HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should return lock status for authenticated user', async () => {
+    it('should return lock status for DEVELOPER', async () => {
       (prisma.deployment.findFirst as jest.Mock).mockResolvedValue(null);
 
       const res = await request(app)
         .get('/api/deployments/locks/env-1')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.lockStatus.isLocked).toBe(false);

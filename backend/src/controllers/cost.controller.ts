@@ -1,7 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { Provider } from '@prisma/client';
 import { prisma } from '../config/prisma';
-import { estimateTemplateCost, estimateDeploymentCost, CostEstimateResult } from '../services/costs';
+import {
+  estimateTemplateCost,
+  estimateDeploymentCost,
+  optimizeCosts,
+  OptimizableDeployment,
+  CostEstimateResult,
+} from '../services/costs';
 
 export const costController = {
   /**
@@ -70,7 +76,7 @@ export const costController = {
 
       for (const d of deployments) {
         const resources = await prisma.resource.findMany({
-          where: { deploymentId: d.id },
+          where: { deploymentId: d.id, status: { not: 'DESTROYED' } },
           select: { resourceType: true, name: true },
         });
         if (resources.length === 0) continue;
@@ -111,6 +117,67 @@ export const costController = {
         projects,
         computedAt: new Date().toISOString(),
       });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/optimizations?projectId=...
+   * Heuristic recommendations: concrete steps + projected monthly spend.
+   */
+  optimizations: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { projectId } = req.query;
+
+      const where: any = {
+        status: { in: ['SUCCEEDED', 'RUNNING'] },
+        operationType: { not: 'DESTROY' },
+        ...(typeof projectId === 'string' && projectId ? { projectId } : {}),
+      };
+      if (req.user!.role !== 'ADMIN') {
+        where.project = { ownerId: req.user!.userId };
+      }
+
+      const deployments = await prisma.deployment.findMany({
+        where,
+        select: {
+          id: true,
+          configuration: true,
+          template: { select: { provider: true } },
+          project: { select: { id: true, name: true } },
+          environment: { select: { id: true, name: true } },
+        },
+      });
+
+      const optimizable: OptimizableDeployment[] = [];
+      for (const d of deployments) {
+        const resources = await prisma.resource.findMany({
+          where: { deploymentId: d.id, status: { not: 'DESTROYED' } },
+          select: { resourceType: true, name: true },
+        });
+        if (resources.length === 0) continue;
+
+        const estimate = estimateDeploymentCost({
+          deploymentId: d.id,
+          provider: (d.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
+          region: (d.configuration as any)?.['region'] ?? null,
+          resources,
+        });
+
+        optimizable.push({
+          deploymentId: d.id,
+          environmentName: d.environment.name,
+          projectName: d.project.name,
+          provider: (d.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
+          region: (d.configuration as any)?.['region'] ?? null,
+          estimate,
+          configuration: (d.configuration as Record<string, unknown>) ?? {},
+        });
+      }
+
+      const result = optimizeCosts(optimizable);
+      res.status(200).json(result);
     } catch (err) {
       next(err);
     }

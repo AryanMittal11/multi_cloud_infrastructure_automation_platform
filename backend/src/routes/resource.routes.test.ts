@@ -18,6 +18,11 @@ describe('Resource HTTP Routes', () => {
     env.JWT_SECRET,
   );
 
+  const devToken = jwt.sign(
+    { userId: 'usr-dev', email: 'dev@example.com', role: Role.DEVELOPER },
+    env.JWT_SECRET,
+  );
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -28,7 +33,7 @@ describe('Resource HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should allow VIEWER to list resources with 200', async () => {
+    it('should allow DEVELOPER to list resources with 200', async () => {
       (resourceService.listResources as jest.Mock).mockResolvedValue([
         { id: 'res-1', resourceType: 'aws_vpc', name: 'main' },
         { id: 'res-2', resourceType: 'aws_subnet', name: 'public' },
@@ -36,7 +41,7 @@ describe('Resource HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/resources')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.resources).toHaveLength(2);
@@ -58,7 +63,7 @@ describe('Resource HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/resources/res-1')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.resource.id).toBe('res-1');
@@ -69,7 +74,7 @@ describe('Resource HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/resources/non-existent')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(404);
     });

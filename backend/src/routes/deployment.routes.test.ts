@@ -101,7 +101,15 @@ describe('Deployment HTTP Routes', () => {
   });
 
   describe('GET /api/deployments/:id', () => {
-    it('should allow VIEWER to fetch deployment details with 200', async () => {
+    it('should reject VIEWER from fetching deployment details with 403', async () => {
+      const res = await request(app)
+        .get('/api/deployments/dep-100')
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should allow DEVELOPER to fetch deployment details with 200', async () => {
       const mockDeployment = {
         id: 'dep-100',
         status: DeploymentStatus.PLANNED,
@@ -112,7 +120,7 @@ describe('Deployment HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/deployments/dep-100')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.deployment.id).toBe('dep-100');
@@ -126,7 +134,7 @@ describe('Deployment HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/deployments/non-existent')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(404);
     });
@@ -218,14 +226,22 @@ describe('Deployment HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should allow VIEWER to fetch deployment resources with 200', async () => {
+    it('should reject VIEWER from fetching deployment resources with 403', async () => {
+      const res = await request(app)
+        .get('/api/deployments/dep-1/resources')
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should allow DEVELOPER to fetch deployment resources with 200', async () => {
       (deploymentService.getDeploymentResources as jest.Mock).mockResolvedValue([
         { id: 'res-1', resourceType: 'aws_vpc' },
       ]);
 
       const res = await request(app)
         .get('/api/deployments/dep-1/resources')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.resources).toHaveLength(1);
@@ -238,7 +254,7 @@ describe('Deployment HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should allow VIEWER to fetch deployment logs with 200', async () => {
+    it('should allow DEVELOPER to fetch deployment logs with 200', async () => {
       (deploymentService.getDeploymentLogs as jest.Mock).mockResolvedValue({
         id: 'dep-1',
         status: DeploymentStatus.SUCCEEDED,
@@ -247,7 +263,7 @@ describe('Deployment HTTP Routes', () => {
 
       const res = await request(app)
         .get('/api/deployments/dep-1/logs')
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${devToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.logs.applyOutput).toBe('Apply succeeded!');

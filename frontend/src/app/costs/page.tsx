@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, Info } from 'lucide-react';
-import { api, CostSummaryProject } from '../../lib/api';
+import { DollarSign, Info, Lightbulb, TrendingDown } from 'lucide-react';
+import { api, CostSummaryProject, CostRecommendation } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
 import { formatUsd } from '../../lib/format';
 import { PageHeader } from '../../components/cerebro/app-shell';
@@ -32,6 +32,13 @@ export default function CostsPage() {
     refetchInterval: 60000,
   });
 
+  const { data: optData, isLoading: optLoading } = useQuery({
+    queryKey: ['costs-optimizations'],
+    queryFn: () => api.costs.optimizations(),
+    enabled: !!user,
+    refetchInterval: 120000,
+  });
+
   const { data: estimateData, isFetching: estimating } = useQuery({
     queryKey: ['costs-estimate', provider, region, archetype, instanceCount, volumeSize],
     queryFn: () =>
@@ -45,6 +52,7 @@ export default function CostsPage() {
   });
 
   const projects: CostSummaryProject[] = summaryData?.projects ?? [];
+  const recommendations: CostRecommendation[] = optData?.recommendations ?? [];
 
   const regions = useMemo(() => PROVIDER_REGIONS[provider], [provider]);
 

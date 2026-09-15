@@ -1,6 +1,6 @@
 import { ResourceService } from './resource.service';
 import { prisma } from '../../config/prisma';
-import { Provider, ResourceStatus } from '@prisma/client';
+import { Provider, ResourceStatus, Role } from '@prisma/client';
 
 // Mock Prisma
 jest.mock('../../config/prisma', () => ({
@@ -83,6 +83,31 @@ describe('ResourceService Subsystem', () => {
     });
   });
 
+  describe('markResourcesDestroyedByTarget', () => {
+    it('should scope teardown by project/env/template and only flip ACTIVE rows', async () => {
+      (prisma.resource.updateMany as jest.Mock).mockResolvedValue({ count: 2 });
+
+      const count = await service.markResourcesDestroyedByTarget({
+        projectId: 'proj-1',
+        environmentId: 'env-1',
+        templateId: 'tmpl-1',
+      });
+
+      expect(count).toBe(2);
+      expect(prisma.resource.updateMany).toHaveBeenCalledWith({
+        where: {
+          status: ResourceStatus.ACTIVE,
+          deployment: {
+            projectId: 'proj-1',
+            environmentId: 'env-1',
+            templateId: 'tmpl-1',
+          },
+        },
+        data: { status: ResourceStatus.DESTROYED },
+      });
+    });
+  });
+
   describe('getResourcesByDeployment', () => {
     it('should return resources ordered by createdAt asc', async () => {
       (prisma.resource.findMany as jest.Mock).mockResolvedValue([
@@ -122,7 +147,7 @@ describe('ResourceService Subsystem', () => {
     it('should filter resources by status and environmentId', async () => {
       (prisma.resource.findMany as jest.Mock).mockResolvedValue([{ id: 'res-active' }]);
 
-      const resources = await service.listResources({
+      const resources = await service.listResources('usr-admin', Role.ADMIN, {
         environmentId: 'env-prod',
         status: ResourceStatus.ACTIVE,
       });

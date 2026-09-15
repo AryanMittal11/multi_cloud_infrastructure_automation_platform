@@ -62,6 +62,37 @@ export class ResourceService {
   }
 
   /**
+   * Marks ACTIVE resources destroyed for the deployment TARGET of a teardown.
+   *
+   * Resource rows are recorded under the ORIGINAL create deployment, while a
+   * DESTROY deployment is a separate record that owns none — so teardown must
+   * scope by the shared project + environment + template instead of the
+   * destroy deployment's own id, or nothing is ever marked.
+   */
+  async markResourcesDestroyedByTarget(target: {
+    projectId: string;
+    environmentId: string;
+    templateId: string;
+  }): Promise<number> {
+    const result = await prisma.resource.updateMany({
+      where: {
+        status: ResourceStatus.ACTIVE,
+        deployment: {
+          projectId: target.projectId,
+          environmentId: target.environmentId,
+          templateId: target.templateId,
+        },
+      },
+      data: { status: ResourceStatus.DESTROYED },
+    });
+
+    logger.info(
+      `Marked ${result.count} resource(s) as DESTROYED for env [${target.environmentId}] · template [${target.templateId}]`,
+    );
+    return result.count;
+  }
+
+  /**
    * Retrieves resources for a specific deployment.
    */
   async getResourcesByDeployment(deploymentId: string) {
