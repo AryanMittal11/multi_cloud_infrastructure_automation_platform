@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Provider } from '@prisma/client';
 import { prisma } from '../config/prisma';
+import { cloudService } from '../services/cloud/cloud.service';
 import {
   estimateTemplateCost,
   estimateDeploymentCost,
@@ -8,6 +9,27 @@ import {
   OptimizableDeployment,
   CostEstimateResult,
 } from '../services/costs';
+
+/**
+ * Builds a per-request region resolver: maps a bound cloud account to its
+ * default region the same way the worker does (decrypted once per account,
+ * cached for the request). Falls back to null → estimator default.
+ */
+function makeRegionResolver() {
+  const cache = new Map<string, string | null>();
+  return async (cloudAccountId: string | null | undefined): Promise<string | null> => {
+    if (!cloudAccountId) return null;
+    if (!cache.has(cloudAccountId)) {
+      try {
+        const creds = await cloudService.getDecryptedCredentials(cloudAccountId);
+        cache.set(cloudAccountId, ((creds as unknown) as Record<string, unknown>)?.['defaultRegion'] as string ?? null);
+      } catch {
+        cache.set(cloudAccountId, null);
+      }
+    }
+    return cache.get(cloudAccountId) ?? null;
+  };
+}
 
 export const costController = {
   /**
@@ -63,9 +85,11 @@ export const costController = {
           configuration: true,
           template: { select: { provider: true } },
           project: { select: { id: true, name: true } },
-          environment: { select: { id: true, name: true } },
+          environment: { select: { id: true, name: true, cloudAccountId: true } },
         },
       });
+
+      const resolveRegion = makeRegionResolver();
 
       const byProject = new Map<string, {
         projectId: string;
@@ -84,7 +108,7 @@ export const costController = {
         const estimate = estimateDeploymentCost({
           deploymentId: d.id,
           provider: (d.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
-          region: (d.configuration as any)?.['region'] ?? null,
+          region: await resolveRegion(d.environment.cloudAccountId),
           resources,
         });
 
@@ -146,11 +170,14 @@ export const costController = {
           configuration: true,
           template: { select: { provider: true } },
           project: { select: { id: true, name: true } },
-          environment: { select: { id: true, name: true } },
+          environment: { select: { id: true, name: true, cloudAccountId: true } },
         },
-      });
+      });
 
       const optimizable: OptimizableDeployment[] = [];
+      // Resolve each deployment's effective target region the same way the
+      // worker does: bound cloud account's default region.
+      const resolveRegion = makeRegionResolver();
       for (const d of deployments) {
         const resources = await prisma.resource.findMany({
           where: { deploymentId: d.id, status: { not: 'DESTROYED' } },
@@ -158,10 +185,12 @@ export const costController = {
         });
         if (resources.length === 0) continue;
 
+        const region = await resolveRegion(d.environment.cloudAccountId);
+
         const estimate = estimateDeploymentCost({
           deploymentId: d.id,
           provider: (d.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
-          region: (d.configuration as any)?.['region'] ?? null,
+          region,
           resources,
         });
 
@@ -170,7 +199,7 @@ export const costController = {
           environmentName: d.environment.name,
           projectName: d.project.name,
           provider: (d.template.provider || 'AWS') as 'AWS' | 'AZURE' | 'GCP',
-          region: (d.configuration as any)?.['region'] ?? null,
+          region,
           estimate,
           configuration: (d.configuration as Record<string, unknown>) ?? {},
         });

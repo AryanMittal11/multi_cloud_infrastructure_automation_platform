@@ -168,17 +168,28 @@ export class TerraformRunner {
       output = `Initializing the backend...\nInitializing provider plugins...\nTerraform has been successfully initialized!`;
     } else if (action === 'plan') {
       const isDestroy = args.includes('-destroy');
+      const declared = this.scanWorkspaceResources(options.workspaceDir);
+      const count = Math.max(declared.length, 1);
+      const listing = declared
+        .slice(0, 4)
+        .map((r) => `  ${isDestroy ? '-' : '+'} resource "${r.type}" "${r.name}"`)
+        .join('\n');
       if (isDestroy) {
-        output = `Terraform will perform the following actions:\n\n  # aws_vpc.main will be destroyed\n  - resource "aws_vpc" "main" {\n      - cidr_block = "10.0.0.0/16"\n    }\n\nPlan: 0 to add, 0 to change, 1 to destroy.`;
+        const target = declared[0];
+        const label = target ? `${target.type}.${target.name}` : 'aws_vpc.main';
+        output = `Terraform will perform the following actions:\n\n  # ${label} will be destroyed\n${listing}\n\nPlan: 0 to add, 0 to change, ${count} to destroy.`;
       } else {
-        output = `Terraform will perform the following actions:\n  + create\nPlan: 3 to add, 0 to change, 0 to destroy.`;
+        output = `Terraform will perform the following actions:\n${listing}\n\nPlan: ${count} to add, 0 to change, 0 to destroy.`;
       }
     } else if (action === 'apply') {
-      output = `Apply complete! Resources: 3 added, 0 changed, 0 destroyed.`;
-      // Write simulated state file
+      const declared = this.scanWorkspaceResources(options.workspaceDir);
+      const count = Math.max(declared.length, 1);
+      output = `Apply complete! Resources: ${count} added, 0 changed, 0 destroyed.`;
+      // Write simulated state file derived from the workspace's real template HCL
       this.writeSimulatedState(options.workspaceDir);
     } else if (action === 'destroy') {
-      output = `Destroy complete! Resources: 3 destroyed.`;
+      const declared = this.scanWorkspaceResources(options.workspaceDir);
+      output = `Destroy complete! Resources: ${Math.max(declared.length, 1)} destroyed.`;
       const stateFile = path.join(options.workspaceDir, 'terraform.tfstate');
       if (fs.existsSync(stateFile)) {
         fs.writeFileSync(stateFile, JSON.stringify({ version: 4, resources: [] }), 'utf8');
@@ -199,33 +210,75 @@ export class TerraformRunner {
     };
   }
 
+  /**
+   * Extracts declared `resource "<type>" "<name>"` blocks from the
+   * workspace's .tf files (comments stripped) so sandboxed executions
+   * reflect the template actually being deployed.
+   */
+  private scanWorkspaceResources(workspaceDir: string): Array<{ type: string; name: string }> {
+    const found: Array<{ type: string; name: string }> = [];
+    let files: string[] = [];
+    try {
+      files = fs.readdirSync(workspaceDir).filter((f) => f.endsWith('.tf'));
+    } catch {
+      return found;
+    }
+    const blockRe = /\bresource\s+"([A-Za-z0-9_-]+)"\s+"([A-Za-z0-9_-]+)"/g;
+    for (const file of files) {
+      let raw = '';
+      try {
+        raw = fs.readFileSync(path.join(workspaceDir, file), 'utf8');
+      } catch {
+        continue;
+      }
+      const hcl = raw
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*#.*$/gm, '')
+        .replace(/^\s*\/\/.*$/gm, '');
+      for (const m of hcl.matchAll(blockRe)) {
+        if (!found.some((r) => r.type === m[1] && r.name === m[2])) {
+          found.push({ type: m[1], name: m[2] });
+        }
+      }
+    }
+    return found;
+  }
+
+  /**
+   * Derives the simulated state from the workspace's real template HCL so
+   * sandbox applies record every declared resource (not a fixed VPC).
+   * Deterministic IDs keep runs reproducible and testable.
+   */
   private writeSimulatedState(workspaceDir: string): void {
     const stateFile = path.join(workspaceDir, 'terraform.tfstate');
+    const declared = this.scanWorkspaceResources(workspaceDir);
+
+    const providerFor = (type: string): string => {
+      if (type.startsWith('aws_')) return 'provider["registry.terraform.io/hashicorp/aws"]';
+      if (type.startsWith('azurerm_') || type.startsWith('azapi_')) return 'provider["registry.terraform.io/hashicorp/azurerm"]';
+      if (type.startsWith('google_')) return 'provider["registry.terraform.io/hashicorp/google"]';
+      return `provider["registry.terraform.io/hashicorp/${type.split('_')[0]}"]`;
+    };
+
+    const resources = (declared.length > 0 ? declared : [{ type: 'aws_vpc', name: 'main' }]).map((r, i) => ({
+      type: r.type,
+      name: r.name,
+      provider: providerFor(r.type),
+      instances: [
+        {
+          attributes: {
+            id: `sim-${r.type}-${r.name}-${i}`,
+            arn: `arn:simulated:${r.type}:${r.name}:${i}`,
+          },
+        },
+      ],
+    }));
+
     const mockState = {
       version: 4,
       terraform_version: '1.5.0',
-      resources: [
-        {
-          type: 'aws_vpc',
-          name: 'main',
-          provider: 'provider["registry.terraform.io/hashicorp/aws"]',
-          instances: [
-            {
-              attributes: {
-                id: 'vpc-0123456789abcdef0',
-                arn: 'arn:aws:ec2:us-east-1:123456789012:vpc/vpc-0123456789abcdef0',
-                cidr_block: '10.0.0.0/16',
-              },
-            },
-          ],
-        },
-      ],
-      outputs: {
-        vpc_id: {
-          value: 'vpc-0123456789abcdef0',
-          type: 'string',
-        },
-      },
+      resources,
+      outputs: {} as Record<string, unknown>,
     };
     fs.writeFileSync(stateFile, JSON.stringify(mockState, null, 2), 'utf8');
   }

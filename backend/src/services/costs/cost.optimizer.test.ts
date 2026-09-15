@@ -1,7 +1,7 @@
 import { optimizeCosts, OptimizableDeployment } from './cost.optimizer';
 import { CostEstimateResult } from './cost.estimator';
 
-function estimate(total: number, resourceTypes: string[] = ['compute']): CostEstimateResult {
+function estimate(total: number, resourceTypes: string[] = ['compute'], qty: number = 1): CostEstimateResult {
   const per = total / resourceTypes.length;
   return {
     scope: 'deployment',
@@ -13,9 +13,9 @@ function estimate(total: number, resourceTypes: string[] = ['compute']): CostEst
     lineItems: resourceTypes.map((t) => ({
       resourceType: t,
       label: t,
-      quantity: 1,
+      quantity: qty,
       unit: 'flat',
-      unitMonthlyUsd: per,
+      unitMonthlyUsd: per / qty,
       monthlyUsd: Math.round(per * 100) / 100,
       basis: 'test',
     })),
@@ -65,15 +65,24 @@ describe('cost.optimizer (builtin-heuristics-v1)', () => {
   });
 
   it('flags non-production multi-instance redundancy', () => {
-    // unit price $24/instance; dropping 3 → 2 saves one unit
+    // estimate prices 3 instances at $24 each; dropping 3 → 2 saves one unit
     const result = optimizeCosts([
-      dep({ id: 'dep-staging', environmentName: 'staging', configuration: { instance_count: 3 }, estimate: estimate(24, ['compute']) }),
+      dep({ id: 'dep-staging', environmentName: 'staging', configuration: { instance_count: 3 }, estimate: estimate(72, ['compute'], 3) }),
     ]);
 
     const rec = result.recommendations.find((r) => r.rule === 'nonprod-redundancy');
     expect(rec).toBeDefined();
     expect(rec!.title).toContain('2 instead of 3');
     expect(rec!.estimatedMonthlySavingsUsd).toBeCloseTo(24, 0);
+  });
+
+  it('does not claim redundancy savings when the estimate prices fewer instances than configured', () => {
+    // config requests 3 but the template only priced 1 — nothing real to trim
+    const result = optimizeCosts([
+      dep({ id: 'dep-mismatch', environmentName: 'staging', configuration: { instance_count: 3 }, estimate: estimate(24, ['compute'], 1) }),
+    ]);
+
+    expect(result.recommendations.find((r) => r.rule === 'nonprod-redundancy')).toBeUndefined();
   });
 
   it('never suggests region moves or trimming for production', () => {

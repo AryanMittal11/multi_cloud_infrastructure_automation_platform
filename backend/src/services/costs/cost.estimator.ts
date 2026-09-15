@@ -91,7 +91,8 @@ const RATE_CARD: Record<string, RateCardEntry> = {
     unit: 'GB-month',
     unitMonthlyUsd: 0.1,
     basis: 'standard SSD tier',
-    quantityFromConfig: (c) => Math.max(8, Number(c['volume_size'] ?? c['disk_size'] ?? c['root_volume_size'] ?? 8)) || 8,
+    quantityFromConfig: (c) =>
+      Math.max(8, Number(c['volume_size'] ?? c['disk_size'] ?? c['allocated_storage_gb'] ?? c['root_volume_size'] ?? 8)) || 8,
   },
   database: {
     label: 'Managed database',

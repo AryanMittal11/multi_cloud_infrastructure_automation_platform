@@ -1,4 +1,4 @@
-import { Provider } from '@prisma/client';
+import { Provider, Role } from '@prisma/client';
 import { CloudService } from './cloud.service';
 import { prisma } from '../../config/prisma';
 import { decryptCredential } from '../../utils/crypto';
@@ -214,7 +214,7 @@ describe('CloudService', () => {
         environments: [{ id: 'env-1', name: 'production' }],
       });
 
-      await expect(cloudService.deleteCloudAccount('acc-bound', 'usr-admin')).rejects.toThrow(
+      await expect(cloudService.deleteCloudAccount('acc-bound', 'usr-admin', Role.ADMIN)).rejects.toThrow(
         'currently associated with 1 environment',
       );
       expect(prisma.cloudAccount.delete).not.toHaveBeenCalled();
@@ -227,7 +227,7 @@ describe('CloudService', () => {
         environments: [],
       });
 
-      const res = await cloudService.deleteCloudAccount('acc-free', 'usr-admin');
+      const res = await cloudService.deleteCloudAccount('acc-free', 'usr-admin', Role.ADMIN);
       expect(res.success).toBe(true);
       expect(prisma.cloudAccount.delete).toHaveBeenCalledWith({ where: { id: 'acc-free' } });
     });

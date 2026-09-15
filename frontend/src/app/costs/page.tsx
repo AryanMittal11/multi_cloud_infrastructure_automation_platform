@@ -268,6 +268,101 @@ export default function CostsPage() {
           </Panel>
         </div>
       )}
+
+      {/* Cost optimization advisor */}
+      {!isLoading && (
+        <Panel
+          className="mt-4"
+          title="Optimization advisor"
+          subtitle="Rule-based suggestions · apply through the normal pipeline"
+        >
+          {optLoading ? (
+            <div className="px-4 py-6"><Skeleton className="h-[120px]" /></div>
+          ) : !optData || recommendations.length === 0 ? (
+            <EmptyState
+              icon={<TrendingDown size={22} />}
+              title="No optimizations flagged"
+              body="Configurations look lean right now. Recommendations appear when volumes are oversized, non-production fleets run redundant instances, regions are priced above equivalents, or sandbox environments sit idle."
+            />
+          ) : (
+            <div className="px-4 py-4">
+              {/* projected spend header */}
+              <div className="flex flex-wrap items-end justify-between gap-4 mb-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <p className="stat-label">Projected spend if applied</p>
+                  <p className="num text-[30px] leading-none mt-1" style={{ color: 'var(--ink)' }}>
+                    {formatUsd(optData.projectedMonthlyUsd)}
+                    <span className="text-sm ml-1" style={{ color: 'var(--ink-muted)' }}>/mo est.</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="badge" style={{ color: 'var(--success)', background: 'var(--success-soft)' }}>
+                    −{formatUsd(optData.totalEstimatedMonthlySavingsUsd)}/mo ({optData.savingsPct}%)
+                  </span>
+                  <span className="chip">from {formatUsd(optData.currentMonthlyUsd)}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {recommendations.map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="p-4 rounded-[var(--r-md)] flex flex-col"
+                    style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-start gap-2.5">
+                        <Lightbulb
+                          size={15}
+                          className="flex-none mt-0.5"
+                          style={{ color: rec.severity === 'warning' ? 'var(--warn)' : 'var(--ink)' }}
+                        />
+                        <div>
+                          <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink)' }}>{rec.title}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: 'var(--ink-muted)' }}>
+                            {rec.projectName ?? 'Platform'}{rec.environmentName ? ` · ${rec.environmentName}` : ''} · {rec.rule}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="num text-sm font-semibold flex-none" style={{ color: 'var(--success)' }}>
+                        −{formatUsd(rec.estimatedMonthlySavingsUsd)}/mo
+                      </span>
+                    </div>
+
+                    <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--ink-secondary)' }}>{rec.detail}</p>
+
+                    <ol className="mt-auto flex flex-col gap-1.5 text-xs pl-1">
+                      {rec.steps.map((step, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span
+                            className="num flex-none w-[16px] h-[16px] rounded-[5px] flex items-center justify-center text-[9px] font-bold mt-[1px]"
+                            style={{ background: 'var(--surface-3)', color: 'var(--ink-secondary)' }}
+                          >
+                            {i + 1}
+                          </span>
+                          <span style={{ color: 'var(--ink-secondary)' }}>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+
+                    {rec.deploymentId && (
+                      <a
+                        href={`/deployments/${rec.deploymentId}`}
+                        className="text-[11px] mt-3 inline-flex items-center gap-1"
+                        style={{ color: 'var(--ink-muted)' }}
+                      >
+                        Open deployment →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[11px] mt-4" style={{ color: 'var(--ink-faint)' }}>{optData.label}</p>
+            </div>
+          )}
+        </Panel>
+      )}
     </div>
   );
 }

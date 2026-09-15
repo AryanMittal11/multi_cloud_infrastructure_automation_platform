@@ -62,7 +62,8 @@ const ASSUMED_BOOT_GB = 8;
  * observed default when the workload archetype (web/compute) doesn't need it.
  */
 function volumeRule(deployment: OptimizableDeployment): CostRecommendation | null {
-  const volumeSize = Number(deployment.configuration['volume_size'] ?? deployment.configuration['disk_size'] ?? 0);
+  const volumeKey = ['volume_size', 'disk_size', 'allocated_storage_gb', 'root_volume_size'].find((k) => deployment.configuration[k] !== undefined);
+  const volumeSize = volumeKey ? Number(deployment.configuration[volumeKey]) : 0;
   if (volumeSize < 32) return null; // small volumes are fine
 
   const computeItems = deployment.estimate.lineItems.filter((li) => li.resourceType === 'storage' || li.resourceType === 'compute');
@@ -74,7 +75,10 @@ function volumeRule(deployment: OptimizableDeployment): CostRecommendation | nul
 
   const gbSaved = volumeSize - suggestedGb;
   const storageUnit = 0.1 * (deployment.region ? 1.1 : 1); // rough; rate card SSD tier
-  const savings = round2(gbSaved * storageUnit * (Number(deployment.configuration['instance_count'] ?? 1) || 1));
+  // Savings scale with instances actually priced (not the requested count,
+  // which may not be a real template variable).
+  const pricedUnits = deployment.estimate.lineItems.find((li) => li.resourceType === 'compute')?.quantity ?? 1;
+  const savings = round2(gbSaved * storageUnit * pricedUnits);
 
   if (savings < 0.1) return null;
 
@@ -86,9 +90,9 @@ function volumeRule(deployment: OptimizableDeployment): CostRecommendation | nul
     rule: 'oversized-volume',
     severity: 'opportunity',
     title: `Shrink ${volumeSize} GB volumes to ~${suggestedGb} GB`,
-    detail: `Configuration requests ${volumeSize} GB block storage per instance. Most web/compute workloads operate comfortably ~30% smaller; cloud volumes are the easiest cost lever because resizing is non-destructive when done via snapshot.`,
+    detail: `Configuration requests ${volumeSize} GB block storage per instance (via ${volumeKey}). Most web/compute workloads operate comfortably ~30% smaller; cloud volumes are the easiest cost lever because resizing is non-destructive when done via snapshot.`,
     steps: [
-      `Open the deployment's configuration and set volume_size to ${suggestedGb} GB.`,
+      `Open the deployment's configuration and set ${volumeKey} to ${suggestedGb} GB.`,
       'Apply the change through the normal plan → approve pipeline (resize is in-place).',
       'Verify disk usage headroom on the affected instances after apply.',
     ],
@@ -108,8 +112,14 @@ function instanceCountRule(deployment: OptimizableDeployment): CostRecommendatio
   const computeLine = deployment.estimate.lineItems.find((li) => li.resourceType === 'compute');
   if (!computeLine) return null;
 
-  const suggestedCount = Math.max(1, count - 1);
-  const savings = round2(computeLine.unitMonthlyUsd * (count - suggestedCount));
+  // Only claim savings for instances the estimate actually prices: if the
+  // template provisions fewer than the requested count, the config key is
+  // not a real template variable and there is nothing to trim.
+  const priced = Math.min(count, computeLine.quantity);
+  if (priced < 2) return null;
+
+  const suggestedCount = Math.max(1, priced - 1);
+  const savings = round2(computeLine.unitMonthlyUsd * (priced - suggestedCount));
 
   return {
     id: `${deployment.deploymentId}:nonprod-redundancy`,
@@ -118,7 +128,7 @@ function instanceCountRule(deployment: OptimizableDeployment): CostRecommendatio
     environmentName: deployment.environmentName,
     rule: 'nonprod-redundancy',
     severity: 'opportunity',
-    title: `Run ${suggestedCount} instead of ${count} instance(s) in "${deployment.environmentName}"`,
+    title: `Run ${suggestedCount} instead of ${priced} instance(s) in "${deployment.environmentName}"`,
     detail: `Non-production environments rarely need multi-instance redundancy. Dropping to ${suggestedCount} keeps the environment usable for development while removing idle duplicate spend.`,
     steps: [
       `Set instance_count to ${suggestedCount} in the deployment configuration.`,
