@@ -83,29 +83,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const quickLogin = async (role: 'DEVELOPER' | 'VIEWER') => {
     setIsLoading(true);
-    const roleLower = role.toLowerCase();
-    const email = `${roleLower}@multicloud.local`;
+    // Map to the seeded demo personas first — quick-login must never create a
+    // shadow account the site owner cannot see designs/projects for.
+    const seededPersona =
+      role === 'DEVELOPER'
+        ? { email: 'dev@multicloud.local', password: 'DevPassword123!' }
+        : { email: 'viewer@multicloud.local', password: 'ViewerPassword123!' };
     const capitalized = `${role.charAt(0).toUpperCase()}${role.slice(1).toLowerCase()}`;
     const name = `${capitalized} Operator`;
-    // Deterministic demo credentials: the quick-login convention first, then
-    // the seed-script convention (e.g. "AdminPassword123!"), so persona
-    // switching works whether or not the database was seeded.
-    const candidatePasswords = [`${capitalized}Pass123!`, `${capitalized}Password123!`];
+    // Generic persona convention as fallback (e.g. seeded via another script).
+    const fallbackEmail = `${role.toLowerCase()}@multicloud.local`;
+    const fallbackPassword = `${capitalized}Password123!`;
     const isBadCredentialError = (err: any) =>
       err?.status === 401 || err?.message?.includes('Invalid email or password');
 
     try {
-      for (const password of candidatePasswords) {
+      for (const candidate of [seededPersona, { email: fallbackEmail, password: fallbackPassword }]) {
         try {
-          await login(email, password);
+          await login(candidate.email, candidate.password);
           return;
         } catch (loginErr: any) {
           if (!isBadCredentialError(loginErr)) throw loginErr;
-          // try next candidate password
+          // try next candidate
         }
       }
-      // User does not exist yet — register with deterministic demo credentials
-      await register(name, email, candidatePasswords[0], role);
+      // No persona exists yet — register it with deterministic demo credentials
+      await register(name, fallbackEmail, fallbackPassword, role);
     } finally {
       setIsLoading(false);
     }

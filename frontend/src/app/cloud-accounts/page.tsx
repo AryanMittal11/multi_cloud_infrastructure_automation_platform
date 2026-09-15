@@ -4,6 +4,15 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, CloudAccount } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
+import { PageHeader } from '../../components/cerebro/app-shell';
+import {
+  Panel,
+  EmptyState,
+  Skeleton,
+  Modal,
+  ConfirmDialog,
+  useToast,
+} from '../../components/cerebro/ui-kit';
 import {
   Cloud,
   Plus,
@@ -12,15 +21,20 @@ import {
   Calendar,
   AlertCircle,
   X,
-  Key,
+  Loader2,
   Trash2,
+  KeyRound,
 } from 'lucide-react';
 
+const CONFIRM_KEYWORD = 'CONFIRM_DELETE_ACCOUNT';
+
 export default function CloudAccountsPage() {
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
+  const { push } = useToast();
   const queryClient = useQueryClient();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CloudAccount | null>(null);
   const [provider, setProvider] = useState<'AWS' | 'AZURE' | 'GCP'>('AWS');
   const [name, setName] = useState('');
   const [accountReference, setAccountReference] = useState('');
@@ -28,12 +42,12 @@ export default function CloudAccountsPage() {
   const [awsAccessKey, setAwsAccessKey] = useState('');
   const [awsSecretKey, setAwsSecretKey] = useState('');
   const [awsRegion, setAwsRegion] = useState('us-east-1');
-  // Azure credential fields (Sub-Phase 2.1.1)
+  // Azure credential fields
   const [azureClientId, setAzureClientId] = useState('');
   const [azureClientSecret, setAzureClientSecret] = useState('');
   const [azureTenantId, setAzureTenantId] = useState('');
   const [azureSubscriptionId, setAzureSubscriptionId] = useState('');
-  // GCP credential fields (Sub-Phase 2.1.2)
+  // GCP credential fields
   const [gcpProjectId, setGcpProjectId] = useState('');
   const [gcpClientEmail, setGcpClientEmail] = useState('');
   const [gcpPrivateKey, setGcpPrivateKey] = useState('');
@@ -52,7 +66,7 @@ export default function CloudAccountsPage() {
       accountReference: string;
       credentials: Record<string, string>;
     }) => api.cloudAccounts.create(newAccount),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['cloud-accounts'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
       setIsModalOpen(false);
@@ -60,9 +74,35 @@ export default function CloudAccountsPage() {
       setAccountReference('');
       resetCredentialFields();
       setFormError(null);
+      push({ title: res.message || 'Cloud account onboarded', tone: 'success' });
     },
     onError: (err: any) => {
-      setFormError(err.message || 'Failed to onboard cloud account');
+      setFormError(
+        err?.status === 403
+          ? 'Onboarding cloud accounts requires the Site Owner (ADMIN)'
+          : err.message || 'Failed to onboard cloud account',
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.cloudAccounts.delete(id, CONFIRM_KEYWORD),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['cloud-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+      push({ title: res.message || 'Cloud account deleted', tone: 'success' });
+    },
+    onError: (err: any) => {
+      push({
+        title:
+          err?.status === 400
+            ? err.message
+            : err?.status === 403
+              ? 'Deleting cloud accounts requires the Site Owner (ADMIN)'
+              : err?.message || 'Failed to delete cloud account',
+        tone: 'fail',
+      });
     },
   });
 
@@ -138,367 +178,332 @@ export default function CloudAccountsPage() {
   const getProviderConfig = (p: string) => {
     switch (p) {
       case 'AWS':
-        return {
-          badge: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-          dot: 'bg-amber-400',
-          label: 'Amazon Web Services',
-        };
+        return { color: '#b45309', label: 'Amazon Web Services' };
       case 'AZURE':
-        return {
-          badge: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-          dot: 'bg-sky-400',
-          label: 'Microsoft Azure',
-        };
+        return { color: '#0369a1', label: 'Microsoft Azure' };
       case 'GCP':
-        return {
-          badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-          dot: 'bg-emerald-400',
-          label: 'Google Cloud Platform',
-        };
+        return { color: '#047857', label: 'Google Cloud Platform' };
       default:
-        return {
-          badge: 'bg-slate-800 text-slate-300 border-slate-700',
-          dot: 'bg-slate-400',
-          label: p,
-        };
+        return { color: 'var(--ink-muted)', label: p };
     }
   };
 
-  return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
-              <Cloud className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Cloud Accounts</h1>
-              <p className="text-xs text-slate-400">
-                Manage cloud provider credentials secured with AES-256-GCM encryption
-              </p>
-            </div>
-          </div>
-        </div>
+  const accounts: CloudAccount[] = data?.cloudAccounts ?? [];
+  const isAdmin = user?.role === 'ADMIN';
 
-        {user ? (
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Connect Account</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => quickLogin('DEVELOPER')}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
-          >
-            <Key className="w-4 h-4" />
-            <span>Connect to Manage Accounts</span>
-          </button>
-        )}
-      </div>
+  return (
+    <div>
+      <PageHeader
+        title="Cloud Accounts"
+        sub="Manage cloud provider credentials secured with AES-256-GCM encryption"
+        actions={
+          user && (
+            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+              <Plus size={14} /> Connect account
+            </button>
+          )
+        }
+      />
 
       {/* Invariant Alert */}
-      <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex items-start space-x-3 text-xs">
-        <Lock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <span className="font-semibold text-slate-200">Zero Secret Leakage Invariant:</span>
-          <p className="text-slate-400 text-[11px]">
-            Cloud credentials are validated upon onboarding, encrypted using AES-256-GCM before database insertion, and sanitized from all logs and client payloads.
-          </p>
+      <Panel className="mb-5">
+        <div className="flex items-start gap-3">
+          <Lock size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--warn)' }} />
+          <div>
+            <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              Zero secret leakage invariant
+            </span>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted)' }}>
+              Cloud credentials are validated upon onboarding, encrypted using AES-256-GCM before database
+              insertion, and sanitized from all logs and client payloads. Deletion is guarded by an explicit
+              typed confirmation and blocked while any environment is still bound.
+            </p>
+          </div>
         </div>
-      </div>
+      </Panel>
 
-      {/* Cloud Accounts List */}
       {user && (
         <>
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {[1, 2, 3].map((n) => (
-                <div
-                  key={n}
-                  className="h-44 rounded-2xl border border-slate-800 bg-slate-900/40 animate-pulse"
-                />
+                <Skeleton key={n} className="h-48" />
               ))}
             </div>
           ) : error ? (
-            <div className="p-6 rounded-2xl border border-rose-500/30 bg-rose-950/20 text-rose-300 text-xs flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span>Failed to fetch cloud accounts: {(error as Error).message}</span>
-            </div>
-          ) : data?.cloudAccounts && data.cloudAccounts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {data.cloudAccounts.map((account: CloudAccount) => {
+            <Panel>
+              <div className="flex items-center gap-2.5 text-sm" style={{ color: 'var(--fail)' }}>
+                <AlertCircle size={16} className="shrink-0" />
+                <span>Failed to fetch cloud accounts: {(error as Error).message}</span>
+              </div>
+            </Panel>
+          ) : accounts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {accounts.map((account) => {
                 const cfg = getProviderConfig(account.provider);
                 return (
-                  <div
-                    key={account.id}
-                    className="p-5 rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-slate-700 transition-all flex flex-col justify-between space-y-4"
-                  >
+                  <div key={account.id} className="panel p-5 flex flex-col justify-between gap-4">
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h2 className="text-base font-bold text-white tracking-tight">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>
                             {account.name}
                           </h2>
-                          <span className="text-[11px] text-slate-400">{cfg.label}</span>
+                          <span className="text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                            {cfg.label}
+                          </span>
                         </div>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider flex items-center space-x-1.5 ${cfg.badge}`}
+                          className="chip flex-none flex items-center gap-1.5 uppercase"
+                          style={{ color: cfg.color, borderColor: cfg.color }}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          <span>{account.provider}</span>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
+                          {account.provider}
                         </span>
                       </div>
 
-                      <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 font-mono text-xs flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Account Ref:</span>
-                        <span className="text-slate-200">{account.accountReference}</span>
+                      <div
+                        className="px-2.5 py-2 rounded-[10px] mono text-xs flex items-center justify-between"
+                        style={{ background: 'var(--surface-2)', border: '1px solid var(--border-faint)' }}
+                      >
+                        <span style={{ color: 'var(--ink-faint)' }}>Account Ref:</span>
+                        <span style={{ color: 'var(--ink)' }}>{account.accountReference}</span>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="w-3.5 h-3.5" />
+                    <div
+                      className="pt-3 flex items-center justify-between text-[11px]"
+                      style={{ borderTop: '1px solid var(--border-faint)' }}
+                    >
+                      <span className="flex items-center gap-1" style={{ color: 'var(--ink-faint)' }}>
+                        <Calendar size={12} />
                         <span>{new Date(account.createdAt).toLocaleDateString()}</span>
                       </span>
-                      <span className="flex items-center space-x-1 text-emerald-400">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>AES-256 Encrypted</span>
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="flex items-center gap-1"
+                          style={{ color: 'var(--ok)' }}
+                          title="Credentials encrypted at rest with AES-256-GCM"
+                        >
+                          <ShieldCheck size={12} />
+                          <span>Encrypted</span>
+                        </span>
+                        {isAdmin && (
+                          <button
+                            className="icon-btn"
+                            style={{ color: 'var(--ink-faint)' }}
+                            onClick={() => setDeleteTarget(account)}
+                            title="Delete cloud account (Site Owner only)"
+                            aria-label={`Delete cloud account ${account.name}`}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="p-12 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 space-y-3">
-              <Cloud className="w-10 h-10 text-slate-600 mx-auto" />
-              <h2 className="text-sm font-semibold text-slate-300">No cloud accounts connected</h2>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Connect your AWS account credentials to enable automated infrastructure deployments.
-              </p>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-md shadow-indigo-600/30"
-              >
-                Connect Account
-              </button>
-            </div>
+            <Panel>
+              <EmptyState
+                icon={<Cloud size={28} />}
+                title="No cloud accounts connected"
+                body="Connect your AWS, Azure, or GCP credentials to enable automated infrastructure deployments."
+                action={
+                  <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+                    <Plus size={14} /> Connect account
+                  </button>
+                }
+              />
+            </Panel>
           )}
         </>
       )}
 
+      {/* Secure delete confirmation */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+        }}
+        title={`Delete “${deleteTarget?.name ?? ''}”?`}
+        body={`This permanently removes the stored credential reference for this ${deleteTarget?.provider ?? ''} account. The action is audited and cannot be undone. Environments still bound to this account will block deletion.`}
+        confirmLabel="Delete account"
+        danger
+        requireText={CONFIRM_KEYWORD}
+      />
+
       {/* Onboard Cloud Account Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center space-x-2.5">
-                <Cloud className="w-5 h-5 text-amber-400" />
-                <h3 className="text-sm font-bold text-white">Connect Cloud Provider</h3>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {formError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreate} className="space-y-4">
-              {/* Provider selector */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Target Provider</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['AWS', 'AZURE', 'GCP'] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setProvider(p)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                        provider === p
-                          ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-sm'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Account Friendly Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Production AWS Account"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">
-                  Account Reference / ID *
-                </label>
-                <input
-                  type="text"
-                  placeholder={provider === 'AWS' ? '12-digit AWS Account ID' : 'Subscription / Project ID'}
-                  value={accountReference}
-                  onChange={(e) => setAccountReference(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                  required
-                />
-              </div>
-
-              {provider === 'AWS' && (
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                  <div className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
-                    AWS IAM Credentials
-                  </div>
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      placeholder="AWS Access Key ID (AKIA...)"
-                      value={awsAccessKey}
-                      onChange={(e) => setAwsAccessKey(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <input
-                      type="password"
-                      placeholder="AWS Secret Access Key"
-                      value={awsSecretKey}
-                      onChange={(e) => setAwsSecretKey(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <select
-                      value={awsRegion}
-                      onChange={(e) => setAwsRegion(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
-                    >
-                      <option value="us-east-1">us-east-1 (N. Virginia)</option>
-                      <option value="us-west-2">us-west-2 (Oregon)</option>
-                      <option value="eu-west-1">eu-west-1 (Ireland)</option>
-                      <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {provider === 'AZURE' && (
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                  <div className="text-[11px] font-semibold text-sky-400 uppercase tracking-wider">
-                    Azure Service Principal
-                  </div>
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      placeholder="Application (Client) ID — UUID"
-                      value={azureClientId}
-                      onChange={(e) => setAzureClientId(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <input
-                      type="password"
-                      placeholder="Client Secret"
-                      value={azureClientSecret}
-                      onChange={(e) => setAzureClientSecret(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Directory (Tenant) ID — UUID"
-                      value={azureTenantId}
-                      onChange={(e) => setAzureTenantId(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Subscription ID — UUID"
-                      value={azureSubscriptionId}
-                      onChange={(e) => setAzureSubscriptionId(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    Verified against Azure Resource Manager (Subscriptions — Get) before storage.
-                  </p>
-                </div>
-              )}
-
-              {provider === 'GCP' && (
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                  <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">
-                    GCP Service Account
-                  </div>
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      placeholder="Project ID (e.g. infra-platform-prod)"
-                      value={gcpProjectId}
-                      onChange={(e) => setGcpProjectId(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Service Account Email (name@project.iam.gserviceaccount.com)"
-                      value={gcpClientEmail}
-                      onChange={(e) => setGcpClientEmail(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <textarea
-                      placeholder="Private Key (PEM format: -----BEGIN PRIVATE KEY-----)"
-                      value={gcpPrivateKey}
-                      onChange={(e) => setGcpPrivateKey(e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                      required
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    Verified against Google Cloud Resource Manager (projects.get) before storage.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50"
-                >
-                  {createMutation.isPending ? 'Validating & Storing...' : 'Onboard Account'}
-                </button>
-              </div>
-            </form>
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Connect cloud provider" large>
+        {formError && (
+          <div
+            className="p-3 mb-4 rounded-[10px] flex items-start gap-2 text-xs"
+            style={{ background: 'var(--fail-soft)', border: '1px solid var(--fail)', color: 'var(--fail)' }}
+          >
+            <AlertCircle size={14} className="flex-none mt-0.5" />
+            <span>{formError}</span>
           </div>
-        </div>
-      )}
+        )}
+
+        <form onSubmit={handleCreate} className="space-y-4">
+          {/* Provider selector */}
+          <div>
+            <label className="eyebrow block mb-1.5">Target provider</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['AWS', 'AZURE', 'GCP'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setProvider(p)}
+                  className={provider === p ? 'btn-primary' : 'btn-ghost'}
+                  style={{ justifyContent: 'center' }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="eyebrow block mb-1.5">Account friendly name *</label>
+            <input
+              type="text"
+              placeholder="e.g. Production AWS Account"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input w-full"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="eyebrow block mb-1.5">Account reference / ID *</label>
+            <input
+              type="text"
+              placeholder={provider === 'AWS' ? '12-digit AWS Account ID' : 'Subscription / Project ID'}
+              value={accountReference}
+              onChange={(e) => setAccountReference(e.target.value)}
+              className="input mono w-full"
+              required
+            />
+          </div>
+
+          {provider === 'AWS' && (
+            <div className="p-3.5 rounded-[12px] space-y-2.5" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-faint)' }}>
+              <div className="eyebrow flex items-center gap-1.5" style={{ color: 'var(--warn)' }}>
+                <KeyRound size={12} /> AWS IAM credentials
+              </div>
+              <input
+                type="text"
+                placeholder="AWS Access Key ID (AKIA...)"
+                value={awsAccessKey}
+                onChange={(e) => setAwsAccessKey(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <input
+                type="password"
+                placeholder="AWS Secret Access Key"
+                value={awsSecretKey}
+                onChange={(e) => setAwsSecretKey(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <select value={awsRegion} onChange={(e) => setAwsRegion(e.target.value)} className="input w-full">
+                <option value="us-east-1">us-east-1 (N. Virginia)</option>
+                <option value="us-west-2">us-west-2 (Oregon)</option>
+                <option value="eu-west-1">eu-west-1 (Ireland)</option>
+                <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+              </select>
+            </div>
+          )}
+
+          {provider === 'AZURE' && (
+            <div className="p-3.5 rounded-[12px] space-y-2.5" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-faint)' }}>
+              <div className="eyebrow flex items-center gap-1.5" style={{ color: '#0369a1' }}>
+                <KeyRound size={12} /> Azure service principal
+              </div>
+              <input
+                type="text"
+                placeholder="Application (Client) ID — UUID"
+                value={azureClientId}
+                onChange={(e) => setAzureClientId(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <input
+                type="password"
+                placeholder="Client Secret"
+                value={azureClientSecret}
+                onChange={(e) => setAzureClientSecret(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Directory (Tenant) ID — UUID"
+                value={azureTenantId}
+                onChange={(e) => setAzureTenantId(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Subscription ID — UUID"
+                value={azureSubscriptionId}
+                onChange={(e) => setAzureSubscriptionId(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+            </div>
+          )}
+
+          {provider === 'GCP' && (
+            <div className="p-3.5 rounded-[12px] space-y-2.5" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-faint)' }}>
+              <div className="eyebrow flex items-center gap-1.5" style={{ color: '#047857' }}>
+                <KeyRound size={12} /> GCP service account
+              </div>
+              <input
+                type="text"
+                placeholder="Project ID (e.g. infra-platform-prod)"
+                value={gcpProjectId}
+                onChange={(e) => setGcpProjectId(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Service Account Email (name@project.iam.gserviceaccount.com)"
+                value={gcpClientEmail}
+                onChange={(e) => setGcpClientEmail(e.target.value)}
+                className="input mono w-full"
+                required
+              />
+              <textarea
+                placeholder="Private Key (PEM format: -----BEGIN PRIVATE KEY-----)"
+                value={gcpPrivateKey}
+                onChange={(e) => setGcpPrivateKey(e.target.value)}
+                rows={4}
+                className="input mono w-full"
+                required
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" className="btn-ghost" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={createMutation.isPending}>
+              {createMutation.isPending && <Loader2 size={14} className="animate-spin" />}
+              {createMutation.isPending ? 'Validating & storing…' : 'Onboard account'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

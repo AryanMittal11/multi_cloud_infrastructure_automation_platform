@@ -111,6 +111,32 @@ describe('ProjectService', () => {
       });
     });
 
+    it('unbinds the cloud account when cloudAccountId is null', async () => {
+      (prisma.environment.findUnique as jest.Mock).mockResolvedValue({
+        id: 'env-dev',
+        name: 'development',
+        cloudAccountId: 'acc-aws',
+      });
+      (prisma.environment.update as jest.Mock).mockResolvedValue({
+        id: 'env-dev',
+        name: 'development',
+        projectId: 'proj-1',
+        cloudAccountId: null,
+        cloudAccount: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await projectService.bindCloudAccountToEnvironment('env-dev', null);
+
+      expect(res.cloudAccountId).toBeNull();
+      expect(prisma.environment.update).toHaveBeenCalledWith({
+        where: { id: 'env-dev' },
+        data: { cloudAccountId: null },
+        include: { cloudAccount: true },
+      });
+    });
+
     it('should reject environment creation if name is duplicated within project', async () => {
       (prisma.project.findUnique as jest.Mock).mockResolvedValue({ id: 'proj-1' });
       (prisma.environment.findUnique as jest.Mock).mockResolvedValue({
@@ -132,7 +158,7 @@ describe('ProjectService', () => {
         deployments: [{ id: 'dep-1', status: 'RUNNING' }],
       });
 
-      await expect(projectService.deleteProject('proj-active', 'usr-admin')).rejects.toThrow(
+      await expect(projectService.deleteProject('proj-active', 'usr-admin', require('@prisma/client').Role.ADMIN)).rejects.toThrow(
         'active running deployment(s)',
       );
       expect(prisma.project.delete).not.toHaveBeenCalled();

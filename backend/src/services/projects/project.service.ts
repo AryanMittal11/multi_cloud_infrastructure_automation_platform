@@ -52,11 +52,16 @@ export class ProjectService {
   }
 
   /**
-   * Lists all projects with their environments and associated cloud accounts.
+   * Lists projects. The site owner (ADMIN) sees ALL projects; every other
+   * user sees only the projects they created — new users start with an
+   * isolated workspace instead of inheriting someone else's inventory.
    */
-  async listProjects(): Promise<ProjectResponse[]> {
+  async listProjects(userId: string, role: Role): Promise<ProjectResponse[]> {
+    const where = role === Role.ADMIN ? {} : { ownerId: userId };
     const projects = await prisma.project.findMany({
+      where,
       include: {
+        owner: { select: { id: true, name: true, email: true } },
         environments: {
           include: {
             cloudAccount: true,
@@ -229,11 +234,11 @@ export class ProjectService {
   }
 
   /**
-   * Binds an approved cloud account to a specific environment.
+   * Binds (or unbinds, when cloudAccountId is null) a cloud account on an environment.
    */
   async bindCloudAccountToEnvironment(
     environmentId: string,
-    cloudAccountId: string,
+    cloudAccountId: string | null,
   ): Promise<EnvironmentResponse> {
     const environment = await prisma.environment.findUnique({ where: { id: environmentId } });
     if (!environment) {
@@ -242,11 +247,13 @@ export class ProjectService {
       throw error;
     }
 
-    const cloudAccount = await prisma.cloudAccount.findUnique({ where: { id: cloudAccountId } });
-    if (!cloudAccount) {
-      const error: any = new Error('Cloud account not found');
-      error.statusCode = 404;
-      throw error;
+    if (cloudAccountId !== null) {
+      const cloudAccount = await prisma.cloudAccount.findUnique({ where: { id: cloudAccountId } });
+      if (!cloudAccount) {
+        const error: any = new Error('Cloud account not found');
+        error.statusCode = 404;
+        throw error;
+      }
     }
 
     const updated = await prisma.environment.update({
@@ -267,6 +274,7 @@ export class ProjectService {
       name: project.name,
       description: project.description,
       ownerId: project.ownerId,
+      owner: project.owner ?? null,
       environments: (project.environments || []).map((e: any) => this.formatEnvironment(e)),
       cloudAccounts: (project.cloudAccounts || []).map((ca: any) => ({
         id: ca.id,

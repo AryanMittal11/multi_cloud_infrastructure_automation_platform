@@ -259,10 +259,13 @@ export const api = {
         body: JSON.stringify(data),
       }),
     bindCloudAccount: (projectId: string, environmentId: string, cloudAccountId: string | null) =>
-      request<{ environment: Environment }>(`/projects/${projectId}/environments/${environmentId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ cloudAccountId }),
-      }),
+      request<{ message: string; environment: Environment }>(
+        `/projects/${projectId}/environments/${environmentId}/account`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ cloudAccountId }),
+        },
+      ),
   },
 
   cloudAccounts: {
@@ -275,13 +278,14 @@ export const api = {
       credentials: Record<string, string>;
       projectId?: string;
     }) =>
-      request<{ cloudAccount: CloudAccount }>('/cloud-accounts', {
+      request<{ message: string; cloudAccount: CloudAccount }>('/cloud-accounts', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    delete: (id: string) =>
+    delete: (id: string, confirmation: string) =>
       request<{ message: string }>(`/cloud-accounts/${id}`, {
         method: 'DELETE',
+        body: JSON.stringify({ confirmation }),
       }),
   },
 

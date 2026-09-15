@@ -34,6 +34,7 @@ export interface ProjectResponse {
   name: string;
   description: string | null;
   ownerId: string;
+  owner?: { id: string; name: string; email: string } | null;
   environments: EnvironmentResponse[];
   cloudAccounts: Array<{
     id: string;

@@ -43,6 +43,7 @@ import { InfraNode, InfraNodeData } from '../../components/designer/infra-node';
 import { NodeInspector } from '../../components/designer/node-inspector';
 import { TfCodePanel } from '../../components/designer/tf-code-panel';
 import { DeployDialog } from '../../components/designer/deploy-dialog';
+import { useToast } from '../../components/cerebro/ui-kit';
 
 const nodeTypes = { infra: InfraNode };
 
@@ -253,15 +254,21 @@ function DesignerInner() {
 
   const selectedTemplateSchema = (templateData as any)?.inputSchema || null;
 
+  const { push } = useToast();
+
   const handleSave = async () => {
     if (!user) {
-      quickLogin('DEVELOPER');
+      router.push('/login');
+      return;
+    }
+    if (!designName.trim()) {
+      push({ title: 'Name your design before saving', tone: 'warn' });
       return;
     }
     setSaving(true);
     try {
       const payload = {
-        name: designName,
+        name: designName.trim(),
         description: `Visual architecture with ${nodes.length} resources across ${cloudProvider}`,
         cloudProvider,
         nodes: designPayload.nodes,
@@ -273,8 +280,17 @@ function DesignerInner() {
       setDesignId(res.design.id);
       saveActiveDesignId(res.design.id);
       setSavedAt(new Date().toLocaleTimeString());
-    } catch (err) {
-      console.error('Save failed', err);
+      push({ title: 'Design saved', sub: res.design.name, tone: 'success' });
+    } catch (err: any) {
+      push({
+        title:
+          err?.status === 403
+            ? 'Saving designs requires the Developer role or above'
+            : err?.status === 404
+              ? 'This design was deleted or is not yours to edit'
+              : err?.message || 'Failed to save design',
+        tone: 'fail',
+      });
     } finally {
       setSaving(false);
     }

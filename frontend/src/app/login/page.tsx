@@ -39,7 +39,17 @@ export default function LoginPage() {
       await login(useEmail.trim(), usePassword);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err?.message?.includes('Invalid') ? 'Invalid email or password' : err?.message || 'Sign-in failed');
+      // 401 is genuinely bad credentials; anything else (backend down,
+      // network error, DB failure) must not be reported as a wrong password.
+      if (err?.status === 401) {
+        setError('Invalid email or password');
+      } else {
+        setError(
+          err?.message?.includes('fetch') || err?.message?.includes('Network')
+            ? 'Cannot reach the platform API — is the backend running?'
+            : err?.message || 'Sign-in failed',
+        );
+      }
     } finally {
       setPending(false);
     }

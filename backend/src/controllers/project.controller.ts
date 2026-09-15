@@ -21,9 +21,9 @@ export const projectController = {
   /**
    * GET /api/projects
    */
-  list: async (_req: Request, res: Response, next: NextFunction) => {
+  list: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const projects = await projectService.listProjects();
+      const projects = await projectService.listProjects(req.user!.userId, req.user!.role);
       res.status(200).json({ projects });
     } catch (err) {
       next(err);
@@ -97,17 +97,21 @@ export const projectController = {
   bindCloudAccount: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { cloudAccountId } = req.body;
-      if (!cloudAccountId) {
-        return res.status(400).json({ error: 'cloudAccountId is required in body' });
+      // cloudAccountId: null (or absent) unbinds; a non-null id is required otherwise.
+      if (cloudAccountId !== null && cloudAccountId !== undefined && typeof cloudAccountId !== 'string') {
+        return res.status(400).json({ error: 'cloudAccountId must be a string or null' });
       }
 
       const environment = await projectService.bindCloudAccountToEnvironment(
         req.params.envId,
-        cloudAccountId,
+        cloudAccountId ?? null,
       );
 
       res.status(200).json({
-        message: `Cloud account bound to environment "${environment.name}"`,
+        message:
+          cloudAccountId == null
+            ? `Cloud account unbound from environment "${environment.name}"`
+            : `Cloud account bound to environment "${environment.name}"`,
         environment,
       });
     } catch (err) {
