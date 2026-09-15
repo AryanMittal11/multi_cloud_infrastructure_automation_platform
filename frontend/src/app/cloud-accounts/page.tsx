@@ -288,7 +288,7 @@ export default function CloudAccountsPage() {
                           <ShieldCheck size={12} />
                           <span>Encrypted</span>
                         </span>
-                        {isAdmin && (
+                        {(
                           <button
                             className="icon-btn"
                             style={{ color: 'var(--ink-faint)' }}
