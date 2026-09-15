@@ -35,7 +35,7 @@ export const projectController = {
    */
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const project = await projectService.getProjectById(req.params.id);
+      const project = await projectService.getProjectById(req.params.id, req.user!.userId, req.user!.role);
       if (!project) {
         return res.status(404).json({ error: 'Project not found' });
       }
@@ -81,7 +81,12 @@ export const projectController = {
    */
   createEnvironment: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const environment = await projectService.createEnvironment(req.params.id, req.body);
+      const environment = await projectService.createEnvironment(
+        req.params.id,
+        req.body,
+        req.user!.userId,
+        req.user!.role,
+      );
       res.status(201).json({
         message: `Environment "${environment.name}" successfully created`,
         environment,
@@ -105,6 +110,8 @@ export const projectController = {
       const environment = await projectService.bindCloudAccountToEnvironment(
         req.params.envId,
         cloudAccountId ?? null,
+        req.user!.userId,
+        req.user!.role,
       );
 
       res.status(200).json({

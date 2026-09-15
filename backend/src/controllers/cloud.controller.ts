@@ -27,7 +27,7 @@ export const cloudController = {
       const provider = req.query.provider as Provider | undefined;
       const projectId = req.query.projectId as string | undefined;
 
-      const accounts = await cloudService.listCloudAccounts({ provider, projectId });
+      const accounts = await cloudService.listCloudAccounts(req.user!.userId, req.user!.role, { provider, projectId });
       res.status(200).json({ cloudAccounts: accounts });
     } catch (err) {
       next(err);
@@ -39,7 +39,7 @@ export const cloudController = {
    */
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const account = await cloudService.getCloudAccountById(req.params.id);
+      const account = await cloudService.getCloudAccountById(req.params.id, req.user!.userId, req.user!.role);
       if (!account) {
         return res.status(404).json({ error: 'Cloud account not found' });
       }
@@ -55,7 +55,8 @@ export const cloudController = {
   delete: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.userId;
-      const result = await cloudService.deleteCloudAccount(req.params.id, userId);
+      const role = req.user!.role;
+      const result = await cloudService.deleteCloudAccount(req.params.id, userId, role);
       res.status(200).json(result);
     } catch (err) {
       next(err);

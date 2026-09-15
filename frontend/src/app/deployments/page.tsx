@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function DeploymentsPage() {
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
@@ -108,13 +108,13 @@ export default function DeploymentsPage() {
               <span>Launch Wizard</span>
             </Link>
           ) : (
-            <button
-              onClick={() => quickLogin('DEVELOPER')}
+            <Link
+              href="/login"
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
             >
               <Key className="w-4 h-4" />
-              <span>Connect to Track Runs</span>
-            </button>
+              <span>Sign in to Track Runs</span>
+            </Link>
           )}
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { resourceController } from '../controllers/resource.controller';
-import { authenticateToken, requireViewer } from '../middleware';
+import { authenticateToken, requireDeveloper } from '../middleware';
 
 export const resourceRouter = Router();
 
@@ -8,7 +8,7 @@ export const resourceRouter = Router();
 resourceRouter.use(authenticateToken);
 
 // List resources matching filters
-resourceRouter.get('/', requireViewer, resourceController.list);
+resourceRouter.get('/', requireDeveloper, resourceController.list);
 
 // Get specific resource by ID
-resourceRouter.get('/:id', requireViewer, resourceController.getById);
+resourceRouter.get('/:id', requireDeveloper, resourceController.getById);

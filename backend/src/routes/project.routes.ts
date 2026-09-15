@@ -32,13 +32,13 @@ const createEnvironmentSchema = z.object({
 projectRouter.use(authenticateToken);
 
 projectRouter.post('/', requireDeveloper, validateBody(createProjectSchema), projectController.create);
-projectRouter.get('/', requireViewer, projectController.list);
-projectRouter.get('/:id', requireViewer, projectController.getById);
+projectRouter.get('/', requireDeveloper, projectController.list);
+projectRouter.get('/:id', requireDeveloper, projectController.getById);
 projectRouter.put('/:id', requireDeveloper, validateBody(updateProjectSchema), projectController.update);
 
 projectRouter.delete(
   '/:id',
-  requireAdmin,
+  requireDeveloper,
   requireDestructivePermission({ expectedKeyword: 'CONFIRM_DELETE_PROJECT' }),
   projectController.delete,
 );

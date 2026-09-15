@@ -1,4 +1,4 @@
-import { Provider, ResourceStatus } from '@prisma/client';
+import { Provider, ResourceStatus, Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { ParsedResourceItem } from '../terraform/terraform.types';
 import { logger } from '../../utils/logger';
@@ -74,8 +74,8 @@ export class ResourceService {
   /**
    * Retrieves a single resource by its unique identifier.
    */
-  async getResourceById(id: string) {
-    return prisma.resource.findUnique({
+  async getResourceById(id: string, userId?: string, role?: Role) {
+    const resource = await prisma.resource.findUnique({
       where: { id },
       include: {
         deployment: {
@@ -86,16 +86,26 @@ export class ResourceService {
             templateId: true,
             status: true,
             operationType: true,
+            project: {
+              select: { ownerId: true },
+            },
           },
         },
       },
     });
+
+    if (!resource) return null;
+    if (role && role !== Role.ADMIN && resource.deployment.project.ownerId !== userId) {
+      return null;
+    }
+    return resource;
   }
 
   /**
    * Lists resources matching flexible filtering criteria (project, environment, provider, status).
+   * ADMIN sees all; DEVELOPER sees only resources from their own projects.
    */
-  async listResources(filter?: ResourceFilter) {
+  async listResources(userId: string, role: Role, filter?: ResourceFilter) {
     const where: any = {};
 
     if (filter?.status) where.status = filter.status;
@@ -103,10 +113,11 @@ export class ResourceService {
     if (filter?.resourceType) where.resourceType = filter.resourceType;
     if (filter?.deploymentId) where.deploymentId = filter.deploymentId;
 
-    if (filter?.environmentId || filter?.projectId) {
-      where.deployment = {};
-      if (filter.environmentId) where.deployment.environmentId = filter.environmentId;
-      if (filter.projectId) where.deployment.projectId = filter.projectId;
+    where.deployment = where.deployment || {};
+    if (filter?.environmentId) where.deployment.environmentId = filter.environmentId;
+    if (filter?.projectId) where.deployment.projectId = filter.projectId;
+    if (role !== Role.ADMIN) {
+      where.deployment.project = { ownerId: userId };
     }
 
     return prisma.resource.findMany({

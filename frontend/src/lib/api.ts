@@ -4,7 +4,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'DEVELOPER' | 'VIEWER';
+  role: 'ADMIN' | 'DEVELOPER';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -38,6 +38,9 @@ export interface Project {
   environments: Environment[];
   cloudAccounts?: CloudAccount[];
   owner?: User;
+  _count?: {
+    deployments?: number;
+  };
 }
 
 export interface CloudAccount {
@@ -227,10 +230,10 @@ export const api = {
       return res;
     },
 
-    register: async (name: string, email: string, password: string, role: string = 'DEVELOPER') => {
+    register: async (name: string, email: string, password: string) => {
       const res = await request<{ user: User; accessToken: string }>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password }),
       });
       setStoredToken(res.accessToken);
       setStoredUser(res.user);
@@ -411,7 +414,18 @@ export const api = {
   users: {
     list: () => request<{ users: UserWithCounts[] }>('/users'),
     get: (id: string) => request<{ user: UserWithCounts }>(`/users/${id}`),
-    updateRole: (id: string, role: 'DEVELOPER' | 'VIEWER') =>
+    getActivity: (id: string) =>
+      request<{
+        user: User;
+        activity: {
+          projects: Project[];
+          deployments: Deployment[];
+          designs: ArchitectureDesign[];
+          cloudAccounts: CloudAccount[];
+          auditLogs: AuditLog[];
+        };
+      }>(`/users/${id}/activity`),
+    updateRole: (id: string, role: 'DEVELOPER') =>
       request<{ user: User; message: string }>(`/users/${id}/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role }),

@@ -1,4 +1,4 @@
-import { Provider } from '@prisma/client';
+import { Provider, Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { encryptCredential, decryptCredential, maskSecret } from '../../utils/crypto';
 import {
@@ -89,19 +89,27 @@ export class CloudService {
   }
 
   /**
-   * Lists all onboarded cloud accounts with masked credentials.
+   * Lists onboarded cloud accounts with masked credentials.
+   * ADMIN sees all; DEVELOPER sees only their own accounts.
    */
-  async listCloudAccounts(filter?: {
-    provider?: Provider;
-    projectId?: string;
-  }): Promise<CloudAccountResponse[]> {
+  async listCloudAccounts(
+    userId: string,
+    role: Role,
+    filter?: {
+      provider?: Provider;
+      projectId?: string;
+    },
+  ): Promise<CloudAccountResponse[]> {
     const where: any = {};
+    if (role !== Role.ADMIN) {
+      where.ownerId = userId;
+    }
     if (filter?.provider) where.provider = filter.provider;
     if (filter?.projectId) where.projectId = filter.projectId;
 
     const accounts = await prisma.cloudAccount.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },
     });
 
     return accounts.map((acc) => this.formatAccountResponse(acc));
@@ -110,12 +118,15 @@ export class CloudService {
   /**
    * Retrieves a single cloud account by ID.
    */
-  async getCloudAccountById(id: string): Promise<CloudAccountResponse | null> {
+  async getCloudAccountById(id: string, userId?: string, role?: Role): Promise<CloudAccountResponse | null> {
     const account = await prisma.cloudAccount.findUnique({
       where: { id },
     });
 
     if (!account) return null;
+    if (role && role !== Role.ADMIN && account.ownerId !== userId) {
+      return null;
+    }
     return this.formatAccountResponse(account);
   }
 
@@ -140,7 +151,7 @@ export class CloudService {
   /**
    * Safely deletes an onboarded cloud account if not bound to active environments.
    */
-  async deleteCloudAccount(id: string, userId: string): Promise<{ success: boolean; message: string }> {
+  async deleteCloudAccount(id: string, userId: string, role: Role): Promise<{ success: boolean; message: string }> {
     const account = await prisma.cloudAccount.findUnique({
       where: { id },
       include: {
@@ -151,6 +162,12 @@ export class CloudService {
     if (!account) {
       const error: any = new Error('Cloud account not found');
       error.statusCode = 404;
+      throw error;
+    }
+
+    if (role !== Role.ADMIN && account.ownerId !== userId) {
+      const error: any = new Error('Forbidden: You can only delete your own cloud account');
+      error.statusCode = 403;
       throw error;
     }
 

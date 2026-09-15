@@ -11,8 +11,6 @@ const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  // Only DEVELOPER and VIEWER can self-register; ADMIN is the site owner (created via seed).
-  role: z.enum(['DEVELOPER', 'VIEWER']).optional(),
 });
 
 const loginSchema = z.object({

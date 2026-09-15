@@ -36,4 +36,5 @@ export function requireRole(allowedRoles: Role[]) {
  */
 export const requireAdmin = requireRole([Role.ADMIN]);
 export const requireDeveloper = requireRole([Role.ADMIN, Role.DEVELOPER]);
-export const requireViewer = requireRole([Role.ADMIN, Role.DEVELOPER, Role.VIEWER]);
+export const requireViewer = requireDeveloper; // Deprecated alias, identical to requireDeveloper
+

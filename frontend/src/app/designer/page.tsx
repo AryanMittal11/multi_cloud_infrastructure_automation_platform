@@ -58,7 +58,7 @@ interface CanvasNodeData extends InfraNodeData {}
 function DesignerInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNodeData>([]);

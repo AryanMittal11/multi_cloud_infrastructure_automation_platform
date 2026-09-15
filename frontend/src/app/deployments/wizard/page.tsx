@@ -29,7 +29,7 @@ function DeploymentWizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
 
   // Step state
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -206,12 +206,12 @@ function DeploymentWizardContent() {
           <p className="text-xs text-slate-300">
             Sign in with a Developer or Administrator persona to configure and approve infrastructure plans.
           </p>
-          <button
-            onClick={() => quickLogin('DEVELOPER')}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
+          <Link
+            href="/login"
+            className="inline-block px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
           >
-            Authenticate as Developer
-          </button>
+            Sign in to Continue
+          </Link>
         </div>
       )}
 

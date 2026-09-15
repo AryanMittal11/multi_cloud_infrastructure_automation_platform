@@ -7,6 +7,19 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   // ==========================================
+  // 0. Clean Existing Data
+  // ==========================================
+  console.log('🧹 Cleaning existing data...');
+  await prisma.auditLog.deleteMany({});
+  await prisma.resource.deleteMany({});
+  await prisma.deployment.deleteMany({});
+  await prisma.architectureDesign.deleteMany({});
+  await prisma.environment.deleteMany({});
+  await prisma.project.deleteMany({});
+  await prisma.cloudAccount.deleteMany({});
+  await prisma.user.deleteMany({});
+
+  // ==========================================
   // 1. Seed Admin (Site Owner)
   // The admin is the platform owner — there should only ever be ONE.
   // Credentials: admin@multicloud.local / AdminPassword123!
@@ -24,71 +37,10 @@ async function main() {
     },
   });
 
-  // ==========================================
-  // 2. Seed Demo Developer (team user)
-  // Credentials: dev@multicloud.local / DevPassword123!
-  // ==========================================
-  const devPasswordHash = await bcrypt.hash('DevPassword123!', 10);
-
-  const developer = await prisma.user.upsert({
-    where: { email: 'dev@multicloud.local' },
-    update: {},
-    create: {
-      name: 'DevOps Engineer',
-      email: 'dev@multicloud.local',
-      passwordHash: devPasswordHash,
-      role: Role.DEVELOPER,
-    },
-  });
-
   console.log(`✅ Seeded users:`);
   console.log(`   👑 Site Owner:  ${admin.email}  (ADMIN)   — password: AdminPassword123!`);
-  console.log(`   🔧 Developer:   ${developer.email}  (DEVELOPER) — password: DevPassword123!`);
 
-  // 2. Seed Default Project
-  const project = await prisma.project.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0000-000000000001',
-      name: 'Default Cloud Infrastructure',
-      description: 'Primary project for enterprise multi-cloud workloads and templates',
-      ownerId: admin.id,
-    },
-  });
-
-  // 3. Seed Environments
-  const envDev = await prisma.environment.upsert({
-    where: {
-      projectId_name: {
-        projectId: project.id,
-        name: 'development',
-      },
-    },
-    update: {},
-    create: {
-      name: 'development',
-      projectId: project.id,
-    },
-  });
-
-  const envProd = await prisma.environment.upsert({
-    where: {
-      projectId_name: {
-        projectId: project.id,
-        name: 'production',
-      },
-    },
-    update: {},
-    create: {
-      name: 'production',
-      projectId: project.id,
-    },
-  });
-
-  console.log(`✅ Seeded project "${project.name}" with environments [${envDev.name}, ${envProd.name}]`);
-
-  // 4. Seed Canonical Templates (AWS & Cross-Cloud)
+  // 2. Seed Canonical Templates (AWS, Azure, GCP & Cross-Cloud)
   const templates = [
     {
       id: '10000000-0000-0000-0000-000000000001',
@@ -203,9 +155,7 @@ async function main() {
         },
       },
     },
-    // ==========================================
-    // Phase 2: Azure Canonical Templates
-    // ==========================================
+    // Azure Templates
     {
       id: '20000000-0000-0000-0000-000000000001',
       name: 'Azure Modular VNet',
@@ -335,9 +285,7 @@ async function main() {
         },
       },
     },
-    // ==========================================
-    // Phase 2: GCP Canonical Templates
-    // ==========================================
+    // GCP Templates
     {
       id: '30000000-0000-0000-0000-000000000001',
       name: 'GCP Custom VPC Network',

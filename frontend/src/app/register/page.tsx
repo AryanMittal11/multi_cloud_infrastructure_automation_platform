@@ -40,7 +40,7 @@ export default function RegisterPage() {
     setError(null);
     setPending(true);
     try {
-      await register(name.trim(), email.trim(), password, role);
+      await register(name.trim(), email.trim(), password);
       router.push('/dashboard');
     } catch (err: any) {
       const msg = err?.message ?? 'Registration failed';
@@ -53,7 +53,7 @@ export default function RegisterPage() {
   const busy = pending || isLoading;
 
   return (
-    <AuthLayout title="Create your account" subtitle="Join the control plane in under a minute.">
+    <AuthLayout title="Create your account" subtitle="Join the control plane as a Developer in under a minute.">
       {error && (
         <div className="p-3 mb-4 rounded-[10px] flex items-start gap-2 text-xs" style={{ background: 'var(--fail-soft)', border: '1px solid var(--fail)', color: 'var(--fail)' }}>
           <AlertCircle size={14} className="flex-none mt-0.5" />
@@ -108,37 +108,6 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-        </div>
-
-        <div>
-          <p className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--ink-secondary)' }}>
-            Role
-          </p>
-          <div className="space-y-1.5">
-            {ROLE_OPTIONS.map((r) => (
-              <label
-                key={r.value}
-                className="flex items-start gap-2.5 px-3 py-2.5 rounded-[10px] cursor-pointer transition-colors"
-                style={{
-                  background: role === r.value ? 'var(--accent-soft)' : 'var(--surface-2)',
-                  border: `1px solid ${role === r.value ? 'var(--accent-border)' : 'var(--border)'}`,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="role"
-                  value={r.value}
-                  checked={role === r.value}
-                  onChange={() => setRole(r.value)}
-                  className="mt-0.5"
-                />
-                <span>
-                  <span className="block text-xs font-semibold" style={{ color: 'var(--ink)' }}>{r.label}</span>
-                  <span className="block text-[11px]" style={{ color: 'var(--ink-muted)' }}>{r.note}</span>
-                </span>
-              </label>
-            ))}
-          </div>
         </div>
 
         <button type="submit" disabled={busy} className="btn-primary w-full" style={{ height: 38 }}>

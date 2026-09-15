@@ -586,11 +586,11 @@ export class DeploymentService {
   /**
    * Retrieves a deployment by ID, incorporating parsed plan output if available.
    */
-  async getDeploymentById(id: string): Promise<DeploymentResponse> {
+  async getDeploymentById(id: string, userId?: string, role?: Role): Promise<DeploymentResponse> {
     const deployment = await prisma.deployment.findUnique({
       where: { id },
       include: {
-        project: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, ownerId: true } },
         environment: { select: { id: true, name: true, cloudAccountId: true } },
         template: { select: { id: true, name: true, provider: true, version: true } },
         user: { select: { id: true, name: true, email: true, role: true } },
@@ -603,18 +603,32 @@ export class DeploymentService {
       throw error;
     }
 
+    if (role && role !== Role.ADMIN && deployment.project.ownerId !== userId && deployment.userId !== userId) {
+      const error: any = new Error(`Deployment [${id}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
     return this.formatDeploymentResponse(deployment);
   }
 
   /**
    * Lists deployments with optional filtering by project, environment, or status.
+   * ADMIN sees all; DEVELOPER sees only deployments for their own projects/user.
    */
-  async listDeployments(filter?: {
-    projectId?: string;
-    environmentId?: string;
-    status?: DeploymentStatus;
-  }): Promise<DeploymentResponse[]> {
+  async listDeployments(
+    userId: string,
+    role: Role,
+    filter?: {
+      projectId?: string;
+      environmentId?: string;
+      status?: DeploymentStatus;
+    },
+  ): Promise<DeploymentResponse[]> {
     const where: any = {};
+    if (role !== Role.ADMIN) {
+      where.project = { ownerId: userId };
+    }
     if (filter?.projectId) where.projectId = filter.projectId;
     if (filter?.environmentId) where.environmentId = filter.environmentId;
     if (filter?.status) where.status = filter.status;
@@ -623,7 +637,7 @@ export class DeploymentService {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        project: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, ownerId: true } },
         environment: { select: { id: true, name: true, cloudAccountId: true } },
         template: { select: { id: true, name: true, provider: true, version: true } },
         user: { select: { id: true, name: true, email: true, role: true } },
@@ -636,13 +650,19 @@ export class DeploymentService {
   /**
    * Retrieves all provisioned resources created by a specific deployment.
    */
-  async getDeploymentResources(deploymentId: string) {
+  async getDeploymentResources(deploymentId: string, userId?: string, role?: Role) {
     const deployment = await prisma.deployment.findUnique({
       where: { id: deploymentId },
-      select: { id: true },
+      include: { project: true },
     });
 
     if (!deployment) {
+      const error: any = new Error(`Deployment [${deploymentId}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (role && role !== Role.ADMIN && deployment.project.ownerId !== userId && deployment.userId !== userId) {
       const error: any = new Error(`Deployment [${deploymentId}] not found`);
       error.statusCode = 404;
       throw error;
@@ -654,20 +674,10 @@ export class DeploymentService {
   /**
    * Retrieves execution logs and status timings for a deployment.
    */
-  async getDeploymentLogs(deploymentId: string) {
+  async getDeploymentLogs(deploymentId: string, userId?: string, role?: Role) {
     const deployment = await prisma.deployment.findUnique({
       where: { id: deploymentId },
-      select: {
-        id: true,
-        status: true,
-        operationType: true,
-        planOutput: true,
-        applyOutput: true,
-        planTime: true,
-        applyTime: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      include: { project: true },
     });
 
     if (!deployment) {
@@ -676,7 +686,23 @@ export class DeploymentService {
       throw error;
     }
 
-    return deployment;
+    if (role && role !== Role.ADMIN && deployment.project.ownerId !== userId && deployment.userId !== userId) {
+      const error: any = new Error(`Deployment [${deploymentId}] not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return {
+      id: deployment.id,
+      status: deployment.status,
+      operationType: deployment.operationType,
+      planOutput: deployment.planOutput,
+      applyOutput: deployment.applyOutput,
+      planTime: deployment.planTime,
+      applyTime: deployment.applyTime,
+      createdAt: deployment.createdAt,
+      updatedAt: deployment.updatedAt,
+    };
   }
 
   /**

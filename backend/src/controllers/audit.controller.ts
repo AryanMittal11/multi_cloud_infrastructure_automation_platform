@@ -13,7 +13,11 @@ export const auditController = {
       const take = limit ? Math.min(parseInt(limit as string, 10) || 50, 200) : 50;
 
       const where: any = {};
-      if (typeof userId === 'string') where.userId = userId;
+      if (req.user!.role !== 'ADMIN') {
+        where.userId = req.user!.userId;
+      } else if (typeof userId === 'string') {
+        where.userId = userId;
+      }
       if (typeof projectId === 'string') where.projectId = projectId;
       if (typeof deploymentId === 'string') where.deploymentId = deploymentId;
       if (typeof action === 'string') where.action = action;

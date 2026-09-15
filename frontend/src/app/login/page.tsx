@@ -8,8 +8,7 @@ import { AuthLayout } from '../../components/auth/auth-layout';
 import { AlertCircle, Loader2, LogIn, ShieldCheck } from 'lucide-react';
 
 const DEMO_CREDENTIALS = [
-  { role: 'ADMIN', label: 'Site Owner', email: 'admin@multicloud.local', password: 'AdminPassword123!', note: 'full platform access · manage users & cloud accounts' },
-  { role: 'DEVELOPER', label: 'Developer', email: 'dev@multicloud.local', password: 'DevPassword123!', note: 'plan, deploy & manage infrastructure' },
+  { role: 'ADMIN', label: 'Site Owner (Admin)', email: 'admin@multicloud.local', password: 'AdminPassword123!', note: 'Full platform oversight & user activity tracking' },
 ];
 
 export default function LoginPage() {

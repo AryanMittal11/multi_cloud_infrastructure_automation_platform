@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { designController } from '../controllers/design.controller';
-import { authenticateToken, requireDeveloper, requireViewer } from '../middleware';
+import { authenticateToken, requireDeveloper } from '../middleware';
 
 export const designRouter = Router();
 
@@ -39,8 +39,8 @@ const updateDesignSchema = createDesignSchema.partial();
 
 designRouter.use(authenticateToken);
 
-designRouter.get('/', requireViewer, designController.list);
-designRouter.get('/:id', requireViewer, designController.getById);
+designRouter.get('/', requireDeveloper, designController.list);
+designRouter.get('/:id', requireDeveloper, designController.getById);
 designRouter.post('/', requireDeveloper, designController.create);
 designRouter.put('/:id', requireDeveloper, designController.update);
 // Ownership (owner-only) is enforced in DesignService.deleteDesign; any developer may remove their own design.

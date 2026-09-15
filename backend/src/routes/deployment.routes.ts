@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { deploymentController } from '../controllers/deployment.controller';
-import { authenticateToken, requireDeveloper, requireViewer, validateBody } from '../middleware';
+import { authenticateToken, requireDeveloper, validateBody } from '../middleware';
 
 export const deploymentRouter = Router();
 
@@ -55,7 +55,7 @@ deploymentRouter.post(
 );
 
 // List deployments (supports ?projectId, ?environmentId, ?status)
-deploymentRouter.get('/', requireViewer, deploymentController.list);
+deploymentRouter.get('/', requireDeveloper, deploymentController.list);
 
 // Explicit approval gate: Transitions PLANNED -> QUEUED and dispatches APPLY job
 deploymentRouter.post(
@@ -89,10 +89,10 @@ deploymentRouter.post(
 );
 
 // Get single deployment by ID with plan output summary
-deploymentRouter.get('/:id', requireViewer, deploymentController.getById);
+deploymentRouter.get('/:id', requireDeveloper, deploymentController.getById);
 
 // Get provisioned infrastructure resources for a deployment
-deploymentRouter.get('/:id/resources', requireViewer, deploymentController.getResources);
+deploymentRouter.get('/:id/resources', requireDeveloper, deploymentController.getResources);
 
 // Get execution logs and phase timings
-deploymentRouter.get('/:id/logs', requireViewer, deploymentController.getLogs);
+deploymentRouter.get('/:id/logs', requireDeveloper, deploymentController.getLogs);

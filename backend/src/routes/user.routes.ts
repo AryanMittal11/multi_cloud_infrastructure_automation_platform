@@ -6,8 +6,8 @@ import { authenticateToken, requireAdmin, validateBody } from '../middleware';
 export const userRouter = Router();
 
 const updateRoleSchema = z.object({
-  role: z.enum(['DEVELOPER', 'VIEWER'], {
-    errorMap: () => ({ message: 'Role must be DEVELOPER or VIEWER' }),
+  role: z.enum(['DEVELOPER'], {
+    errorMap: () => ({ message: 'Role must be DEVELOPER' }),
   }),
 });
 
@@ -17,6 +17,9 @@ userRouter.use(requireAdmin);
 
 // List all platform users
 userRouter.get('/', userController.list);
+
+// Get user activity summary
+userRouter.get('/:id/activity', userController.getActivity);
 
 // Get a specific user
 userRouter.get('/:id', userController.getById);

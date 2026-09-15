@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api, AuditLog } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function AuditLogsPage() {
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
@@ -72,13 +73,13 @@ export default function AuditLogsPage() {
           </div>
 
           {!user && (
-            <button
-              onClick={() => quickLogin('VIEWER')}
+            <Link
+              href="/login"
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
             >
               <Key className="w-4 h-4" />
-              <span>Connect (Viewer)</span>
-            </button>
+              <span>Sign in to View Audit Trail</span>
+            </Link>
           )}
         </div>
       </div>

@@ -82,10 +82,11 @@ export class ProjectService {
   /**
    * Retrieves a single project by ID with full relations.
    */
-  async getProjectById(id: string): Promise<ProjectResponse | null> {
+  async getProjectById(id: string, userId?: string, role?: Role): Promise<ProjectResponse | null> {
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
+        owner: { select: { id: true, name: true, email: true } },
         environments: {
           include: {
             cloudAccount: true,
@@ -100,6 +101,9 @@ export class ProjectService {
     });
 
     if (!project) return null;
+    if (role && role !== Role.ADMIN && project.ownerId !== userId) {
+      return null;
+    }
     return this.formatProject(project);
   }
 
@@ -111,6 +115,12 @@ export class ProjectService {
     if (!project) {
       const error: any = new Error('Project not found');
       error.statusCode = 404;
+      throw error;
+    }
+
+    if (role !== Role.ADMIN && project.ownerId !== userId) {
+      const error: any = new Error('Forbidden: You can only update your own project');
+      error.statusCode = 403;
       throw error;
     }
 
@@ -156,6 +166,12 @@ export class ProjectService {
       throw error;
     }
 
+    if (role !== Role.ADMIN && project.ownerId !== userId) {
+      const error: any = new Error('Forbidden: You can only delete your own project');
+      error.statusCode = 403;
+      throw error;
+    }
+
     if (project.deployments.length > 0) {
       const error: any = new Error(
         `Cannot delete project "${project.name}". There are ${project.deployments.length} active running deployment(s).`,
@@ -182,11 +198,22 @@ export class ProjectService {
   /**
    * Creates a new environment under a project.
    */
-  async createEnvironment(projectId: string, input: CreateEnvironmentInput): Promise<EnvironmentResponse> {
+  async createEnvironment(
+    projectId: string,
+    input: CreateEnvironmentInput,
+    userId?: string,
+    role?: Role,
+  ): Promise<EnvironmentResponse> {
     const project = await prisma.project.findUnique({ where: { id: projectId } });
     if (!project) {
       const error: any = new Error('Project not found');
       error.statusCode = 404;
+      throw error;
+    }
+
+    if (role && role !== Role.ADMIN && project.ownerId !== userId) {
+      const error: any = new Error('Forbidden: You can only add environments to your own project');
+      error.statusCode = 403;
       throw error;
     }
 
@@ -217,6 +244,11 @@ export class ProjectService {
         error.statusCode = 400;
         throw error;
       }
+      if (role && role !== Role.ADMIN && cloudAccount.ownerId !== userId) {
+        const error: any = new Error('Forbidden: You can only bind your own cloud account');
+        error.statusCode = 403;
+        throw error;
+      }
     }
 
     const environment = await prisma.environment.create({
@@ -239,11 +271,22 @@ export class ProjectService {
   async bindCloudAccountToEnvironment(
     environmentId: string,
     cloudAccountId: string | null,
+    userId?: string,
+    role?: Role,
   ): Promise<EnvironmentResponse> {
-    const environment = await prisma.environment.findUnique({ where: { id: environmentId } });
+    const environment = await prisma.environment.findUnique({
+      where: { id: environmentId },
+      include: { project: true },
+    });
     if (!environment) {
       const error: any = new Error('Environment not found');
       error.statusCode = 404;
+      throw error;
+    }
+
+    if (role && role !== Role.ADMIN && environment.project.ownerId !== userId) {
+      const error: any = new Error('Forbidden: You can only modify environments of your own project');
+      error.statusCode = 403;
       throw error;
     }
 
@@ -252,6 +295,11 @@ export class ProjectService {
       if (!cloudAccount) {
         const error: any = new Error('Cloud account not found');
         error.statusCode = 404;
+        throw error;
+      }
+      if (role && role !== Role.ADMIN && cloudAccount.ownerId !== userId) {
+        const error: any = new Error('Forbidden: You can only bind your own cloud account');
+        error.statusCode = 403;
         throw error;
       }
     }

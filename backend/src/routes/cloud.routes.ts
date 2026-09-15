@@ -5,7 +5,7 @@ import { cloudController } from '../controllers/cloud.controller';
 import {
   authenticateToken,
   requireAdmin,
-  requireViewer,
+  requireDeveloper,
   requireDestructivePermission,
   validateBody,
 } from '../middleware';
@@ -27,17 +27,17 @@ cloudRouter.use(authenticateToken);
 
 cloudRouter.post(
   '/',
-  requireAdmin,
+  requireDeveloper,
   validateBody(createCloudAccountSchema),
   cloudController.create,
 );
 
-cloudRouter.get('/', requireViewer, cloudController.list);
-cloudRouter.get('/:id', requireViewer, cloudController.getById);
+cloudRouter.get('/', requireDeveloper, cloudController.list);
+cloudRouter.get('/:id', requireDeveloper, cloudController.getById);
 
 cloudRouter.delete(
   '/:id',
-  requireAdmin,
+  requireDeveloper,
   requireDestructivePermission({ expectedKeyword: 'CONFIRM_DELETE_ACCOUNT' }),
   cloudController.delete,
 );

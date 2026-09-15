@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function TemplatesPage() {
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -72,13 +72,13 @@ export default function TemplatesPage() {
               <span>{syncMutation.isPending ? 'Syncing...' : 'Sync from Disk'}</span>
             </button>
           ) : (
-            <button
-              onClick={() => quickLogin('DEVELOPER')}
+            <Link
+              href="/login"
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all"
             >
               <Key className="w-4 h-4" />
-              <span>Connect to Access Catalog</span>
-            </button>
+              <span>Sign in to Access Catalog</span>
+            </Link>
           )}
         </div>
       </div>

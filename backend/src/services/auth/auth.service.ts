@@ -41,14 +41,13 @@ export class AuthService {
     // 2. Hash password with bcrypt
     const passwordHash = await bcrypt.hash(input.password, 10);
 
-    // 3. Persist user in database (role is limited to DEVELOPER or VIEWER)
-    const safeRole = input.role === Role.VIEWER ? Role.VIEWER : Role.DEVELOPER;
+    // 3. Persist user in database (always DEVELOPER persona)
     const user = await prisma.user.create({
       data: {
         name: input.name.trim(),
         email: normalizedEmail,
         passwordHash,
-        role: safeRole,
+        role: Role.DEVELOPER,
       },
     });
 
@@ -102,11 +101,6 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
-
-    // 4. First-admin convenience: prepare demo artifacts (idempotent, never blocks login)
-    if (user.role === Role.ADMIN) {
-      await showcaseService.prepareShowcaseForAdmin(user.id);
-    }
 
     return {
       user: {

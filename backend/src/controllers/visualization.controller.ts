@@ -12,13 +12,17 @@ export const visualizationController = {
     try {
       const { projectId } = req.query;
 
+      const where: any = {
+        status: { not: 'DESTROYED' },
+        ...(typeof projectId === 'string' && projectId ? { deployment: { projectId } } : {}),
+      };
+      if (req.user!.role !== 'ADMIN') {
+        where.deployment = where.deployment || {};
+        where.deployment.project = { ownerId: req.user!.userId };
+      }
+
       const resources = await prisma.resource.findMany({
-        where: {
-          status: { not: 'DESTROYED' },
-          ...(typeof projectId === 'string' && projectId
-            ? { deployment: { projectId } }
-            : {}),
-        },
+        where,
         orderBy: { createdAt: 'desc' },
       });
 

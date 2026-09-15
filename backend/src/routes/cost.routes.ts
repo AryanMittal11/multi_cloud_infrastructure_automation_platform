@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { costController } from '../controllers/cost.controller';
-import { authenticateToken, requireViewer } from '../middleware';
+import { authenticateToken, requireDeveloper } from '../middleware';
 
 export const costRouter = Router();
 
-// All cost routes require authentication (VIEWER may read estimates)
+// All cost routes require authentication
 costRouter.use(authenticateToken);
 
 // Pre-deployment estimate: template + configuration + provider + region
-costRouter.post('/estimate', requireViewer, costController.estimate);
+costRouter.post('/estimate', requireDeveloper, costController.estimate);
 
 // Monthly rollup across active deployments, optionally per project
-costRouter.get('/summary', requireViewer, costController.summary);
+costRouter.get('/summary', requireDeveloper, costController.summary);

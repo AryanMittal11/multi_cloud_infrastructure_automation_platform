@@ -8,8 +8,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role?: string) => Promise<void>;
-  quickLogin: (role: 'DEVELOPER' | 'VIEWER') => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -70,45 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string, role?: string) => {
+  const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const res = await api.auth.register(name, email, password, role);
+      const res = await api.auth.register(name, email, password);
       setUser(res.user);
       setToken(res.accessToken);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const quickLogin = async (role: 'DEVELOPER' | 'VIEWER') => {
-    setIsLoading(true);
-    // Map to the seeded demo personas first — quick-login must never create a
-    // shadow account the site owner cannot see designs/projects for.
-    const seededPersona =
-      role === 'DEVELOPER'
-        ? { email: 'dev@multicloud.local', password: 'DevPassword123!' }
-        : { email: 'viewer@multicloud.local', password: 'ViewerPassword123!' };
-    const capitalized = `${role.charAt(0).toUpperCase()}${role.slice(1).toLowerCase()}`;
-    const name = `${capitalized} Operator`;
-    // Generic persona convention as fallback (e.g. seeded via another script).
-    const fallbackEmail = `${role.toLowerCase()}@multicloud.local`;
-    const fallbackPassword = `${capitalized}Password123!`;
-    const isBadCredentialError = (err: any) =>
-      err?.status === 401 || err?.message?.includes('Invalid email or password');
-
-    try {
-      for (const candidate of [seededPersona, { email: fallbackEmail, password: fallbackPassword }]) {
-        try {
-          await login(candidate.email, candidate.password);
-          return;
-        } catch (loginErr: any) {
-          if (!isBadCredentialError(loginErr)) throw loginErr;
-          // try next candidate
-        }
-      }
-      // No persona exists yet — register it with deterministic demo credentials
-      await register(name, fallbackEmail, fallbackPassword, role);
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         register,
-        quickLogin,
         logout,
         refreshUser,
       }}

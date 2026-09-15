@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { auditController } from '../controllers/audit.controller';
-import { authenticateToken, requireViewer } from '../middleware';
+import { authenticateToken, requireDeveloper } from '../middleware';
 
 export const auditRouter = Router();
 
@@ -8,4 +8,4 @@ export const auditRouter = Router();
 auditRouter.use(authenticateToken);
 
 // List audit logs matching optional filters
-auditRouter.get('/', requireViewer, auditController.list);
+auditRouter.get('/', requireDeveloper, auditController.list);

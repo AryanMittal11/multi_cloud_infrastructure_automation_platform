@@ -186,4 +186,85 @@ export const userController = {
       next(err);
     }
   },
+
+  /**
+   * GET /api/users/:id/activity
+   * Retrieve complete user activity summary (projects, deployments, designs, cloud accounts, audit logs). Admin-only.
+   */
+  getActivity: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const targetId = req.params.id;
+
+      const user = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const [projects, deployments, designs, cloudAccounts, auditLogs] = await Promise.all([
+        prisma.project.findMany({
+          where: { ownerId: targetId },
+          include: {
+            environments: { select: { id: true, name: true } },
+            _count: { select: { deployments: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.deployment.findMany({
+          where: { userId: targetId },
+          include: {
+            project: { select: { id: true, name: true } },
+            environment: { select: { id: true, name: true } },
+            template: { select: { id: true, name: true, provider: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        }),
+        prisma.architectureDesign.findMany({
+          where: { ownerId: targetId },
+          orderBy: { updatedAt: 'desc' },
+          take: 20,
+        }),
+        prisma.cloudAccount.findMany({
+          where: { ownerId: targetId },
+          select: {
+            id: true,
+            name: true,
+            provider: true,
+            accountReference: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.auditLog.findMany({
+          where: { userId: targetId },
+          orderBy: { timestamp: 'desc' },
+          take: 30,
+        }),
+      ]);
+
+      res.status(200).json({
+        user,
+        activity: {
+          projects,
+          deployments,
+          designs,
+          cloudAccounts,
+          auditLogs,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

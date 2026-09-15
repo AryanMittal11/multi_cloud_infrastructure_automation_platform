@@ -26,7 +26,11 @@ export const deploymentController = {
    */
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const deployment = await deploymentService.getDeploymentById(req.params.id);
+      const deployment = await deploymentService.getDeploymentById(
+        req.params.id,
+        req.user!.userId,
+        req.user!.role,
+      );
       res.status(200).json({ deployment });
     } catch (err) {
       next(err);
@@ -40,11 +44,15 @@ export const deploymentController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { projectId, environmentId, status } = req.query;
-      const deployments = await deploymentService.listDeployments({
-        projectId: typeof projectId === 'string' ? projectId : undefined,
-        environmentId: typeof environmentId === 'string' ? environmentId : undefined,
-        status: typeof status === 'string' ? (status as DeploymentStatus) : undefined,
-      });
+      const deployments = await deploymentService.listDeployments(
+        req.user!.userId,
+        req.user!.role,
+        {
+          projectId: typeof projectId === 'string' ? projectId : undefined,
+          environmentId: typeof environmentId === 'string' ? environmentId : undefined,
+          status: typeof status === 'string' ? (status as DeploymentStatus) : undefined,
+        },
+      );
       res.status(200).json({ deployments });
     } catch (err) {
       next(err);
@@ -99,7 +107,11 @@ export const deploymentController = {
    */
   getResources: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const resources = await deploymentService.getDeploymentResources(req.params.id);
+      const resources = await deploymentService.getDeploymentResources(
+        req.params.id,
+        req.user!.userId,
+        req.user!.role,
+      );
       res.status(200).json({ resources });
     } catch (err) {
       next(err);
@@ -112,7 +124,11 @@ export const deploymentController = {
    */
   getLogs: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const logs = await deploymentService.getDeploymentLogs(req.params.id);
+      const logs = await deploymentService.getDeploymentLogs(
+        req.params.id,
+        req.user!.userId,
+        req.user!.role,
+      );
       res.status(200).json({ logs });
     } catch (err) {
       next(err);

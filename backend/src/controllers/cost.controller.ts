@@ -41,12 +41,17 @@ export const costController = {
     try {
       const { projectId } = req.query;
 
+      const where: any = {
+        status: { in: ['SUCCEEDED', 'RUNNING'] },
+        operationType: { not: 'DESTROY' },
+        ...(typeof projectId === 'string' && projectId ? { projectId } : {}),
+      };
+      if (req.user!.role !== 'ADMIN') {
+        where.project = { ownerId: req.user!.userId };
+      }
+
       const deployments = await prisma.deployment.findMany({
-        where: {
-          status: { in: ['SUCCEEDED', 'RUNNING'] },
-          operationType: { not: 'DESTROY' },
-          ...(typeof projectId === 'string' && projectId ? { projectId } : {}),
-        },
+        where,
         select: {
           id: true,
           configuration: true,

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function DashboardContent() {
-  const { user, quickLogin } = useAuth();
+  const { user } = useAuth();
 
   const { data: healthData } = useQuery({
     queryKey: ['health'],
@@ -223,13 +223,13 @@ export default function DashboardContent() {
                 <span>My Architectures</span>
               </Link>
               {!user && (
-                <button
-                  onClick={() => quickLogin('DEVELOPER')}
+                <Link
+                  href="/login"
                   className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 font-medium text-xs flex items-center space-x-2 border border-slate-700/60"
                 >
-                  <span>Connect to explore</span>
+                  <span>Sign in to explore</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                </Link>
               )}
             </div>
           </div>
