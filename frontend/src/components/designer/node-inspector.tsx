@@ -46,15 +46,15 @@ export function NodeInspector({ node, schema, loadingSchema, onClose, onChange }
   };
 
   return (
-    <div className="w-80 shrink-0 h-full overflow-y-auto bg-slate-950/70 border-l border-slate-800/80 flex flex-col">
-      <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
+    <div className="w-80 shrink-0 h-full overflow-y-auto bg-neutral-950/70 border-l border-neutral-800/80 flex flex-col">
+      <div className="p-4 border-b border-neutral-800/80 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <div className={`p-1.5 rounded-lg border ${meta.accent}`}>
             <Package className={`w-3.5 h-3.5 ${meta.color}`} />
           </div>
           <span className="text-xs font-bold text-white">Resource Inspector</span>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-white">
+        <button onClick={onClose} className="text-neutral-400 hover:text-white">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -62,19 +62,19 @@ export function NodeInspector({ node, schema, loadingSchema, onClose, onChange }
       <div className="p-4 space-y-4 flex-1">
         {/* Label */}
         <div className="space-y-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
             Resource Name
           </label>
           <input
             value={node.label}
             onChange={(e) => onChange(node.id, { label: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
+            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-400"
           />
         </div>
 
         {/* Provider switcher */}
         <div className="space-y-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
             Target Provider
           </label>
           <div className="grid grid-cols-3 gap-1.5">
@@ -84,8 +84,8 @@ export function NodeInspector({ node, schema, loadingSchema, onClose, onChange }
                 onClick={() => onChange(node.id, { provider: p })}
                 className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-[10px] font-bold border transition-all ${
                   node.provider === p
-                    ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-white/10 border-neutral-400 text-white'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
                 }`}
               >
                 <ProviderIcon provider={p} size={12} />
@@ -96,26 +96,26 @@ export function NodeInspector({ node, schema, loadingSchema, onClose, onChange }
         </div>
 
         {/* Template reference */}
-        <div className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 space-y-1">
-          <div className="text-[10px] font-semibold text-slate-400 flex items-center space-x-1.5">
+        <div className="p-2.5 rounded-lg bg-neutral-900/80 border border-neutral-800 space-y-1">
+          <div className="text-[10px] font-semibold text-neutral-400 flex items-center space-x-1.5">
             <FileCode2 className="w-3 h-3" />
             <span>Module Reference</span>
           </div>
-          <div className="text-[11px] font-mono text-indigo-300 break-all">{node.templateRef}</div>
+          <div className="text-[11px] font-mono text-neutral-200 break-all">{node.templateRef}</div>
         </div>
 
         {/* Schema-driven config form */}
         <div className="space-y-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
             Configuration {schema ? `(${Object.keys(properties).length} params)` : ''}
           </div>
 
           {loadingSchema && (
-            <div className="text-[11px] text-slate-500">Loading schema contract...</div>
+            <div className="text-[11px] text-neutral-500">Loading schema contract...</div>
           )}
 
           {!loadingSchema && Object.keys(properties).length === 0 && (
-            <div className="text-[11px] text-slate-500 italic">
+            <div className="text-[11px] text-neutral-500 italic">
               This module uses platform defaults.
             </div>
           )}
@@ -125,16 +125,16 @@ export function NodeInspector({ node, schema, loadingSchema, onClose, onChange }
             const isRequired = requiredKeys.includes(key);
 
             const inputClass =
-              'w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500';
+              'w-full px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-400';
 
             return (
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-slate-300 font-mono">
+                  <label className="text-[11px] font-semibold text-neutral-300 font-mono">
                     {key}
                     {isRequired && <span className="text-rose-400 ml-1">*</span>}
                   </label>
-                  <span className="text-[9px] text-slate-600 uppercase">{prop.type}</span>
+                  <span className="text-[9px] text-neutral-600 uppercase">{prop.type}</span>
                 </div>
 
                 {prop.enum ? (
@@ -205,7 +205,7 @@ export function NodeInspector({ node, schema, loadingSchema, onClose, onChange }
                 )}
 
                 {prop.description && (
-                  <p className="text-[10px] text-slate-500 leading-snug">{prop.description}</p>
+                  <p className="text-[10px] text-neutral-500 leading-snug">{prop.description}</p>
                 )}
               </div>
             );

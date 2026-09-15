@@ -50,7 +50,7 @@ export function ForTeams() {
           const Icon = a.icon;
           return (
             <Reveal key={a.title} delay={i * 70} className="quiet-card p-7">
-              <Icon size={18} style={{ color: 'var(--accent-strong)' }} />
+              <Icon size={18} style={{ color: 'var(--ink)' }} />
               <h3 className="mt-4 text-[15px] font-semibold" style={{ color: 'var(--ink)' }}>{a.title}</h3>
               <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--ink-muted)' }}>{a.body}</p>
             </Reveal>
@@ -168,8 +168,8 @@ export function FinalCTA() {
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href="/dashboard"
-              className="group inline-flex items-center gap-2 h-12 px-7 rounded-full text-sm font-semibold text-white transition-all"
-              style={{ background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 28px rgba(38,87,201,0.32)' }}
+              className="group inline-flex items-center gap-2 h-12 px-7 rounded-[8px] text-sm font-semibold transition-all"
+              style={{ background: '#ffffff', color: '#0a0a0a', boxShadow: '0 4px 24px rgba(255,255,255,0.12)' }}
             >
               Open the dashboard
               <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
@@ -236,10 +236,10 @@ export function Footer() {
         <div className="grid md:grid-cols-[1.3fr_repeat(3,0.8fr)] gap-10">
           <div>
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent-strong)" strokeWidth="2.4" strokeLinecap="round">
+              <span className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: '#ffffff', border: '1px solid #ffffff' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2.4" strokeLinecap="round">
                   <path d="M12 2a10 10 0 1 0 10 10" />
-                  <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
+                  <circle cx="12" cy="12" r="3" fill="#0a0a0a" stroke="none" />
                 </svg>
               </span>
               <span className="font-semibold tracking-tight" style={{ color: 'var(--ink)' }}>cloudweave</span>

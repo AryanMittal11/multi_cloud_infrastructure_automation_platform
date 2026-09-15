@@ -20,14 +20,15 @@ import { useAuth } from '../../context/auth-context';
 import { PageHeader } from '../../components/cerebro/app-shell';
 import { Panel, EmptyState, Skeleton } from '../../components/cerebro/ui-kit';
 
+/* greyscale ramp — kind is encoded by position in the legend, not hue */
 const KIND_COLOR: Record<TopologyNodeKind, string> = {
-  network: '#2f6bde',
-  compute: '#43c463',
-  database: '#e8a13c',
-  storage: '#9a7bf7',
-  loadbalancer: '#41c4d9',
-  cluster: '#f0637d',
-  other: '#8b93a7',
+  network: '#fafafa',
+  compute: '#d4d4d4',
+  database: '#a3a3a3',
+  storage: '#737373',
+  loadbalancer: '#525252',
+  cluster: '#8b8b8b',
+  other: '#404040',
 };
 
 const KIND_LABEL: Record<TopologyNodeKind, string> = {

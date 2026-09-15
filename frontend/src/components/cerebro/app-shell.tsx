@@ -454,13 +454,12 @@ function Tabbar() {
         <TabItem key={it.href} {...it} />
       ))}
       <button
-        className="tab-fab self-center w-[50px] h-[50px] flex-none rounded-full flex items-center justify-center"
+        className="tab-fab self-center w-[50px] h-[50px] flex-none rounded-[10px] flex items-center justify-center"
         style={{
-          marginTop: -18,
-          background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)',
-          color: '#fff',
+          marginTop: -18,            background: 'linear-gradient(180deg, #ffffff 0%, var(--accent) 60%, #d4d4d4 100%)',
+          color: '#0a0a0a',
           border: '3px solid var(--bg)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 26px rgba(45,108,232,0.45)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 26px rgba(0,0,0,0.55)',
         }}
         onClick={open}
         aria-label="Search"

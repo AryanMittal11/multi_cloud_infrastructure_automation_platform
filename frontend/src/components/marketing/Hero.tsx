@@ -80,7 +80,7 @@ export function Hero() {
       <div className="absolute inset-0 grid-bg" aria-hidden />
       <div
         className="glow-orb w-[720px] h-[420px] left-1/2 -translate-x-1/2 -top-24"
-        style={{ background: 'radial-gradient(closest-side, rgba(77,141,255,0.14), transparent)', transform: `translateX(-50%) translateY(${scrollY * 0.1}px)` }}
+        style={{ background: 'radial-gradient(closest-side, rgba(255, 255, 255, 0.07), transparent)', transform: `translateX(-50%) translateY(${scrollY * 0.1}px)` }}
         aria-hidden
       />
 
@@ -129,15 +129,15 @@ export function Hero() {
         >
           <Link
             href="/dashboard"
-            className="group inline-flex items-center gap-2 h-12 px-7 rounded-full text-sm font-semibold text-white transition-all"
-            style={{ background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 28px rgba(38,87,201,0.32)' }}
+            className="group inline-flex items-center gap-2 h-12 px-7 rounded-[8px] text-sm font-semibold transition-all"
+            style={{ background: '#ffffff', color: '#0a0a0a', boxShadow: '0 4px 24px rgba(255,255,255,0.12)' }}
           >
             Open the dashboard
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
           <a
             href="#showcase"
-            className="inline-flex items-center gap-2.5 h-12 px-6 rounded-full text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-2.5 h-12 px-6 rounded-[8px] text-sm font-medium transition-colors"
             style={{ border: '1px solid var(--border-strong)', color: 'var(--ink-secondary)', background: 'var(--surface)' }}
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink)')}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-secondary)')}
@@ -173,12 +173,12 @@ export function Hero() {
             style={{
               maxWidth: 1120,
               height: 120,
-              background: 'linear-gradient(180deg, rgba(18, 22, 30, 0.16), transparent 80%)',
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 80%)',
               maskImage: 'linear-gradient(180deg, black, transparent 85%)',
               WebkitMaskImage: 'linear-gradient(180deg, black, transparent 85%)',
               transform: 'perspective(600px) rotateX(58deg) scale(0.96)',
               transformOrigin: 'top center',
-              opacity: 0.35,
+              opacity: 0.5,
             }}
             aria-hidden
           />

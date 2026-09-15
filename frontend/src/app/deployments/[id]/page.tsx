@@ -100,9 +100,9 @@ export default function DeploymentMonitoringPage() {
   if (deploymentLoading) {
     return (
       <div className="p-16 text-center space-y-4">
-        <div className="w-10 h-10 rounded-full border-3 border-indigo-500 border-t-transparent animate-spin mx-auto" />
+        <div className="w-10 h-10 rounded-full border-3 border-neutral-400 border-t-transparent animate-spin mx-auto" />
         <h2 className="text-sm font-bold text-white">Connecting to Execution Telemetry...</h2>
-        <p className="text-xs text-slate-400">Loading deployment #{deploymentId?.slice(0, 8)}</p>
+        <p className="text-xs text-neutral-400">Loading deployment #{deploymentId?.slice(0, 8)}</p>
       </div>
     );
   }
@@ -117,7 +117,7 @@ export default function DeploymentMonitoringPage() {
         </p>
         <Link
           href="/deployments"
-          className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
+          className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Deployments</span>
@@ -129,11 +129,11 @@ export default function DeploymentMonitoringPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800/80 pb-5">
         <div className="flex items-center space-x-4">
           <Link
             href="/deployments"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
             title="Back to Deployments"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -145,15 +145,15 @@ export default function DeploymentMonitoringPage() {
                 Deployment #{deployment.id.slice(0, 8)}
               </h1>
               {isLive && (
-                <span className="flex items-center space-x-1.5 text-[11px] font-mono text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded-full border border-cyan-800/40 animate-pulse">
+                <span className="flex items-center space-x-1.5 text-[11px] font-mono text-neutral-300 bg-neutral-900 px-2 py-0.5 rounded-full border border-neutral-600/40 animate-pulse">
                   <Radio className="w-3 h-3" />
                   <span>Live</span>
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Target: <strong className="text-slate-200">{deployment.project?.name}</strong> &bull; Env:{' '}
-              <strong className="text-indigo-300">{deployment.environment?.name}</strong>
+            <p className="text-xs text-neutral-400 mt-0.5">
+              Target: <strong className="text-neutral-200">{deployment.project?.name}</strong> &bull; Env:{' '}
+              <strong className="text-neutral-200">{deployment.environment?.name}</strong>
             </p>
           </div>
         </div>
@@ -166,17 +166,17 @@ export default function DeploymentMonitoringPage() {
               refetchResources();
             }}
             disabled={isRefetching}
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs transition-colors"
+            className="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-white text-xs transition-colors"
             title="Refresh state"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin text-indigo-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin text-neutral-300' : ''}`} />
           </button>
 
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium flex items-center space-x-1.5 transition-colors"
+            className="px-3 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 text-xs font-medium flex items-center space-x-1.5 transition-colors"
           >
-            <FileCode className="w-3.5 h-3.5 text-indigo-400" />
+            <FileCode className="w-3.5 h-3.5 text-neutral-300" />
             <span>{showConfig ? 'Hide Config' : 'View Config'}</span>
           </button>
 
@@ -216,9 +216,9 @@ export default function DeploymentMonitoringPage() {
 
       {/* Expandable Submitted Configuration Drawer */}
       {showConfig && (
-        <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/80 space-y-2 animate-in fade-in">
-          <span className="text-xs font-bold text-slate-300">Submitted Parameter Configuration:</span>
-          <pre className="p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs text-indigo-300 overflow-x-auto max-h-56">
+        <div className="p-4 rounded-2xl border border-neutral-800 bg-neutral-950/80 space-y-2 animate-in fade-in">
+          <span className="text-xs font-bold text-neutral-300">Submitted Parameter Configuration:</span>
+          <pre className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 font-mono text-xs text-neutral-200 overflow-x-auto max-h-56">
             {JSON.stringify(deployment.configuration, null, 2)}
           </pre>
         </div>
@@ -246,8 +246,8 @@ export default function DeploymentMonitoringPage() {
 
       {/* 3. Real-time Log Terminal View */}
       <div className="space-y-3">
-        <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-300">
-          <Terminal className="w-4 h-4 text-indigo-400" />
+        <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-neutral-300">
+          <Terminal className="w-4 h-4 text-neutral-300" />
           <span>Execution Console & Worker Telemetry</span>
         </div>
 

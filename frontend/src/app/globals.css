@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Design tokens — light, calm SaaS (CerebrOps-reference palette)
-   Single light theme; dimensional tokens kept for components.
+   Design tokens — dark-only, black & white (Aero-style reference)
+   Pure monochrome surfaces; status colors kept functional but muted.
    ============================================================ */
 :root {
-  /* typography */
-  --font-ui: var(--font-sg), "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-serif), Georgia, "Times New Roman", serif;
+  /* typography — neo-grotesque sans, tight tracking (reference match) */
+  --font-ui: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jb), ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, monospace;
 
   --text-xs: 11px;
@@ -62,56 +62,57 @@
   --z-toast: 100;
 }
 
-/* ---- light (only theme) ---- */
+/* ---- dark (only theme) ---- */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  --bg: #fbfbfa;
-  --bg-elevated: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f6f7f9;
-  --surface-3: #eef0f3;
-  --surface-hover: #f2f4f6;
+  --bg: #0a0a0a;
+  --bg-elevated: #111111;
+  --surface: #101010;
+  --surface-2: #161616;
+  --surface-3: #1d1d1d;
+  --surface-hover: #1a1a1a;
 
-  --border: rgba(16, 18, 24, 0.1);
-  --border-strong: rgba(16, 18, 24, 0.17);
-  --border-faint: rgba(16, 18, 24, 0.055);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-faint: rgba(255, 255, 255, 0.06);
 
-  --ink: #1c1f26;
-  --ink-secondary: #4c5564;
-  --ink-muted: #7d8593;
-  --ink-faint: #a9aeb8;
+  --ink: #f5f5f5;
+  --ink-secondary: #c4c4c4;
+  --ink-muted: #8a8a8a;
+  --ink-faint: #5c5c5c;
 
-  --accent: #2f6bde;
-  --accent-strong: #1d5ed1;
-  --accent-soft: rgba(47, 107, 222, 0.09);
-  --accent-border: rgba(47, 107, 222, 0.32);
-  --accent-ink: #ffffff;
+  /* monochrome interaction color — white IS the accent */
+  --accent: #ffffff;
+  --accent-strong: #ffffff;
+  --accent-soft: rgba(255, 255, 255, 0.1);
+  --accent-border: rgba(255, 255, 255, 0.32);
+  --accent-ink: #0a0a0a;
 
-  --success: #19813c;
-  --success-soft: rgba(25, 129, 60, 0.09);
-  --fail: #d0242f;
-  --fail-soft: rgba(208, 36, 47, 0.08);
-  --warn: #97690a;
-  --warn-soft: rgba(151, 105, 10, 0.09);
-  --run: #1264c8;
-  --run-soft: rgba(18, 100, 200, 0.08);
-  --muted: #7d8593;
-  --muted-soft: rgba(109, 115, 128, 0.09);
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.1);
+  --fail: #f87171;
+  --fail-soft: rgba(248, 113, 113, 0.1);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.1);
+  --run: #e5e5e5;
+  --run-soft: rgba(255, 255, 255, 0.08);
+  --muted: #8a8a8a;
+  --muted-soft: rgba(255, 255, 255, 0.07);
 
-  --shadow-sm: 0 1px 2px rgba(18, 22, 30, 0.05);
-  --shadow-md: 0 8px 24px rgba(18, 22, 30, 0.08), 0 2px 6px rgba(18, 22, 30, 0.05);
-  --shadow-lg: 0 24px 64px rgba(18, 22, 30, 0.13), 0 4px 12px rgba(18, 22, 30, 0.07);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
 
-  --grid-line: rgba(18, 22, 30, 0.05);
-  --glow-accent: rgba(47, 107, 222, 0.09);
-  --glow-warm: rgba(18, 22, 30, 0.03);
+  --grid-line: rgba(255, 255, 255, 0.05);
+  --glow-accent: rgba(255, 255, 255, 0.05);
+  --glow-warm: rgba(255, 255, 255, 0.03);
 
-  --log-ts: #9aa0aa;
-  --log-info: #4c5564;
-  --log-warn: #97690a;
-  --log-error: #d0242f;
-  --log-ok: #19813c;
+  --log-ts: #6b6b6b;
+  --log-info: #c4c4c4;
+  --log-warn: #fbbf24;
+  --log-error: #f87171;
+  --log-ok: #4ade80;
 }
 
 /* ============================================================
@@ -132,9 +133,9 @@ body {
 }
 
 h1, h2, h3, h4 {
-  font-weight: 650;
-  letter-spacing: var(--tracking-tight);
-  line-height: 1.12;
+  font-weight: 640;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
 }
 
 ::selection {
@@ -172,7 +173,7 @@ body::before {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(1100px 560px at 12% -12%, var(--glow-accent), transparent 62%),
+    radial-gradient(1100px 560px at 50% -18%, rgba(255, 255, 255, 0.045), transparent 62%),
     radial-gradient(900px 520px at 88% 112%, var(--glow-warm), transparent 60%);
   pointer-events: none;
 }
@@ -210,7 +211,7 @@ body::before {
   font-size: 10px;
 }
 
-/* buttons */
+/* buttons — squared-off (8px), not capsule */
 .btn,
 .btn-primary,
 .btn-ghost,
@@ -221,12 +222,12 @@ body::before {
   gap: var(--sp-2);
   height: 34px;
   padding: 0 var(--sp-4);
-  border-radius: var(--r-full);
+  border-radius: 8px;
   border: 1px solid var(--border-strong);
   background: var(--surface-2);
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: var(--tracking-tight);
   white-space: nowrap;
   text-decoration: none;
@@ -238,7 +239,7 @@ body::before {
     box-shadow var(--dur) var(--ease-out);
   user-select: none;
 }
-.btn:hover { background: var(--surface-hover); }
+.btn:hover { background: var(--surface-hover); border-color: rgba(255, 255, 255, 0.26); }
 .btn:active,
 .btn-primary:active,
 .btn-ghost:active,
@@ -248,20 +249,22 @@ body::before {
 .btn-ghost:disabled,
 .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary {
-  background: linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: var(--accent-ink);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 2px 12px rgba(38, 87, 201, 0.28);
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #0a0a0a;
+  font-weight: 600;
+  box-shadow: 0 2px 14px rgba(255, 255, 255, 0.09);
 }
 .btn-primary:hover {
-  background: linear-gradient(180deg, #4b8bf5 0%, var(--accent-strong) 60%, #2f63dd 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 20px rgba(38, 87, 201, 0.4);
+  background: #e8e8e8;
+  border-color: #e8e8e8;
+  box-shadow: 0 4px 22px rgba(255, 255, 255, 0.14);
 }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-secondary); }
 .btn-ghost:hover { background: var(--surface-hover); color: var(--ink); border-color: transparent; }
-.btn-danger { background: var(--fail-soft); border-color: var(--fail); color: var(--fail); }
-.btn-danger:hover { background: var(--fail); color: #fff; }
-.btn-sm { height: 28px; padding: 0 var(--sp-3); font-size: var(--text-xs); }
+.btn-danger { background: var(--fail-soft); border-color: rgba(248, 113, 113, 0.4); color: var(--fail); }
+.btn-danger:hover { background: rgba(248, 113, 113, 0.18); border-color: var(--fail); color: #fff; }
+.btn-sm { height: 28px; padding: 0 var(--sp-3); font-size: var(--text-xs); border-radius: 7px; }
 
 /* inputs */
 .input {
@@ -529,7 +532,7 @@ table.data tr.clickable { cursor: pointer; }
   animation: shimmer 1.4s var(--ease-in-out) infinite;
 }
 .skeleton::after {
-  background: linear-gradient(90deg, transparent, rgba(16, 18, 24, 0.05), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
 }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
 
@@ -1047,26 +1050,26 @@ table.data tr.clickable { cursor: pointer; }
 }
 
 /* ============================================================
-   Marketing display typography (Brainboard-scale editorial)
+   Marketing display typography (monumental, reference-scale)
    ============================================================ */
 .display-hero {
   font-size: clamp(52px, 8.5vw, 118px);
-  font-weight: 600;
-  line-height: 0.92;
-  letter-spacing: -0.045em;
+  font-weight: 620;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
   text-wrap: balance;
 }
 .display-xl {
   font-size: clamp(36px, 4.6vw, 60px);
-  font-weight: 600;
-  line-height: 1.02;
+  font-weight: 620;
+  line-height: 1.04;
   letter-spacing: -0.035em;
   text-wrap: balance;
 }
 .display-lg {
   font-size: clamp(28px, 3.4vw, 44px);
-  font-weight: 600;
-  line-height: 1.06;
+  font-weight: 620;
+  line-height: 1.08;
   letter-spacing: -0.03em;
 }
 
@@ -1086,7 +1089,7 @@ table.data tr.clickable { cursor: pointer; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  transition: border-color var(--dur) var(--ease-out);
+  transition: border-color var(--dur) var(--ease-out), background var(--dur) var(--ease-out);
 }
 .quiet-card:hover { border-color: var(--border-strong); }
 
@@ -1137,11 +1140,12 @@ table.data tr.clickable { cursor: pointer; }
   from { opacity: 0; transform: translateY(12px); }
 }
 
-/* display serif italic accent word */
+/* white accent word (monochrome display) */
 .serif-it {
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
+  font-style: normal;
+  font-weight: 620;
+  color: var(--ink);
 }
 
 /* product mocks on the landing page */
@@ -1160,7 +1164,6 @@ table.data tr.clickable { cursor: pointer; }
   .dash-mock .mock-code { display: none !important; }
 }
 
-/* dot-grid CTA box */
 .cta-box {
   border-radius: var(--r-xl);
   border: 1px solid var(--border);
@@ -1169,9 +1172,6 @@ table.data tr.clickable { cursor: pointer; }
   background-size: 22px 22px;
   background-position: center;
   padding-block: clamp(48px, 7vw, 88px);
-}
-.cta-box {
-  background-image: radial-gradient(rgba(16, 18, 24, 0.08) 1px, transparent 1px);
 }
 
 /* ============================================================
@@ -1262,14 +1262,14 @@ html { scroll-behavior: smooth; }
 .animate-pulse-glow { animation: pulse-glow 5s ease-in-out infinite; }
 
 .text-gradient {
-  background: linear-gradient(100deg, #e6eaf2 0%, #a5b4fc 45%, #67e8f9 100%);
+  background: linear-gradient(100deg, #ffffff 0%, #b8b8b8 55%, #7c7c7c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-gradient-accent {
-  background: linear-gradient(100deg, #818cf8 0%, #38bdf8 55%, #34d399 100%);
+  background: linear-gradient(100deg, #ffffff 0%, #d4d4d4 55%, #8a8a8a 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

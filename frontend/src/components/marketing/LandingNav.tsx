@@ -7,8 +7,8 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 const LINKS = [
   { label: 'Showcase', href: '#showcase' },
   { label: 'Multi-cloud', href: '#multicloud' },
-  { label: 'Designer', href: '#designer' },
-  { label: 'Platform', href: '#platform' },
+  { label: 'Operate', href: '#operate' },
+  { label: 'Trust', href: '#trust' },
   { label: 'FAQ', href: '#faq' },
 ];
 
@@ -52,11 +52,11 @@ export function LandingNav() {
         <Link href="/" className="flex items-center gap-2.5 group">
           <span
             className="w-7 h-7 rounded-[8px] flex items-center justify-center transition-transform group-hover:scale-105"
-            style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}
+            style={{ background: '#ffffff', border: '1px solid #ffffff' }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent-strong)" strokeWidth="2.4" strokeLinecap="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2.4" strokeLinecap="round">
               <path d="M12 2a10 10 0 1 0 10 10" />
-              <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
+              <circle cx="12" cy="12" r="3" fill="#0a0a0a" stroke="none" />
             </svg>
           </span>
           <span className="font-semibold tracking-tight text-[15px]" style={{ color: 'var(--ink)' }}>cloudweave</span>
@@ -85,16 +85,16 @@ export function LandingNav() {
 
         <div className="flex items-center gap-2.5">
           <Link
-            href="/dashboard"
-            className="hidden sm:inline-flex h-9 items-center px-4 text-[13px] font-medium rounded-full transition-colors"
+            href="/login"
+            className="hidden sm:inline-flex h-9 items-center px-4 text-[13px] font-medium rounded-[8px] transition-colors"
             style={{ color: 'var(--ink-secondary)' }}
           >
             Sign in
           </Link>
           <Link
-            href="/dashboard"
-            className="group hidden sm:inline-flex items-center gap-1.5 h-9 px-4 rounded-full text-[13px] font-semibold text-white transition-all"
-            style={{ background: 'linear-gradient(180deg, #3f80f0 0%, var(--accent) 60%, #2657c9 100%)' }}
+            href="/login"
+            className="group hidden sm:inline-flex items-center gap-1.5 h-9 px-4 rounded-[8px] text-[13px] font-semibold transition-all"
+            style={{ background: '#ffffff', color: '#0a0a0a' }}
           >
             Launch
             <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />

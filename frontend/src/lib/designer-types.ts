@@ -118,32 +118,32 @@ export const KIND_META: Record<
 > = {
   network: {
     label: 'Network',
-    color: 'text-sky-300',
-    accent: 'border-sky-500/40 bg-sky-500/10',
+    color: 'text-neutral-200',
+    accent: 'border-neutral-500/40 bg-white/5',
     icon: 'network',
   },
   compute: {
     label: 'Compute',
-    color: 'text-amber-300',
-    accent: 'border-amber-500/40 bg-amber-500/10',
+    color: 'text-neutral-200',
+    accent: 'border-neutral-500/40 bg-white/5',
     icon: 'cpu',
   },
   database: {
     label: 'Database',
-    color: 'text-indigo-300',
-    accent: 'border-indigo-500/40 bg-indigo-500/10',
+    color: 'text-neutral-200',
+    accent: 'border-neutral-500/40 bg-white/5',
     icon: 'database',
   },
   storage: {
     label: 'Storage',
-    color: 'text-emerald-300',
-    accent: 'border-emerald-500/40 bg-emerald-500/10',
+    color: 'text-neutral-200',
+    accent: 'border-neutral-500/40 bg-white/5',
     icon: 'hard-drive',
   },
   kubernetes: {
     label: 'Kubernetes',
-    color: 'text-violet-300',
-    accent: 'border-violet-500/40 bg-violet-500/10',
+    color: 'text-neutral-200',
+    accent: 'border-neutral-500/40 bg-white/5',
     icon: 'ship',
   },
 };

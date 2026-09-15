@@ -64,7 +64,7 @@ export function ExecutionStatusPipeline({
         return 'bg-amber-950/40 text-amber-400 border-amber-800/40';
       case 'CREATE':
       default:
-        return 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40';
+        return 'bg-emerald-950/40 text-neutral-300 border-emerald-800/40';
     }
   };
 
@@ -80,9 +80,9 @@ export function ExecutionStatusPipeline({
   };
 
   return (
-    <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-6">
+    <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-900/40 space-y-6">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800/80 pb-4">
         <div className="flex items-center space-x-3">
           <span
             className={`text-xs font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider ${getOperationBadge(
@@ -92,17 +92,17 @@ export function ExecutionStatusPipeline({
             {operationType}
           </span>
 
-          <div className="flex items-center space-x-2 text-xs text-slate-300">
-            <span className="text-slate-400">Status:</span>
+          <div className="flex items-center space-x-2 text-xs text-neutral-300">
+            <span className="text-neutral-400">Status:</span>
             <span
               className={`font-bold px-2 py-0.5 rounded-full border uppercase text-[11px] ${
                 status === 'SUCCEEDED'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  ? 'bg-white/5 text-neutral-300 border-neutral-500/30'
                   : status === 'RUNNING'
-                  ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 animate-pulse'
+                  ? 'bg-white/5 text-neutral-300 border-neutral-500/30 animate-pulse'
                   : status === 'FAILED'
                   ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                  : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+                  : 'bg-white/5 text-neutral-300 border-neutral-500/30'
               }`}
             >
               {status}
@@ -111,15 +111,15 @@ export function ExecutionStatusPipeline({
         </div>
 
         {/* Timing & Telemetry */}
-        <div className="flex items-center space-x-4 text-xs text-slate-400 font-mono">
+        <div className="flex items-center space-x-4 text-xs text-neutral-400 font-mono">
           {formatDuration() && (
-            <div className="flex items-center space-x-1.5 text-slate-300">
-              <Clock className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="flex items-center space-x-1.5 text-neutral-300">
+              <Clock className="w-3.5 h-3.5 text-neutral-300" />
               <span>Duration: {formatDuration()}</span>
             </div>
           )}
           {executionReference && (
-            <div className="flex items-center space-x-1 text-slate-500 truncate max-w-[160px]" title={executionReference}>
+            <div className="flex items-center space-x-1 text-neutral-500 truncate max-w-[160px]" title={executionReference}>
               <Lock className="w-3 h-3 text-amber-400" />
               <span>Lock: {executionReference.slice(0, 10)}...</span>
             </div>
@@ -141,10 +141,10 @@ export function ExecutionStatusPipeline({
                     state === 'completed'
                       ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
                       : state === 'active'
-                      ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/20 shadow-lg shadow-indigo-600/40 animate-pulse'
+                      ? 'bg-white text-neutral-900 ring-4 ring-neutral-400/20 shadow-lg shadow-black/40 animate-pulse'
                       : state === 'failed'
                       ? 'bg-rose-600 text-white shadow-md shadow-rose-500/20'
-                      : 'bg-slate-950 border border-slate-800 text-slate-500'
+                      : 'bg-neutral-950 border border-neutral-800 text-neutral-500'
                   }`}
                 >
                   {state === 'completed' ? (
@@ -165,15 +165,15 @@ export function ExecutionStatusPipeline({
                       state === 'active'
                         ? 'text-white'
                         : state === 'completed'
-                        ? 'text-slate-200'
+                        ? 'text-neutral-200'
                         : state === 'failed'
                         ? 'text-rose-400'
-                        : 'text-slate-500'
+                        : 'text-neutral-500'
                     }`}
                   >
                     {stage.label}
                   </div>
-                  <div className="hidden sm:block text-[10px] text-slate-500 font-normal leading-tight">
+                  <div className="hidden sm:block text-[10px] text-neutral-500 font-normal leading-tight">
                     {stage.desc}
                   </div>
                 </div>

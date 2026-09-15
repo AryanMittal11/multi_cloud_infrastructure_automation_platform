@@ -30,12 +30,12 @@ export function WizardStepper({
   maxStepReached,
 }: WizardStepperProps) {
   return (
-    <div className="w-full py-4 border-b border-slate-800/80 mb-8">
+    <div className="w-full py-4 border-b border-neutral-800/80 mb-8">
       <div className="flex items-center justify-between relative max-w-4xl mx-auto px-4">
         {/* Connecting Progress Line */}
-        <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-0.5 bg-slate-800 -z-0">
+        <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-0.5 bg-neutral-800 -z-0">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-400 transition-all duration-300"
+            className="h-full bg-gradient-to-r from-neutral-200 via-neutral-400 to-neutral-500 transition-all duration-300"
             style={{
               width: `${((Math.min(currentStep, 5) - 1) / 4) * 100}%`,
             }}
@@ -61,8 +61,8 @@ export function WizardStepper({
                   isCompleted
                     ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
                     : isActive
-                    ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/20 shadow-lg shadow-indigo-600/40 scale-110'
-                    : 'bg-slate-900 border border-slate-800 text-slate-500'
+                    ? 'bg-white text-neutral-900 ring-4 ring-neutral-400/20 shadow-lg shadow-black/40 scale-110'
+                    : 'bg-neutral-900 border border-neutral-800 text-neutral-500'
                 }`}
               >
                 {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
@@ -74,13 +74,13 @@ export function WizardStepper({
                     isActive
                       ? 'text-white'
                       : isCompleted
-                      ? 'text-slate-300'
-                      : 'text-slate-500'
+                      ? 'text-neutral-300'
+                      : 'text-neutral-500'
                   }`}
                 >
                   {step.title}
                 </span>
-                <span className="hidden sm:block text-[10px] text-slate-500 font-normal">
+                <span className="hidden sm:block text-[10px] text-neutral-500 font-normal">
                   {step.shortDesc}
                 </span>
               </div>

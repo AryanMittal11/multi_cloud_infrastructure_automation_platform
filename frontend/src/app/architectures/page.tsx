@@ -67,12 +67,7 @@ export default function ArchitecturesPage() {
 
   const designs = data?.designs || [];
 
-  const providerColor = (p: string) => {
-    if (p === 'AWS') return '#b45309';
-    if (p === 'AZURE') return '#0369a1';
-    if (p === 'GCP') return '#047857';
-    return 'var(--accent)';
-  };
+  const providerColor = (_p: string) => 'var(--accent)';
 
   return (
     <div>

@@ -26,7 +26,7 @@ export function DynamicForm({
 
   if (Object.keys(properties).length === 0) {
     return (
-      <div className="p-8 text-center rounded-2xl border border-slate-800 bg-slate-950/40 text-slate-500 text-xs">
+      <div className="p-8 text-center rounded-2xl border border-neutral-800 bg-neutral-950/40 text-neutral-500 text-xs">
         This template requires no custom parameters. Defaults will be provisioned directly.
       </div>
     );
@@ -48,22 +48,22 @@ export function DynamicForm({
             className={`space-y-1.5 p-4 rounded-xl border transition-all ${
               error
                 ? 'border-rose-500/50 bg-rose-950/10'
-                : 'border-slate-800/80 bg-slate-900/30 hover:border-slate-700/80'
+                : 'border-neutral-800/80 bg-neutral-900/30 hover:border-neutral-700/80'
             } ${prop.type === 'object' || prop.type === 'array' ? 'md:col-span-2' : ''}`}
           >
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-200 flex items-center space-x-1.5">
-                <span className="font-mono text-indigo-300">{key}</span>
+              <label className="text-xs font-bold text-neutral-200 flex items-center space-x-1.5">
+                <span className="font-mono text-neutral-200">{key}</span>
                 {isRequired && <span className="text-rose-400 font-bold">*</span>}
               </label>
 
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400">
                 {prop.type || 'string'}
               </span>
             </div>
 
             {prop.description && (
-              <p className="text-[11px] text-slate-400 leading-snug">{prop.description}</p>
+              <p className="text-[11px] text-neutral-400 leading-snug">{prop.description}</p>
             )}
 
             {/* Input Controls */}
@@ -72,7 +72,7 @@ export function DynamicForm({
                 <select
                   value={value}
                   onChange={(e) => onChange(key, e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-400 transition-colors"
                 >
                   <option value="" disabled>
                     Select an option...
@@ -91,8 +91,8 @@ export function DynamicForm({
                     onChange={(e) => onChange(key, e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  <span className="text-xs font-medium text-slate-300">
+                  <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neutral-300"></div>
+                  <span className="text-xs font-medium text-neutral-300">
                     {value ? 'Enabled' : 'Disabled'}
                   </span>
                 </label>
@@ -114,7 +114,7 @@ export function DynamicForm({
                         : parseFloat(e.target.value)
                     )
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-400 transition-colors"
                 />
               ) : (
                 <input
@@ -127,7 +127,7 @@ export function DynamicForm({
                   placeholder={prop.default !== undefined ? String(prop.default) : `Enter ${key}...`}
                   value={value}
                   onChange={(e) => onChange(key, e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white font-mono focus:outline-none focus:border-neutral-400 transition-colors"
                 />
               )}
             </div>
@@ -139,7 +139,7 @@ export function DynamicForm({
                 <span>{error}</span>
               </div>
             ) : prop.default !== undefined ? (
-              <div className="text-[10px] text-slate-500 font-mono pt-0.5">
+              <div className="text-[10px] text-neutral-500 font-mono pt-0.5">
                 Default: {JSON.stringify(prop.default)}
               </div>
             ) : null}

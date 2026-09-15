@@ -37,14 +37,14 @@ export const InfraNode = memo(({ id, data, selected }: NodeProps<InfraNodeData>)
     <div
       className={`w-56 rounded-2xl border-2 backdrop-blur-md transition-all cursor-grab active:cursor-grabbing ${
         selected
-          ? 'border-indigo-400 shadow-[0_0_24px_rgba(99,102,241,0.35)]'
-          : 'border-slate-700/80 hover:border-slate-500'
-      } bg-slate-900/90`}
+          ? 'border-neutral-300 shadow-[0_0_24px_rgba(255,255,255,0.18)]'
+          : 'border-neutral-700/80 hover:border-neutral-500'
+      } bg-neutral-900/90`}
       onDoubleClick={() => data.onConfigure?.(id)}
     >
-      <Handle type="target" position={Position.Top} className="!bg-indigo-400 !w-2.5 !h-2.5 !border-2 !border-slate-900" />
+      <Handle type="target" position={Position.Top} className="!bg-neutral-300 !w-2.5 !h-2.5 !border-2 !border-neutral-900" />
       
-      <div className={`p-3 rounded-t-xl border-b ${meta.accent} border-b-slate-800`}>
+      <div className={`p-3 rounded-t-xl border-b ${meta.accent} border-b-neutral-800`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Icon className={`w-4 h-4 ${meta.color}`} />
@@ -58,16 +58,16 @@ export const InfraNode = memo(({ id, data, selected }: NodeProps<InfraNodeData>)
 
       <div className="p-3 space-y-2">
         <div className="text-sm font-bold text-white truncate">{data.label}</div>
-        <div className="text-[10px] font-mono text-slate-500 truncate">{data.templateRef}</div>
+        <div className="text-[10px] font-mono text-neutral-500 truncate">{data.templateRef}</div>
 
         {data.monthlyCost !== undefined && data.monthlyCost > 0 && (
-          <div className="text-[11px] font-semibold text-emerald-400">
+          <div className="text-[11px] font-semibold text-neutral-300">
             ~${data.monthlyCost.toFixed(2)}/mo
           </div>
         )}
 
         <div className="flex items-center justify-between pt-1">
-          <span className="text-[10px] text-slate-500">
+          <span className="text-[10px] text-neutral-500">
             {configCount > 0 ? `${configCount} config param${configCount > 1 ? 's' : ''}` : 'default config'}
           </span>
           <div className="flex items-center space-x-1">
@@ -76,7 +76,7 @@ export const InfraNode = memo(({ id, data, selected }: NodeProps<InfraNodeData>)
                 e.stopPropagation();
                 data.onConfigure?.(id);
               }}
-              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-indigo-300"
+              className="p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
               title="Configure resource"
             >
               <Settings2 className="w-3.5 h-3.5" />
@@ -86,7 +86,7 @@ export const InfraNode = memo(({ id, data, selected }: NodeProps<InfraNodeData>)
                 e.stopPropagation();
                 data.onDelete?.(id);
               }}
-              className="p-1 rounded hover:bg-rose-500/10 text-slate-400 hover:text-rose-400"
+              className="p-1 rounded hover:bg-rose-500/10 text-neutral-400 hover:text-rose-400"
               title="Remove resource"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -95,7 +95,7 @@ export const InfraNode = memo(({ id, data, selected }: NodeProps<InfraNodeData>)
         </div>
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-indigo-400 !w-2.5 !h-2.5 !border-2 !border-slate-900" />
+      <Handle type="source" position={Position.Bottom} className="!bg-neutral-300 !w-2.5 !h-2.5 !border-2 !border-neutral-900" />
     </div>
   );
 });

@@ -200,10 +200,10 @@ function DeploymentWizardContent() {
 
       {/* Unauthenticated Alert */}
       {!user && (
-        <div className="p-6 rounded-2xl border border-indigo-500/30 bg-indigo-950/20 text-center space-y-3">
-          <Key className="w-8 h-8 text-indigo-400 mx-auto" />
+        <div className="p-6 rounded-2xl border border-neutral-500/30 bg-neutral-900 text-center space-y-3">
+          <Key className="w-8 h-8 text-neutral-300 mx-auto" />
           <h2 className="text-sm font-bold text-white">Authentication Required</h2>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-neutral-300">
             Sign in with a Developer or Administrator persona to configure and approve infrastructure plans.
           </p>
           <Link
@@ -224,27 +224,27 @@ function DeploymentWizardContent() {
       )}
 
       {user && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 sm:p-8 space-y-6">
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6 sm:p-8 space-y-6">
           {/* ========================================================= */}
           {/* STEP 1: Project & Environment Selection */}
           {/* ========================================================= */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+              <div className="border-b border-neutral-800 pb-4">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                   <span>Step 1 of 5</span>
                 </div>
                 <h2 className="text-xl font-bold text-white">Select Deployment Target Context</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   Choose the parent workspace project and target deployment environment tier.
                 </p>
               </div>
 
               {/* Projects Selection */}
               <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-200">1. Target Project Workspace *</label>
+                <label className="text-xs font-bold text-neutral-200">1. Target Project Workspace *</label>
                 {projectsLoading ? (
-                  <div className="h-24 rounded-xl bg-slate-950/60 animate-pulse border border-slate-800" />
+                  <div className="h-24 rounded-xl bg-neutral-950/60 animate-pulse border border-neutral-800" />
                 ) : projectsData?.projects && projectsData.projects.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {projectsData.projects.map((proj: Project) => {
@@ -263,20 +263,20 @@ function DeploymentWizardContent() {
                           }}
                           className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
                             isSelected
-                              ? 'border-indigo-500 bg-indigo-950/20 ring-1 ring-indigo-500 shadow-md'
-                              : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                              ? 'border-neutral-400 bg-neutral-900 ring-1 ring-neutral-400 shadow-md'
+                              : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
                           }`}
                         >
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-sm text-white">{proj.name}</span>
-                              {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
+                              {isSelected && <CheckCircle2 className="w-4 h-4 text-neutral-300" />}
                             </div>
-                            <p className="text-[11px] text-slate-400 line-clamp-2">
+                            <p className="text-[11px] text-neutral-400 line-clamp-2">
                               {proj.description || 'Standard workspace'}
                             </p>
                           </div>
-                          <div className="mt-3 text-[10px] text-slate-500 font-mono">
+                          <div className="mt-3 text-[10px] text-neutral-500 font-mono">
                             {proj.environments?.length ?? 0} environment(s) configured
                           </div>
                         </div>
@@ -284,9 +284,9 @@ function DeploymentWizardContent() {
                     })}
                   </div>
                 ) : (
-                  <div className="p-6 rounded-xl border border-dashed border-slate-800 text-center text-xs text-slate-400">
+                  <div className="p-6 rounded-xl border border-dashed border-neutral-800 text-center text-xs text-neutral-400">
                     No projects found.{' '}
-                    <Link href="/projects" className="text-indigo-400 underline">
+                    <Link href="/projects" className="text-neutral-300 underline">
                       Create a project first
                     </Link>
                     .
@@ -296,8 +296,8 @@ function DeploymentWizardContent() {
 
               {/* Environments Selection */}
               {selectedProject && (
-                <div className="space-y-3 pt-4 border-t border-slate-800/80">
-                  <label className="text-xs font-bold text-slate-200">2. Target Environment Tier *</label>
+                <div className="space-y-3 pt-4 border-t border-neutral-800/80">
+                  <label className="text-xs font-bold text-neutral-200">2. Target Environment Tier *</label>
                   {selectedProject.environments && selectedProject.environments.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {selectedProject.environments.map((env: Environment) => {
@@ -311,8 +311,8 @@ function DeploymentWizardContent() {
                             onClick={() => setSelectedEnvironmentId(env.id)}
                             className={`p-4 rounded-xl border cursor-pointer transition-all ${
                               isSelected
-                                ? 'border-indigo-500 bg-indigo-950/20 ring-1 ring-indigo-500'
-                                : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                                ? 'border-neutral-400 bg-neutral-900 ring-1 ring-neutral-400'
+                                : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -322,14 +322,14 @@ function DeploymentWizardContent() {
                                     ? 'text-rose-400'
                                     : isStage
                                     ? 'text-amber-400'
-                                    : 'text-emerald-400'
+                                    : 'text-neutral-300'
                                 }`}
                               >
                                 {env.name}
                               </span>
-                              {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
+                              {isSelected && <CheckCircle2 className="w-4 h-4 text-neutral-300" />}
                             </div>
-                            <div className="mt-2 text-[11px] text-slate-400">
+                            <div className="mt-2 text-[11px] text-neutral-400">
                               {isProd
                                 ? 'Production Tier — Enforces strict admin confirmation'
                                 : isStage
@@ -349,14 +349,14 @@ function DeploymentWizardContent() {
               )}
 
               {/* Navigation Actions */}
-              <div className="pt-4 border-t border-slate-800 flex justify-end">
+              <div className="pt-4 border-t border-neutral-800 flex justify-end">
                 <button
                   disabled={!selectedProjectId || !selectedEnvironmentId}
                   onClick={() => {
                     setCurrentStep(2);
                     setMaxStepReached((prev) => Math.max(prev, 2));
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-neutral-900 font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-black/30 transition-all disabled:opacity-50"
                 >
                   <span>Select Template</span>
                   <ArrowRight className="w-4 h-4" />
@@ -370,21 +370,21 @@ function DeploymentWizardContent() {
           {/* ========================================================= */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+              <div className="border-b border-neutral-800 pb-4">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                   <span>Step 2 of 5</span>
                 </div>
                 <h2 className="text-xl font-bold text-white">Select Architecture Template</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   Choose a verified Infrastructure as Code module to provision in{' '}
-                  <strong className="text-indigo-300">{selectedEnvironment?.name}</strong>.
+                  <strong className="text-neutral-200">{selectedEnvironment?.name}</strong>.
                 </p>
               </div>
 
               {templatesLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[1, 2, 3, 4].map((n) => (
-                    <div key={n} className="h-32 rounded-xl bg-slate-950/60 animate-pulse border border-slate-800" />
+                    <div key={n} className="h-32 rounded-xl bg-neutral-950/60 animate-pulse border border-neutral-800" />
                   ))}
                 </div>
               ) : templatesData?.templates && templatesData.templates.length > 0 ? (
@@ -399,8 +399,8 @@ function DeploymentWizardContent() {
                         onClick={() => setSelectedTemplateId(tmpl.id)}
                         className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
                           isSelected
-                            ? 'border-indigo-500 bg-indigo-950/20 ring-1 ring-indigo-500 shadow-md'
-                            : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                            ? 'border-neutral-400 bg-neutral-900 ring-1 ring-neutral-400 shadow-md'
+                            : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
                         }`}
                       >
                         <div className="space-y-2">
@@ -412,25 +412,25 @@ function DeploymentWizardContent() {
                                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
                                     isAws
                                       ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                      : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+                                      : 'bg-white/5 text-neutral-300 border-neutral-500/30'
                                   }`}
                                 >
                                   {tmpl.provider || 'CROSS-CLOUD'}
                                 </span>
-                                <span className="text-[10px] font-mono text-slate-400">
+                                <span className="text-[10px] font-mono text-neutral-400">
                                   v{tmpl.version}
                                 </span>
                               </div>
                             </div>
-                            {isSelected && <CheckCircle2 className="w-5 h-5 text-indigo-400" />}
+                            {isSelected && <CheckCircle2 className="w-5 h-5 text-neutral-300" />}
                           </div>
 
-                          <p className="text-xs text-slate-400 leading-relaxed">
+                          <p className="text-xs text-neutral-400 leading-relaxed">
                             {tmpl.description || 'Verified infrastructure module archetype.'}
                           </p>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-500 font-mono">
+                        <div className="pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-500 font-mono">
                           {Object.keys(tmpl.inputSchema?.properties || {}).length} configurable inputs
                         </div>
                       </div>
@@ -438,16 +438,16 @@ function DeploymentWizardContent() {
                   })}
                 </div>
               ) : (
-                <div className="p-8 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-400">
+                <div className="p-8 text-center rounded-xl border border-dashed border-neutral-800 text-xs text-neutral-400">
                   No templates available in catalog.
                 </div>
               )}
 
               {/* Navigation Actions */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
                 <button
                   onClick={() => setCurrentStep(1)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center space-x-1.5"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white flex items-center space-x-1.5"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back</span>
@@ -459,7 +459,7 @@ function DeploymentWizardContent() {
                     setCurrentStep(3);
                     setMaxStepReached((prev) => Math.max(prev, 3));
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-neutral-900 font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-black/30 transition-all disabled:opacity-50"
                 >
                   <span>Configure Parameters</span>
                   <ArrowRight className="w-4 h-4" />
@@ -473,21 +473,21 @@ function DeploymentWizardContent() {
           {/* ========================================================= */}
           {currentStep === 3 && selectedTemplate && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+              <div className="border-b border-neutral-800 pb-4">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                   <span>Step 3 of 5</span>
                 </div>
                 <h2 className="text-xl font-bold text-white">
                   Configure {selectedTemplate.name} Parameters
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   Input parameter fields are dynamically generated from the module JSONSchema contract.
                 </p>
               </div>
 
               {validationMessage && (
-                <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-neutral-500/30 text-neutral-200 text-xs flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-neutral-300" />
                   <span>{validationMessage}</span>
                 </div>
               )}
@@ -506,10 +506,10 @@ function DeploymentWizardContent() {
               />
 
               {/* Navigation Actions */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
                 <button
                   onClick={() => setCurrentStep(2)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center space-x-1.5"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white flex items-center space-x-1.5"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back</span>
@@ -519,7 +519,7 @@ function DeploymentWizardContent() {
                   <button
                     type="button"
                     onClick={handleValidateForm}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-all"
+                    className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-medium transition-all"
                   >
                     Validate Inputs
                   </button>
@@ -528,7 +528,7 @@ function DeploymentWizardContent() {
                     type="button"
                     disabled={planMutation.isPending}
                     onClick={handleProceedToPlan}
-                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-neutral-900 font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-black/30 transition-all disabled:opacity-50"
                   >
                     {planMutation.isPending ? (
                       <>
@@ -552,29 +552,29 @@ function DeploymentWizardContent() {
           {/* ========================================================= */}
           {currentStep === 4 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+              <div className="border-b border-neutral-800 pb-4">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                   <span>Step 4 of 5</span>
                 </div>
                 <h2 className="text-xl font-bold text-white">Dry-Run Execution & Diff Review</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   Review planned resource creations and modifications prior to entering the approval gate.
                 </p>
               </div>
 
               {/* Polling / Status indicator */}
               {deployment?.status === 'PLANNING' ? (
-                <div className="p-12 text-center rounded-2xl border border-slate-800 bg-slate-950/60 space-y-4">
-                  <Loader2 className="w-10 h-10 text-indigo-400 animate-spin mx-auto" />
+                <div className="p-12 text-center rounded-2xl border border-neutral-800 bg-neutral-950/60 space-y-4">
+                  <Loader2 className="w-10 h-10 text-neutral-300 animate-spin mx-auto" />
                   <div className="space-y-1">
                     <h3 className="text-base font-bold text-white">
                       Generating Terraform Dry-Run Preview...
                     </h3>
-                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    <p className="text-xs text-neutral-400 max-w-md mx-auto">
                       The isolated worker process is evaluating resource attributes and computing delta changes against AWS.
                     </p>
                   </div>
-                  <div className="text-[11px] font-mono text-slate-500">
+                  <div className="text-[11px] font-mono text-neutral-500">
                     Deployment #{activeDeploymentId?.slice(0, 8)} &bull; Status: PLANNING
                   </div>
                 </div>
@@ -584,12 +584,12 @@ function DeploymentWizardContent() {
                     <AlertTriangle className="w-5 h-5" />
                     <span>Plan Generation Failed</span>
                   </div>
-                  <pre className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-rose-300 overflow-x-auto whitespace-pre-wrap">
+                  <pre className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-xs text-rose-300 overflow-x-auto whitespace-pre-wrap">
                     {deployment.planOutput || 'Terraform plan encountered an error during execution.'}
                   </pre>
                   <button
                     onClick={() => setCurrentStep(3)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
+                    className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
                   >
                     Adjust Parameters
                   </button>
@@ -604,10 +604,10 @@ function DeploymentWizardContent() {
               )}
 
               {/* Navigation Actions */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
                 <button
                   onClick={() => setCurrentStep(3)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center space-x-1.5"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white flex items-center space-x-1.5"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Adjust Parameters</span>
@@ -619,7 +619,7 @@ function DeploymentWizardContent() {
                     setCurrentStep(5);
                     setMaxStepReached((prev) => Math.max(prev, 5));
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-neutral-900 font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-black/30 transition-all disabled:opacity-50"
                 >
                   <span>Proceed to Approval Gate</span>
                   <ArrowRight className="w-4 h-4" />
@@ -633,40 +633,40 @@ function DeploymentWizardContent() {
           {/* ========================================================= */}
           {currentStep === 5 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+              <div className="border-b border-neutral-800 pb-4">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                   <span>Step 5 of 5</span>
                 </div>
                 <h2 className="text-xl font-bold text-white">Authoritative Approval Gate</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   Explicit signoff required to dispatch asynchronous execution to RabbitMQ worker queue.
                 </p>
               </div>
 
               {/* Recap Card */}
-              <div className="p-5 rounded-2xl border border-slate-800 bg-slate-950/60 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <div className="p-5 rounded-2xl border border-neutral-800 bg-neutral-950/60 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   Deployment Specification Summary
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div className="space-y-1">
-                    <span className="text-slate-400">Target Project:</span>
+                    <span className="text-neutral-400">Target Project:</span>
                     <div className="font-bold text-white">{selectedProject?.name}</div>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-slate-400">Environment Tier:</span>
-                    <div className="font-bold text-indigo-300 uppercase">{selectedEnvironment?.name}</div>
+                    <span className="text-neutral-400">Environment Tier:</span>
+                    <div className="font-bold text-neutral-200 uppercase">{selectedEnvironment?.name}</div>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-slate-400">IaC Module:</span>
-                    <div className="font-bold text-emerald-400">{selectedTemplate?.name} (v{selectedTemplate?.version})</div>
+                    <span className="text-neutral-400">IaC Module:</span>
+                    <div className="font-bold text-neutral-300">{selectedTemplate?.name} (v{selectedTemplate?.version})</div>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-slate-400">Signing Operator:</span>
+                    <span className="text-neutral-400">Signing Operator:</span>
                     <div className="font-bold text-white flex items-center space-x-2">
                       <span>{user.name}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 border border-indigo-700/50">
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-200 border border-neutral-600/50">
                         {user.role}
                       </span>
                     </div>
@@ -686,8 +686,8 @@ function DeploymentWizardContent() {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/20 text-emerald-300 text-xs flex items-start space-x-3">
-                  <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
+                <div className="p-4 rounded-xl border border-neutral-500/30 bg-emerald-950/20 text-neutral-200 text-xs flex items-start space-x-3">
+                  <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-neutral-300" />
                   <div className="space-y-1">
                     <span className="font-bold">Permission Verified</span>
                     <p className="text-[11px] leading-relaxed">
@@ -698,10 +698,10 @@ function DeploymentWizardContent() {
               )}
 
               {/* Navigation Actions */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
                 <button
                   onClick={() => setCurrentStep(4)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center space-x-1.5"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white flex items-center space-x-1.5"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Diff</span>
@@ -737,8 +737,8 @@ export default function DeploymentWizardPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-12 text-center text-xs text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mx-auto text-indigo-500 mb-2" />
+        <div className="p-12 text-center text-xs text-neutral-500">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-400 mb-2" />
           <span>Loading Deployment Wizard...</span>
         </div>
       }

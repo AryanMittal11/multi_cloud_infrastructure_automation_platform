@@ -60,7 +60,7 @@ export function Reveal({
 /** Eyebrow pill used above section headlines */
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-white/[0.04] border border-white/10 text-indigo-300">
+    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-[7px] text-[11px] font-semibold tracking-wide bg-white/[0.04] border border-white/10 text-white/70">
       {children}
     </span>
   );

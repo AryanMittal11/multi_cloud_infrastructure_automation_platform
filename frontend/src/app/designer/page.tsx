@@ -309,14 +309,14 @@ function DesignerInner() {
   return (
     <div className="flex flex-col h-[calc(100vh-57px)]">
       {/* Designer toolbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur flex-wrap gap-2">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800/80 bg-neutral-950/70 backdrop-blur flex-wrap gap-2">
         <div className="flex items-center space-x-3">
           <input
             value={designName}
             onChange={(e) => setDesignName(e.target.value)}
-            className="bg-transparent text-sm font-bold text-white focus:outline-none focus:bg-slate-900 rounded-lg px-2 py-1 w-56 border border-transparent focus:border-slate-700"
+            className="bg-transparent text-sm font-bold text-white focus:outline-none focus:bg-neutral-900 rounded-lg px-2 py-1 w-56 border border-transparent focus:border-neutral-700"
           />
-          <div className="flex items-center rounded-xl border border-slate-800 overflow-hidden">
+          <div className="flex items-center rounded-xl border border-neutral-800 overflow-hidden">
             {(['AWS', 'AZURE', 'GCP'] as const).map((p) => (
               <button
                 key={p}
@@ -332,15 +332,15 @@ function DesignerInner() {
                 }}
                 className={`px-3 py-1.5 text-[10px] font-bold transition-all ${
                   cloudProvider === p
-                    ? 'bg-indigo-600/30 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white/15 text-white'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 {p}
               </button>
             ))}
           </div>
-          <span className="text-[11px] text-slate-500 hidden md:inline">
+          <span className="text-[11px] text-neutral-500 hidden md:inline">
             {nodes.length} resources · {edges.length} links
           </span>
         </div>
@@ -349,18 +349,18 @@ function DesignerInner() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs font-semibold hover:border-slate-600 flex items-center space-x-1.5 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-semibold hover:border-neutral-600 flex items-center space-x-1.5 disabled:opacity-50"
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-indigo-400" />}
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-neutral-300" />}
             <span>{designId ? 'Saved' : 'Save'} Design</span>
-            {savedAt && <span className="text-[9px] text-emerald-400">✓ {savedAt}</span>}
+            {savedAt && <span className="text-[9px] text-neutral-300">✓ {savedAt}</span>}
           </button>
           <button
             onClick={() => setShowCode(!showCode)}
             className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 ${
               showCode
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                : 'bg-slate-900 border-slate-800 text-slate-300'
+                ? 'bg-white/5 border-neutral-500/30 text-neutral-200'
+                : 'bg-neutral-900 border-neutral-800 text-neutral-300'
             }`}
           >
             <FileCode2 className="w-3.5 h-3.5" />
@@ -368,14 +368,14 @@ function DesignerInner() {
           </button>
           <button
             onClick={() => setDeployOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 flex items-center space-x-1.5"
+            className="px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-neutral-900 text-xs font-semibold shadow-md shadow-black/30 flex items-center space-x-1.5"
           >
             <Rocket className="w-3.5 h-3.5" />
             <span>Deploy</span>
           </button>
           <button
             onClick={handleClear}
-            className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/40"
+            className="p-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-rose-400 hover:border-rose-500/40"
             title="Clear canvas"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -407,11 +407,11 @@ function DesignerInner() {
               }}
             >
               <Background color="#1e293b" gap={22} variant={BackgroundVariant.Dots} />
-              <Controls className="!bg-slate-900 !border-slate-800 !rounded-xl [&>button]:!bg-slate-900 [&>button]:!border-slate-800 [&>button]:!fill-slate-300" />
+              <Controls className="!bg-neutral-900 !border-neutral-800 !rounded-xl [&>button]:!bg-neutral-900 [&>button]:!border-neutral-800 [&>button]:!fill-neutral-300" />
               <MiniMap
                 pannable
                 zoomable
-                className="!bg-slate-950 !border !border-slate-800 !rounded-xl"
+                className="!bg-neutral-950 !border !border-neutral-800 !rounded-xl"
                 nodeColor={() => '#6366f1'}
                 maskColor="rgba(2, 6, 23, 0.75)"
               />
@@ -420,13 +420,13 @@ function DesignerInner() {
             {nodes.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center space-y-3 max-w-sm pointer-events-auto">
-                  <Network className="w-12 h-12 text-slate-700 mx-auto" />
-                  <h3 className="text-base font-bold text-slate-300">Canvas is empty</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">
+                  <Network className="w-12 h-12 text-neutral-700 mx-auto" />
+                  <h3 className="text-base font-bold text-neutral-300">Canvas is empty</h3>
+                  <p className="text-xs text-neutral-500 leading-relaxed">
                     Click a resource in the palette to place it. Connect nodes bottom-to-top to
                     define dependency order — Terraform code generates live as you design.
                   </p>
-                  <div className="flex items-center justify-center space-x-2 text-[10px] text-slate-600 font-mono">
+                  <div className="flex items-center justify-center space-x-2 text-[10px] text-neutral-600 font-mono">
                     <Wand2 className="w-3 h-3" />
                     <span>design → terraform → deploy</span>
                   </div>
@@ -437,7 +437,7 @@ function DesignerInner() {
         </div>
 
         {/* Right side: inspector + code panel */}
-        <div className="w-96 shrink-0 hidden lg:flex flex-col border-l border-slate-800/80 bg-slate-950/50">
+        <div className="w-96 shrink-0 hidden lg:flex flex-col border-l border-neutral-800/80 bg-neutral-950/50">
           <div className="flex-1 min-h-0">
             {selectedNode ? (
               <NodeInspector
@@ -470,7 +470,7 @@ function DesignerInner() {
       />
 
       {/* Mobile fallback note */}
-      <div className="lg:hidden px-4 py-2 bg-slate-950/70 border-t border-slate-800/80 text-[10px] text-slate-500 text-center">
+      <div className="lg:hidden px-4 py-2 bg-neutral-950/70 border-t border-neutral-800/80 text-[10px] text-neutral-500 text-center">
         Open on a larger screen to use the inspector and Terraform code panel.
       </div>
     </div>
@@ -481,7 +481,7 @@ export default function DesignerPage() {
   return (
     <React.Suspense
       fallback={
-        <div className="flex items-center justify-center h-64 text-xs text-slate-500">
+        <div className="flex items-center justify-center h-64 text-xs text-neutral-500">
           Loading designer workspace...
         </div>
       }

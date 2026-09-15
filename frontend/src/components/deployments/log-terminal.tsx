@@ -72,9 +72,9 @@ export function LogTerminal({
   const isLive = status === 'RUNNING' || status === 'PLANNING';
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden flex flex-col shadow-2xl">
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-2xl">
       {/* Terminal Title Bar */}
-      <div className="bg-slate-900/90 border-b border-slate-800/80 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
+      <div className="bg-neutral-900/90 border-b border-neutral-800/80 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
         <div className="flex items-center space-x-3">
           {/* Window dots */}
           <div className="flex items-center space-x-1.5">
@@ -84,13 +84,13 @@ export function LogTerminal({
           </div>
 
           {/* Tab switcher */}
-          <div className="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 text-xs">
+          <div className="flex items-center space-x-1 bg-neutral-950/80 p-1 rounded-lg border border-neutral-800 text-xs">
             <button
               onClick={() => setActiveTab('apply')}
               className={`px-2.5 py-1 rounded-md font-medium transition-all ${
                 activeTab === 'apply'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               Apply Output {applyOutput ? '✓' : ''}
@@ -99,8 +99,8 @@ export function LogTerminal({
               onClick={() => setActiveTab('plan')}
               className={`px-2.5 py-1 rounded-md font-medium transition-all ${
                 activeTab === 'plan'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               Plan Output {planOutput ? '✓' : ''}
@@ -108,7 +108,7 @@ export function LogTerminal({
           </div>
 
           {isLive && (
-            <span className="flex items-center space-x-1.5 text-[11px] font-mono text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40 animate-pulse">
+            <span className="flex items-center space-x-1.5 text-[11px] font-mono text-neutral-300 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-600/40 animate-pulse">
               <Radio className="w-3 h-3" />
               <span>Live Streaming</span>
             </span>
@@ -119,13 +119,13 @@ export function LogTerminal({
         <div className="flex items-center space-x-2">
           {/* Search bar */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Filter logs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-32 sm:w-44 transition-all"
+              className="pl-8 pr-3 py-1 rounded-lg bg-neutral-950 border border-neutral-800 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 w-32 sm:w-44 transition-all"
             />
           </div>
 
@@ -134,8 +134,8 @@ export function LogTerminal({
             onClick={() => setAutoScroll(!autoScroll)}
             className={`p-1.5 rounded-lg border text-xs transition-colors flex items-center space-x-1 ${
               autoScroll
-                ? 'bg-indigo-950/60 border-indigo-700/50 text-indigo-300'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-neutral-900 border-neutral-600/50 text-neutral-200'
+                : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
             }`}
             title="Auto-scroll to bottom"
           >
@@ -146,17 +146,17 @@ export function LogTerminal({
           <button
             onClick={handleCopy}
             disabled={!rawLogs}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 text-xs transition-colors disabled:opacity-40"
             title="Copy all logs"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-neutral-300" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
 
           {/* Download button */}
           <button
             onClick={handleDownload}
             disabled={!rawLogs}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 text-xs transition-colors disabled:opacity-40"
             title="Download log file"
           >
             <Download className="w-3.5 h-3.5" />
@@ -167,12 +167,12 @@ export function LogTerminal({
       {/* Terminal Viewport */}
       <pre
         ref={terminalRef}
-        className="p-5 font-mono text-xs text-slate-300 overflow-x-auto overflow-y-auto max-h-[500px] min-h-[260px] leading-relaxed whitespace-pre-wrap selection:bg-indigo-600 selection:text-white bg-slate-950/95"
+        className="p-5 font-mono text-xs text-neutral-300 overflow-x-auto overflow-y-auto max-h-[500px] min-h-[260px] leading-relaxed whitespace-pre-wrap selection:bg-neutral-600 selection:text-white bg-neutral-950/95"
       >
         {displayedLogs ? (
           displayedLogs
         ) : (
-          <span className="text-slate-600 italic">
+          <span className="text-neutral-600 italic">
             {activeTab === 'apply'
               ? status === 'RUNNING'
                 ? 'Initializing execution workspace and executing terraform apply...'
@@ -185,15 +185,15 @@ export function LogTerminal({
       </pre>
 
       {/* Footer bar */}
-      <div className="bg-slate-900/60 border-t border-slate-800/80 px-4 py-1.5 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+      <div className="bg-neutral-900/60 border-t border-neutral-800/80 px-4 py-1.5 flex items-center justify-between text-[11px] text-neutral-500 font-mono">
         <div>
           <span>Lines: {rawLogs ? rawLogs.split('\n').length : 0}</span>
-          {searchQuery && <span className="text-indigo-400 ml-2">(Filtered)</span>}
+          {searchQuery && <span className="text-neutral-300 ml-2">(Filtered)</span>}
         </div>
         <div className="flex items-center space-x-2">
           <span>Worker: Isolated Ephemeral Directory</span>
           <span>&bull;</span>
-          <span className="text-emerald-400">Secrets Sanitized</span>
+          <span className="text-neutral-300">Secrets Sanitized</span>
         </div>
       </div>
     </div>

@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { ArrowRight, Boxes, CheckCircle2, FileCode2, GitBranch, Lock, Radar, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Boxes } from 'lucide-react';
 import { Reveal, Eyebrow, Section } from './Reveal';
 import { ProviderIcon } from '../../lib/provider-icon';
-import { DesignerMock } from './DashboardMock';
 
 /* ============================================================
    Multi-cloud — interactive provider switcher
@@ -74,17 +72,17 @@ export function MultiCloud() {
           </p>
 
           {/* interactive switcher */}
-          <div className="mt-8 inline-flex p-1 rounded-full" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }} role="tablist" aria-label="Cloud provider">
+          <div className="mt-8 inline-flex p-1 rounded-[9px]" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }} role="tablist" aria-label="Cloud provider">
             {(Object.keys(PROVIDER_DATA) as PKey[]).map((p) => (
               <button
                 key={p}
                 role="tab"
                 aria-selected={provider === p}
                 onClick={() => setProvider(p)}
-                className="flex items-center gap-2 h-9 px-4 rounded-full text-xs font-semibold transition-all"
+                className="flex items-center gap-2 h-9 px-4 rounded-[7px] text-xs font-semibold transition-all"
                 style={{
-                  background: provider === p ? 'var(--accent-soft)' : 'transparent',
-                  color: provider === p ? 'var(--accent-strong)' : 'var(--ink-muted)',
+                  background: provider === p ? '#ffffff' : 'transparent',
+                  color: provider === p ? '#0a0a0a' : 'var(--ink-muted)',
                 }}
               >
                 <ProviderIcon provider={p} size={14} />
@@ -112,7 +110,7 @@ export function MultiCloud() {
                 {data.tiers.map((t) => (
                   <div key={t.tier} className="rounded-md px-2.5 py-2 text-center" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-faint)' }}>
                     <div className="mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>{t.tier}</div>
-                    <div className="mono text-[11px] font-semibold mt-0.5" style={{ color: 'var(--accent-strong)' }}>{t.sku}</div>
+                    <div className="mono text-[11px] font-semibold mt-0.5" style={{ color: 'var(--ink)' }}>{t.sku}</div>
                   </div>
                 ))}
               </div>
@@ -136,7 +134,7 @@ export function MultiCloud() {
               {ARCHETYPES.map((a) => (
                 <div key={a.name} className="rounded-[var(--r-md)] p-4" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-faint)' }}>
                   <div className="flex items-center gap-2.5">
-                    <Boxes size={14} style={{ color: 'var(--accent-strong)' }} />
+                    <Boxes size={14} style={{ color: 'var(--ink)' }} />
                     <span className="mono text-xs font-semibold" style={{ color: 'var(--ink)' }}>{a.name}</span>
                     <span className="ml-auto mono text-[10px]" style={{ color: 'var(--ink-faint)' }}>{a.ref}</span>
                   </div>
@@ -145,14 +143,14 @@ export function MultiCloud() {
                       <React.Fragment key={n}>
                         <span
                           className="px-2.5 py-1 rounded-md text-[10px] font-mono transition-colors duration-300"
-                          style={{ background: 'var(--accent-soft)', color: 'var(--accent-strong)', border: '1px solid var(--accent-border)' }}
+                          style={{ background: 'var(--accent-soft)', color: 'var(--ink)', border: '1px solid var(--accent-border)' }}
                         >
                           {provider.toLowerCase()}_{n.split('-')[0]}
                         </span>
                         <ArrowRight size={10} style={{ color: 'var(--ink-faint)' }} />
                       </React.Fragment>
                     ))}
-                    <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold" style={{ background: 'var(--success-soft)', color: 'var(--success)', border: '1px solid rgba(67,196,99,0.3)' }}>
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold" style={{ background: 'var(--success-soft)', color: 'var(--success)', border: '1px solid rgba(74,222,128,0.3)' }}>
                       deployable
                     </span>
                   </div>
@@ -164,128 +162,6 @@ export function MultiCloud() {
               back into shared descriptors — compute_public_ip, database_endpoint, storage_uri.
             </p>
           </div>
-        </Reveal>
-      </div>
-    </Section>
-  );
-}
-
-/* ============================================================
-   Designer split — product visual using the real canvas mock
-   ============================================================ */
-
-export function Designer() {
-  return (
-    <Section id="designer">
-      <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
-        <Reveal variant="left" className="order-2 lg:order-1">
-          <Eyebrow>Terraform-as-diagram</Eyebrow>
-          <h2 className="display-lg mt-5" style={{ color: 'var(--ink)' }}>
-            The diagram is the source of truth.
-          </h2>
-          <p className="mt-5 text-base leading-relaxed max-w-lg" style={{ color: 'var(--ink-muted)' }}>
-            Nodes map to hardened modules from your private catalog. Dependency edges become
-            explicit <span className="mono" style={{ color: 'var(--ink-secondary)' }}>depends_on</span> wiring.
-            The code panel is live — copy it, export it, or hand the design straight to the pipeline.
-          </p>
-          <ul className="mt-7 space-y-3">
-            {[
-              'Schema-driven parameter forms per module — enums, ranges, defaults',
-              'Guardrails enforced at generation: private-by-default databases, CIDR-gated SSH',
-              'One canvas works for AWS, Azure, and GCP — switch providers, keep the design',
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                <CheckCircle2 size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <Link href="/designer" className="btn btn-primary mt-8 group">
-            Try the designer
-            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </Reveal>
-
-        <Reveal variant="right" className="order-1 lg:order-2">
-          <div className="browser-frame">
-            <div className="browser-bar">
-              <span className="browser-dot" />
-              <span className="browser-dot" />
-              <span className="browser-dot" />
-              <span className="browser-url">cloudweave.app/designer</span>
-              <span className="w-[46px]" />
-            </div>
-            <div style={{ height: 'clamp(300px, 34vw, 440px)' }}>
-              <DesignerMock />
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </Section>
-  );
-}
-
-/* ============================================================
-   Capabilities — quiet, dense bento (replaces glass-card grid)
-   ============================================================ */
-
-const CAPS = [
-  {
-    icon: GitBranch,
-    title: 'Governed pipeline',
-    desc: 'Plan → policy gate → explicit approval → apply. Every step lands in an immutable audit trail with actor, diff, and timestamp.',
-    wide: true,
-  },
-  {
-    icon: Radar,
-    title: 'Drift detection',
-    desc: 'Scheduled scans diff live state against source of truth on your cron and flag out-of-band changes with the exact attributes that moved.',
-  },
-  {
-    icon: Lock,
-    title: 'Zero secret leakage',
-    desc: 'AES-256-GCM at rest, validated live at onboarding, injected only into the ephemeral worker, regex-masked in logs.',
-  },
-  {
-    icon: FileCode2,
-    title: 'Standards-native output',
-    desc: 'Plain Terraform — modules, variables, tfvars. Export to your repo; the platform never locks your code in.',
-    wide: true,
-  },
-];
-
-export function Capabilities() {
-  return (
-    <Section id="platform">
-      <Reveal className="max-w-2xl">
-        <Eyebrow>The platform</Eyebrow>
-        <h2 className="display-lg mt-5" style={{ color: 'var(--ink)' }}>
-          Everything infrastructure teams ask about, answered by default.
-        </h2>
-      </Reveal>
-
-      <div className="mt-12 grid md:grid-cols-3 gap-3.5">
-        {CAPS.map((f, i) => {
-          const Icon = f.icon;
-          return (
-            <Reveal key={f.title} delay={i * 60} className={`${f.wide ? 'md:col-span-2' : ''} quiet-card p-7`}>
-              <div className="w-9 h-9 rounded-[var(--r-md)] flex items-center justify-center" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
-                <Icon size={16} style={{ color: 'var(--accent-strong)' }} />
-              </div>
-              <h3 className="mt-5 text-[15px] font-semibold" style={{ color: 'var(--ink)' }}>{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--ink-muted)' }}>{f.desc}</p>
-            </Reveal>
-          );
-        })}
-        {/* audit trail card fills the 3x2 grid */}
-        <Reveal delay={240} className="quiet-card p-7 md:row-span-1">
-          <div className="w-9 h-9 rounded-[var(--r-md)] flex items-center justify-center" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
-            <ShieldCheck size={16} style={{ color: 'var(--accent-strong)' }} />
-          </div>
-          <h3 className="mt-5 text-[15px] font-semibold" style={{ color: 'var(--ink)' }}>RBAC & audit</h3>
-          <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--ink-muted)' }}>
-            Admin, developer, and viewer roles scope every route. Production teardown requires an admin; every action is attributable.
-          </p>
         </Reveal>
       </div>
     </Section>

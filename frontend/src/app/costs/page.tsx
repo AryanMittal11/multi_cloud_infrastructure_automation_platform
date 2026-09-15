@@ -136,7 +136,7 @@ export default function CostsPage() {
                             className="h-full rounded-full"
                             style={{
                               width: `${Math.max(pct, 2)}%`,
-                              background: 'linear-gradient(90deg, #3f80f0, var(--accent))',
+                              background: 'linear-gradient(90deg, #ffffff, var(--accent))',
                               transition: 'width 500ms var(--ease-out)',
                             }}
                           />

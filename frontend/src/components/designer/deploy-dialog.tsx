@@ -81,13 +81,13 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl space-y-5">
+        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
           <div className="flex items-center space-x-2.5">
-            <Rocket className="w-5 h-5 text-indigo-400" />
+            <Rocket className="w-5 h-5 text-neutral-300" />
             <h3 className="text-sm font-bold text-white">Deploy &quot;{designName}&quot;</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} className="text-neutral-400 hover:text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -99,36 +99,36 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
           </div>
         )}
 
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+        <div className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800 text-[11px] text-neutral-400 space-y-1">
           <div className="flex justify-between">
             <span>Canvas resources</span>
-            <span className="text-slate-200 font-mono">{nodeCount}</span>
+            <span className="text-neutral-200 font-mono">{nodeCount}</span>
           </div>
           <div className="flex justify-between">
             <span>Primary template</span>
             {templatesLoading ? (
-              <span className="text-slate-500">resolving…</span>
+              <span className="text-neutral-500">resolving…</span>
             ) : resolvedTemplate ? (
-              <span className="text-indigo-300 font-semibold">{resolvedTemplate.name}</span>
+              <span className="text-neutral-200 font-semibold">{resolvedTemplate.name}</span>
             ) : (
               <span className="text-rose-400">no matching template</span>
             )}
           </div>
           <div className="flex justify-between">
             <span>Flow</span>
-            <span className="text-indigo-300 font-semibold">Plan &rarr; Review &rarr; Approve &rarr; Apply</span>
+            <span className="text-neutral-200 font-semibold">Plan &rarr; Review &rarr; Approve &rarr; Apply</span>
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300">Target Project</label>
+          <label className="text-xs font-semibold text-neutral-300">Target Project</label>
           <select
             value={projectId}
             onChange={(e) => {
               setProjectId(e.target.value);
               setEnvironmentId('');
             }}
-            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
+            className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-400"
           >
             <option value="">Select project...</option>
             {projects.map((p) => (
@@ -140,12 +140,12 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300">Target Environment</label>
+          <label className="text-xs font-semibold text-neutral-300">Target Environment</label>
           <select
             value={environmentId}
             onChange={(e) => setEnvironmentId(e.target.value)}
             disabled={!projectId}
-            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+            className="w-full px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none focus:border-neutral-400 disabled:opacity-50"
           >
             <option value="">Select environment...</option>
             {environments.map((env) => (
@@ -157,10 +157,10 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
           </select>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+        <div className="flex items-center justify-end space-x-3 pt-3 border-t border-neutral-800">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white"
           >
             Cancel
           </button>
@@ -174,7 +174,7 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
               deployMutation.mutate();
             }}
             disabled={deployMutation.isPending || !resolvedTemplate}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 disabled:opacity-50 flex items-center space-x-2"
+            className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-200 text-neutral-900 font-semibold text-xs shadow-md shadow-black/30 disabled:opacity-50 flex items-center space-x-2"
           >
             {deployMutation.isPending ? (
               <>
@@ -183,7 +183,7 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
               </>
             ) : deployMutation.isSuccess ? (
               <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-neutral-200" />
                 <span>Plan queued</span>
               </>
             ) : (
@@ -196,7 +196,7 @@ export function DeployDialog({ open, onClose, designName, nodeCount, templateRef
         </div>
 
         {deployMutation.isSuccess && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
+          <div className="p-3 rounded-xl bg-white/5 border border-neutral-500/30 text-neutral-200 text-xs flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>Plan queued — track it on the Deployments page.</span>
           </div>

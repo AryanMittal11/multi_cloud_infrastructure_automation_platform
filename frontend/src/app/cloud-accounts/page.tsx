@@ -178,11 +178,11 @@ export default function CloudAccountsPage() {
   const getProviderConfig = (p: string) => {
     switch (p) {
       case 'AWS':
-        return { color: '#b45309', label: 'Amazon Web Services' };
+        return { color: 'var(--accent)', label: 'Amazon Web Services' };
       case 'AZURE':
-        return { color: '#0369a1', label: 'Microsoft Azure' };
+        return { color: 'var(--accent)', label: 'Microsoft Azure' };
       case 'GCP':
-        return { color: '#047857', label: 'Google Cloud Platform' };
+        return { color: 'var(--accent)', label: 'Google Cloud Platform' };
       default:
         return { color: 'var(--ink-muted)', label: p };
     }
