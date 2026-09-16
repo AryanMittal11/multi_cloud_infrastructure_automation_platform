@@ -197,7 +197,7 @@ export default function DashboardContent() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 text-neutral-300 border border-neutral-500/20 mb-3">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>The cloud is your canvas</span>
+              <span>From diagram to deployed — on every cloud</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Design, deploy and manage your cloud infrastructure

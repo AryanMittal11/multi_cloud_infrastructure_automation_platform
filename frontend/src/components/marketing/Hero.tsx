@@ -106,7 +106,7 @@ export function Hero() {
           }`}
           style={{ color: 'var(--ink)', maxWidth: '12ch' }}
         >
-          The cloud is your <em className="serif-it" style={{ letterSpacing: '-0.01em' }}>canvas</em>.
+          From diagram to <em className="serif-it" style={{ letterSpacing: '-0.01em' }}>deployed</em>.
         </h1>
 
         {/* one quiet, concrete sentence */}
