@@ -41,7 +41,19 @@ describe('Cloud Account HTTP Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should reject DEVELOPER role with 403 (Only ADMIN can onboard accounts)', async () => {
+    it('should allow DEVELOPER role to onboard cloud accounts (developer onboarding policy)', async () => {
+      (prisma.cloudAccount.create as jest.Mock).mockResolvedValue({
+        id: 'acc-dev-1',
+        name: 'AWS Account',
+        provider: Provider.AWS,
+        accountReference: '123456789013',
+        encryptedCredentialReference: 'iv:tag:cipher',
+        ownerId: 'usr-dev',
+        projectId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       const res = await request(app)
         .post('/api/cloud-accounts')
         .set('Authorization', `Bearer ${devToken}`)
@@ -51,7 +63,7 @@ describe('Cloud Account HTTP Routes', () => {
           credentials: { accessKeyId: 'AKIA_MOCK_1234567890', secretAccessKey: 'mockSecretAccessKey!' },
         });
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(201);
     });
 
     it('should allow ADMIN to onboard cloud account', async () => {

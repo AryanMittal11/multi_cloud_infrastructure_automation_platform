@@ -14,6 +14,7 @@ jest.mock('../config/prisma', () => ({
   prisma: {
     deployment: {
       findUnique: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
     },
     auditLog: {
@@ -25,6 +26,7 @@ jest.mock('../config/prisma', () => ({
 jest.mock('../services/queue', () => ({
   queueService: {
     publishEvent: jest.fn(),
+    consumeJobs: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -93,6 +95,39 @@ describe('TerraformWorkerService', () => {
   beforeEach(() => {
     worker = new TerraformWorkerService();
     jest.clearAllMocks();
+  });
+
+  it('start() sweeps deployments stranded mid-flight by a crash into FAILED with an explicit reason', async () => {
+    (prisma.deployment.findMany as jest.Mock).mockResolvedValue([
+      { id: 'dep-stranded-destroy', operationType: 'DESTROY' },
+      { id: 'dep-stranded-apply', operationType: 'CREATE' },
+    ]);
+    (prisma.deployment.update as jest.Mock).mockResolvedValue({});
+    (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
+
+    await worker.start();
+
+    expect(prisma.deployment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: { in: expect.arrayContaining(['PLANNING', 'QUEUED', 'RUNNING']) } },
+      }),
+    );
+    expect(prisma.deployment.update).toHaveBeenCalledTimes(2);
+    const failCall = (prisma.deployment.update as jest.Mock).mock.calls.find(
+      (c) => c[0]?.where?.id === 'dep-stranded-destroy',
+    );
+    expect(failCall[0].data.status).toBe('FAILED');
+    expect(failCall[0].data.applyOutput).toContain('[INTERRUPTED]');
+    // Audit trail records the interruption
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'FAILURE' }) }),
+    );
+  });
+
+  it('start() never blocks worker startup when the database is unreachable during recovery', async () => {
+    (prisma.deployment.findMany as jest.Mock).mockRejectedValue(new Error('P1001: database unreachable'));
+
+    await expect(worker.start()).resolves.not.toThrow();
   });
 
   it('should successfully execute a PLAN action', async () => {

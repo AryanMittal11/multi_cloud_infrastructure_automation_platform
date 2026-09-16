@@ -176,6 +176,12 @@ export default function DeploymentsPage() {
                         <span>&bull;</span>
                         <span>Template: <strong className="text-neutral-200">{deployment.template?.name ?? 'aws_vpc'}</strong></span>
                       </div>
+
+                      {deployment.status === 'FAILED' && deployment.applyOutput && (
+                        <div className="mt-1 max-w-3xl font-mono text-[11px] leading-relaxed text-rose-300/90 line-clamp-2">
+                          {deployment.applyOutput.split('[FATAL EXECUTION FAILURE]: ').pop()?.trim()}
+                        </div>
+                      )}
                     </div>
                   </div>
 

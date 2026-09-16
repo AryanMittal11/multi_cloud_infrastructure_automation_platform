@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>cloudweave — Project Report</title>
+<style>
+  :root{
+    --ink:#111114; --muted:#55555c; --faint:#8a8a92;
+    --line:#e4e4e8; --bg:#ffffff; --soft:#f6f6f7;
+    --accent:#0f1115; --success:#0e7a4d; --warn:#9a6b00; --danger:#b3372f;
+  }
+  @page { size: A4; margin: 22mm 19mm 20mm 19mm; }
+  *{ box-sizing:border-box; }
+  body{ font-family:"Segoe UI",Inter,Arial,sans-serif; color:var(--ink); background:var(--bg); margin:0; font-size:10.5pt; line-height:1.55; }
+  .mono{ font-family:"Cascadia Mono",Consolas,"Courier New",monospace; }
+
+  /* cover */
+  .cover{ page-break-after:always; padding-top:64mm; }
+  .brandrow{ display:flex; align-items:center; gap:10px; margin-bottom:26mm; }
+  .brandmark{ width:34px; height:34px; border-radius:9px; background:#0f1115; display:inline-flex; align-items:center; justify-content:center; }
+  .brandmark svg{ display:block; }
+  .brandname{ font-size:15pt; font-weight:700; letter-spacing:-0.01em; }
+  .cover h1{ font-size:27pt; line-height:1.18; font-weight:700; letter-spacing:-0.02em; margin:0 0 8mm 0; }
+  .cover .sub{ font-size:12pt; color:var(--muted); max-width:150mm; }
+  .covermeta{ margin-top:26mm; border-top:1px solid var(--line); padding-top:6mm; font-size:10pt; color:var(--muted); display:flex; gap:14mm; flex-wrap:wrap; }
+  .covermeta b{ color:var(--ink); font-weight:600; display:block; margin-bottom:1mm; }
+
+  /* headings */
+  h2{ font-size:15pt; font-weight:700; letter-spacing:-0.01em; margin:0 0 4mm; page-break-after:avoid; }
+  h2 .no{ color:var(--faint); font-weight:600; margin-right:3mm; }
+  h3{ font-size:11.5pt; font-weight:650; margin:6mm 0 2mm; page-break-after:avoid; }
+  section.chapter{ page-break-before:always; }
+  section.chapter:first-of-type{ page-break-before:auto; }
+  p{ margin:0 0 3mm; }
+  ul{ margin:0 0 3mm; padding-left:5mm; }
+  li{ margin-bottom:1.2mm; }
+  .lead{ color:var(--muted); font-size:10.5pt; margin-bottom:5mm; }
+
+  /* callouts & tables */
+  .callout{ background:var(--soft); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:3.5mm 4.5mm; margin:4mm 0; font-size:9.5pt; color:var(--muted); }
+  .callout b{ color:var(--ink); }
+  table{ width:100%; border-collapse:collapse; margin:3.5mm 0 5mm; font-size:9.5pt; }
+  th{ text-align:left; font-weight:650; border-bottom:1.5px solid var(--ink); padding:2mm 2.5mm; }
+  td{ border-bottom:1px solid var(--line); padding:2mm 2.5mm; vertical-align:top; color:var(--muted); }
+  td:first-child{ color:var(--ink); font-weight:550; }
+  tr{ page-break-inside:avoid; }
+
+  code{ font-family:"Cascadia Mono",Consolas,monospace; font-size:8.8pt; background:var(--soft); border:1px solid var(--line); border-radius:4px; padding:0.4mm 1.4mm; }
+  .kbd-note{ font-size:8.8pt; color:var(--faint); }
+
+  /* mvp blocks */
+  .mvp{ border:1px solid var(--line); border-radius:10px; padding:4.5mm 5.5mm; margin:4.5mm 0; page-break-inside:avoid; }
+  .mvp .tag{ display:inline-block; font-size:8pt; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:0.8mm 2.8mm; margin-bottom:2.5mm; background:var(--soft); }
+  .mvp h3{ margin:0 0 1.5mm; }
+  .mvp .steps{ margin:2.5mm 0 0; padding-left:5mm; }
+  .mvp .steps li{ margin-bottom:0.8mm; }
+  .flows{ display:flex; gap:2mm; flex-wrap:wrap; margin:2mm 0; }
+  .flows span{ font-size:8.6pt; background:var(--soft); border:1px solid var(--line); border-radius:5px; padding:0.8mm 2mm; color:var(--ink); }
+
+  /* footer page numbers via print */
+  .foot{ margin-top:8mm; font-size:8.5pt; color:var(--faint); border-top:1px solid var(--line); padding-top:2.5mm; }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <div class="brandrow">
+    <span class="brandmark">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round">
+        <path d="M12 2a10 10 0 1 0 10 10"/><circle cx="12" cy="12" r="3" fill="#ffffff" stroke="none"/>
+      </svg>
+    </span>
+    <span class="brandname">cloudweave</span>
+  </div>
+  <h1>A centralized multi-cloud provisioning<br>and management engine</h1>
+  <div class="sub">cloudweave turns cloud infrastructure into a governed product: pick a hardened template,
+  design visually, plan with policy guardrails, approve with receipts, and operate resources,
+  topology, and costs from one control plane.</div>
+  <div class="covermeta">
+    <div><b>Group No.</b>2</div>
+    <div><b>Members</b>Vidhan Gupta (23BSA10043) · Aryan (23BSA10041) · Anshul Bari (23BSA10011) · Nikhil Kumar (23BSA10196) · Manas Awasthi (23BSA10061)</div>
+    <div><b>Version</b>MVP v1 · Sept 2026</div>
+  </div>
+</div>
+
+<!-- ================= 1. INTRODUCTION ================= -->
+<section class="chapter">
+  <h2><span class="no">1</span>Introduction &amp; Core Concept</h2>
+  <p class="lead">What cloudweave is, in one paragraph a supervisor can repeat.</p>
+
+  <p><b>cloudweave</b> is a web platform that gives a team one centralized control plane for infrastructure on
+  <b>AWS, Azure, and GCP</b>. Instead of hand-writing Terraform and running it from laptops, a user picks a
+  <b>curated, production-grade template</b> (or draws the architecture on a <b>visual canvas</b>), configures it through
+  <b>schema-driven forms</b>, and ships it through a <b>governed pipeline</b>: plan → policy check → human approval → apply.
+  Everything the platform provisions is then <b>recorded, observable, and costed</b> — resources, dependency topology,
+  and estimated monthly spend — and every meaningful action lands in an <b>immutable audit log</b>.</p>
+
+  <p>The design principle underneath the whole product: <b>make the safe path the easy path</b>. Templates ship with
+  security guardrails built in; policy runs before humans review; destructive actions require typed confirmation;
+  credentials never leave the encrypted store.</p>
+
+  <div class="callout"><b>One-sentence pitch.</b> cloudweave = Terraform's power + a governed, auditable, multi-cloud workflow
+  that a whole team — not just Terraform experts — can use safely.</div>
+
+  <h3>Scope statement</h3>
+  <p>cloudweave <b>provisions and manages</b> infrastructure; it does not replace your cloud console. It currently targets
+  AWS, Azure, and GCP core services (network, compute, databases, storage) through 12 curated Terraform modules,
+  with a simulation runner for safe demonstrations. The architecture is designed so the simulation layer is the only
+  component that touches the cloud SDK boundary — swapping in live provider execution is a runner-level change, not a redesign.</p>
+</section>
+
+<!-- ================= 2. PROBLEM ================= -->
+<section class="chapter">
+  <h2><span class="no">2</span>The Problem</h2>
+  <p class="lead">Why teams doing multi-cloud infrastructure the default way struggle.</p>
+
+  <p>Cloud platforms are powerful, but their native tools are <b>provider-specific and expert-oriented</b>.
+  A team that runs workloads on AWS and Azure (and experiments on GCP) faces five compounding problems:</p>
+
+  <table>
+    <tr><th style="width:34%">Problem</th><th>What it looks like in practice</th></tr>
+    <tr><td>1 · Fragmentation across consoles</td><td>Three consoles, three IAM models, three billing formats. No single answer to "what do we run and where?"</td></tr>
+    <tr><td>2 · Terraform expertise bottleneck</td><td>Writing correct HCL, state handling, and provider pinning is an expert skill. Everyone else either waits or makes risky manual console changes.</td></tr>
+    <tr><td>3 · Ungoverned changes</td><td>Anyone with console access can delete a database. There is no plan review, no approval, no record of who did what.</td></tr>
+    <tr><td>4 · Invisible cost until the bill</td><td>Cost appears at month end, per provider, after decisions are already made. Nothing prices a change <i>before</i> it is applied.</td></tr>
+    <tr><td>5 · No operational memory</td><td>Resources exist but nobody knows what depends on what, or what a change will break. Tearing down "an idle VM" can kill a database network path.</td></tr>
+  </table>
+
+  <p>Existing answers each solve one slice — multi-cloud dashboards (view only), IaC pipelines (expert-only),
+  CSPMs (audit only), FinOps tools (cost only). None give a small team a single <b>governed path from intent to running,
+  observable infrastructure</b>. That is the gap cloudweave occupies.</p>
+</section>
+
+<!-- ================= 3. SOLUTION ================= -->
+<section class="chapter">
+  <h2><span class="no">3</span>The Solution We Propose</h2>
+  <p class="lead">A governed pipeline from intent to running, observable infrastructure — on one control plane.</p>
+
+  <p>cloudweave replaces "three consoles + expert Terraform" with <b>one product</b> built around a governed pipeline:</p>
+
+  <div class="flows">
+    <span>Pick or design</span><span>→</span><span>Configure (schema-validated)</span><span>→</span>
+    <span>Plan (real diff + cost estimate)</span><span>→</span><span>Policy guardrails</span><span>→</span>
+    <span>Human approval (named, recorded)</span><span>→</span><span>Apply (resources recorded)</span><span>→</span>
+    <span>Operate (inventory · topology · costs)</span>
+  </div>
+
+  <table>
+    <tr><th style="width:34%">Pillar</th><th>How cloudweave answers the problem</th></tr>
+    <tr><td>One control plane</td><td>Projects and environments span AWS, Azure, and GCP; one identity, one RBAC model, one audit trail, one cost view.</td></tr>
+    <tr><td>Paved-road IaC</td><td>Curated hardened templates and a visual designer generate Terraform — teams configure instead of hand-writing HCL.</td></tr>
+    <tr><td>Governed change</td><td>Plan-before-apply is mandatory; policy guardrails run first; named approvals create receipts; destructive actions need typed confirmation.</td></tr>
+    <tr><td>Cost before the bill</td><td>Every plan carries a monthly cost estimate from an offline rate card; a rule-based advisor projects savings from concrete optimizations.</td></tr>
+    <tr><td>Operational memory</td><td>Resources, dependency topology, and deployment history are recorded at apply time — blast radius is visible before change, not after.</td></tr>
+  </table>
+
+  <div class="callout"><b>Why this scope works:</b> each pillar maps to a demonstrable MVP flow (Section 5), a tested backend module (Section 8), and a security guarantee (Section 7) — the project is complete end-to-end rather than a wide, shallow demo.</div>
+</section>
+
+<!-- ================= 4. ARCHITECTURE ================= -->
+<section class="chapter">
+  <h2><span class="no">4</span>System Architecture</h2>
+  <p class="lead">One diagram in words: what talks to what.</p>
+
+  <h3>Layers</h3>
+  <table>
+    <tr><th style="width:22%">Layer</th><th>Technology &amp; responsibility</th></tr>
+    <tr><td>Frontend</td><td>Next.js 15 (App Router) + TypeScript + Tailwind. Dark monochrome control-plane UI: marketing landing page and the platform app (overview, deliver, operate, trust).</td></tr>
+    <tr><td>API</td><td>Express + TypeScript, JWT auth (15-min access + 7-day refresh), RBAC (ADMIN / DEVELOPER / VIEWER), Zod validation on every route.</td></tr>
+    <tr><td>Data</td><td>PostgreSQL + Prisma. 10 models: User, Project, Environment, CloudAccount, Template, Deployment, Resource, AuditLog, Notification, Design.</td></tr>
+    <tr><td>Workers</td><td>Terraform pipeline worker consuming an in-process queue: PLAN → POLICY → APPROVAL → APPLY / DESTROY, with a sandboxed simulation runner for demo environments.</td></tr>
+    <tr><td>Templates</td><td>12 canonical Terraform modules on disk (4 per provider), synced into the catalog with JSON-Schema parameter contracts.</td></tr>
+  </table>
+
+  <h3>Deployment lifecycle (the spine of the system)</h3>
+  <div class="flows">
+    <span>1 · CREATE deployment (DRAFT)</span><span>→</span><span>2 · PLAN job → tfstate + diff</span><span>→</span>
+    <span>3 · POLICY evaluation (guardrails)</span><span>→</span><span>4 · AWAITING_APPROVAL</span><span>→</span>
+    <span>5 · named approver signs</span><span>→</span><span>6 · APPLY → resources recorded</span><span>→</span>
+    <span>7 · Operate: resources / topology / costs</span><span>→</span><span>8 · DESTROY (typed confirm)</span>
+  </div>
+
+  <div class="callout"><b>Key invariants.</b> Credentials are AES-256-GCM encrypted at rest and decrypted only inside the worker;
+  every state transition writes an audit row; DESTROY deployments mark the <i>original</i> deployment's resources
+  destroyed (scoped by project + environment + template) so inventory and cost never lie after teardown.</div>
+</section>
+
+<!-- ================= 5. MVPS ================= -->
+<section class="chapter">
+  <h2><span class="no">5</span>What We Built — Five MVPs</h2>
+  <p class="lead">Five demonstrable flows, each testable live in under two minutes.</p>
+
+  <div class="mvp">
+    <span class="tag">MVP 1 · Multi-cloud governance backbone</span>
+    <h3>Accounts, projects, environments, RBAC</h3>
+    <p>Onboard AWS/Azure/GCP accounts (credentials encrypted, validated live), group work into projects and
+    dev/staging/prod environments each bound to its own account, and role-gate every action
+    (ADMIN governs, DEVELOPER ships, VIEWER reads).</p>
+    <ul class="steps">
+      <li>Demo path: sign up → onboard a cloud account → create project + 3 environments → observe role gating as VIEWER.</li>
+      <li>Proves: one identity plane over three clouds, least-privilege by construction.</li>
+    </ul>
+  </div>
+
+  <div class="mvp">
+    <span class="tag">MVP 2 · Curated template catalog</span>
+    <h3>12 hardened Terraform modules with schema contracts</h3>
+    <p>Four modules per provider — VPC/VNet, compute, database, storage — synced from disk with JSON-Schema
+    parameter contracts. Guardrails are inside the modules: private-by-default databases, encrypted storage,
+    deny-by-default security groups.</p>
+    <ul class="steps">
+      <li>Demo path: Template Catalog → Inspect Schema → see typed parameters and defaults.</li>
+      <li>Proves: paved roads. Users configure; the module carries the security defaults.</li>
+    </ul>
+  </div>
+
+  <div class="mvp">
+    <span class="tag">MVP 3 · Visual designer → Terraform</span>
+    <h3>Canvas that writes production-ready main.tf</h3>
+    <p>Place network, compute, database, storage nodes on a canvas and wire dependencies; the diagram and the
+    generated Terraform never diverge. Designs save as reusable artifacts and can be handed to the pipeline.</p>
+    <ul class="steps">
+      <li>Demo path: Saved Designs → open designer → place VPC + EC2 + RDS → draw edges → watch main.tf update live.</li>
+      <li>Proves: visual intent compiles to IaC — no blank-page Terraform.</li>
+    </ul>
+  </div>
+
+  <div class="mvp">
+    <span class="tag">MVP 4 · Governed pipeline with policy + approvals</span>
+    <h3>Plan → policy → approve → apply, with receipts</h3>
+    <p>The worker runs terraform plan in an isolated runner; a guardrail engine checks encryption, exposure, and
+    CIDR allowlists before a human sees the diff; a named approver signs off; apply records every provisioned resource.
+    Destructive plans require typed confirmation.</p>
+    <ul class="steps">
+      <li>Demo path: launch AWS EC2 Web Server → configure → plan shows diff + policy results → approve (named, recorded) → apply → resources appear in inventory.</li>
+      <li>Proves: no change reaches the cloud without a plan, a policy verdict, and a human receipt.</li>
+    </ul>
+  </div>
+
+  <div class="mvp">
+    <span class="tag">MVP 5 · Operate surface: inventory, topology, costs</span>
+    <h3>Recorded resources, dependency graph, cost estimate + optimizer</h3>
+    <p>Every apply records the provisioned resources (grouped by kind, cross-cloud). A topology graph shows network →
+    compute → database blast radius. Cost estimates per project/deployment come from an offline rate card at plan time,
+    and a rule-based advisor suggests concrete optimizations (idle sandboxes, oversized volumes, region arbitrage) with
+    projected savings.</p>
+    <ul class="steps">
+      <li>Demo path: Resources → Topology → Costs → Optimization advisor (live: $78.40 → $36.45/mo projected).</li>
+      <li>Proves: the platform observes what it provisions — inventory, blast radius, and cost before the bill.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 6. EXTRAS ================= -->
+<section class="chapter">
+  <h2><span class="no">6</span>Beyond the MVPs — Extras</h2>
+  <p class="lead">Depth that turns five features into a coherent platform.</p>
+
+  <table>
+    <tr><th style="width:30%">Extra</th><th>What it adds</th></tr>
+    <tr><td>Immutable audit log</td><td>Append-only, actor + verb + target on every action; surfaced in the UI's Trust group.</td></tr>
+    <tr><td>Sealed credentials</td><td>AES-256-GCM at rest; live validation at onboarding; decrypted only in the ephemeral worker; admin-only deletion with typed confirmation and in-use blocking.</td></tr>
+    <tr><td>RBAC + typed confirmations</td><td>Three roles enforced at route level; destructive operations demand typed phrases; session tokens rotate (15m/7d).</td></tr>
+    <tr><td>Safe teardown</td><td>DESTROY runs through the same pipeline; resources flip to DESTROYED (scoped by project/env/template) so inventory and cost stay truthful after teardown.</td></tr>
+    <tr><td>Cost optimization advisor</td><td>Deterministic rules: idle-sandbox, oversized-volume, nonprod-redundancy, region-arbitrage — each with steps and projected savings.</td></tr>
+    <tr><td>Notifications</td><td>In-app notifications on approval requests and pipeline outcomes.</td></tr>
+    <tr><td>Portability export</td><td>Export designs/deployments as portable Terraform for exit — no lock-in.</td></tr>
+    <tr><td>Command palette</td><td>Ctrl+K palette across all platform sections; keyboard-first navigation.</td></tr>
+    <tr><td>Test suite</td><td>249 backend tests green (unit + route + worker + policy); frontend typechecks and builds clean.</td></tr>
+  </table>
+</section>
+
+<!-- ================= 7. SECURITY MODEL ================= -->
+<section class="chapter">
+  <h2><span class="no">7</span>Security Model</h2>
+  <p class="lead">The guarantees that make the governed path credible.</p>
+
+  <table>
+    <tr><th style="width:30%">Guarantee</th><th>Mechanism</th></tr>
+    <tr><td>Credential secrecy</td><td>AES-256-GCM encryption at rest; plaintext exists only inside the worker process during a run; API responses never include secrets.</td></tr>
+    <tr><td>Credential validity</td><td>Live validation at onboarding — AWS STS, Azure ARM, GCP Resource Manager — so the platform never stores credentials it cannot use.</td></tr>
+    <tr><td>Least privilege</td><td>Route-level RBAC; admin-only onboarding/deletion of accounts; typed confirmation for destructive verbs.</td></tr>
+    <tr><td>Traceability</td><td>Append-only audit log: actor, verb, target, timestamp — including policy verdicts and approvals.</td></tr>
+    <tr><td>Change safety</td><td>Plan-before-apply always; policy gate before human review; destructive ops require typed confirmation; teardown keeps inventory truthful.</td></tr>
+  </table>
+</section>
+
+<!-- ================= 8. VALIDATION ================= -->
+<section class="chapter">
+  <h2><span class="no">8</span>Testing &amp; Validation</h2>
+  <p class="lead">Evidence the platform does what the report claims.</p>
+
+  <table>
+    <tr><th style="width:30%">Check</th><th>Result</th></tr>
+    <tr><td>Backend test suite (Jest)</td><td>249/249 passing — unit, route, worker, policy evaluator, template sync, crypto.</td></tr>
+    <tr><td>Frontend typecheck + build</td><td>tsc clean; production build compiles all 19 routes.</td></tr>
+    <tr><td>Live end-to-end walkthrough</td><td>Signup → account onboarding → project/env → template launch → plan → policy → approval → apply → inventory/topology/costs → teardown, verified against the running stack.</td></tr>
+    <tr><td>Teardown correctness</td><td>Destroy flow flips original deployment's resources to DESTROYED; platform cost total drops accordingly.</td></tr>
+    <tr><td>Cost advisor</td><td>Four rules fire on real deployments with concrete steps and projected spend.</td></tr>
+  </table>
+</section>
+
+<!-- ================= 9. ROADMAP ================= -->
+<section class="chapter">
+  <h2><span class="no">9</span>Limitations &amp; Roadmap</h2>
+  <p class="lead">Honest boundaries, and what comes next.</p>
+
+  <h3>Current limitations (by design)</h3>
+  <ul>
+    <li><b>Simulation runner.</b> Applies execute in a sandboxed simulation that produces realistic tfstate, logs, and resource records — ideal for demos and CI, not yet live cloud calls.</li>
+    <li><b>Module breadth.</b> 12 curated modules (4 per provider) covering network/compute/database/storage; breadth grows by adding modules, not code.</li>
+    <li><b>Estimates, not bills.</b> Cost figures use an offline rate card; real-time pricing and actual billing ingestion are future work.</li>
+  </ul>
+
+  <h3>Roadmap</h3>
+  <table>
+    <tr><th style="width:26%">Next</th><th>What it unlocks</th></tr>
+    <tr><td>Live provider execution</td><td>Swap the simulation runner for real terraform runs per cloud account (runner-level swap).</td></tr>
+    <tr><td>Drift detection</td><td>Scheduled plan-vs-state comparison; alerts on out-of-band console changes.</td></tr>
+    <tr><td>Real-time pricing</td><td>Live provider pricing APIs feed the estimator and optimizer.</td></tr>
+    <tr><td>GitOps integration</td><td>Designs/modules versioned in Git; deployments triggered by pull request.</td></tr>
+    <tr><td>Team features</td><td>Approver groups, delegation, Slack/email notification channels.</td></tr>
+  </table>
+</section>
+
+<!-- ================= 10. CONCLUSION ================= -->
+<section class="chapter">
+  <h2><span class="no">10</span>Conclusion</h2>
+  <p>cloudweave demonstrates that a small team can ship a <b>governed multi-cloud platform</b>: a single control plane
+  over AWS, Azure, and GCP where infrastructure is templated, visualized, planned, policy-checked, approved, applied,
+  and operated — with inventory, topology, and cost always current, and every action attributable. The five MVPs each
+  prove one link of that chain, and the extras (audit, sealed credentials, RBAC, safe teardown, cost advisor,
+  portability) turn the chain into a product.</p>
+
+  <div class="callout"><b>The thesis in one line:</b> make the safe path the easy path — and multi-cloud stops being
+  three consoles and becomes one product.</div>
+
+  <div class="foot">cloudweave · Group 2 · MVP v1 · September 2026 · Report generated from the live codebase.</div>
+</section>
+
+</body>
+</html>

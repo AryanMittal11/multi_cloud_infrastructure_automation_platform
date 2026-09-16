@@ -47,6 +47,8 @@ export class TerraformWorkerService {
 
     logger.info('🚀 Initializing Terraform Provisioning Worker Service...');
 
+    await this.recoverInterruptedDeployments();
+
     await queueService.consumeJobs(async (job, ack, nack) => {
       logger.info(`Processing job for deployment [${job.deploymentId}] (Action: ${job.action})`);
       try {
@@ -358,6 +360,45 @@ export class TerraformWorkerService {
       // 8. Always release deployment lock and shred ephemeral credential material
       cleanupEphemeralCredentialFiles();
       await deploymentLockManager.releaseLock(job.deploymentId);
+    }
+  }
+
+  /**
+   * Startup crash recovery: any deployment left mid-flight (PLANNING / QUEUED /
+   * RUNNING) belongs to a job whose process no longer exists — an earlier
+   * control-plane or worker crash, a database outage, or a machine restart.
+   * The in-memory fallback queue loses those jobs entirely, so without this
+   * sweep they would sit in a fake in-flight state forever while the UI spins.
+   *
+   * Marking them FAILED with an explicit [INTERRUPTED] reason keeps the
+   * lifecycle truthful: a destroy that never executed must not read as
+   * "in progress" (or worse, silently disappear), and the user gets a clear
+   * message plus a one-click retry path instead of a mystery.
+   */
+  private async recoverInterruptedDeployments(): Promise<void> {
+    try {
+      const interrupted = await prisma.deployment.findMany({
+        where: { status: { in: [DeploymentStatus.PLANNING, DeploymentStatus.QUEUED, DeploymentStatus.RUNNING] } },
+        select: { id: true, operationType: true },
+      });
+
+      if (interrupted.length === 0) return;
+
+      logger.warn(
+        `♻️ Crash recovery: ${interrupted.length} deployment(s) found mid-flight from a previous run — marking FAILED.`,
+      );
+
+      for (const dep of interrupted) {
+        await this.markDeploymentFailed(
+          dep.id,
+          `[INTERRUPTED] Execution was interrupted by a platform restart before this ${dep.operationType.toLowerCase()} could complete. No infrastructure changes were applied by this run — please retry from the deployment page.`,
+        );
+      }
+    } catch (err: any) {
+      // Recovery is best-effort: if the database is unreachable at boot (e.g.
+      // the exact outage that strands these rows), surface it but never block
+      // worker startup — jobs arriving later still need to be consumable.
+      logger.error('Crash-recovery sweep failed (database unreachable?):', err.message || err);
     }
   }
 
