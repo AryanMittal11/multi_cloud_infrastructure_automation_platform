@@ -1,4 +1,4 @@
-import { OperationType, DeploymentStatus, Role } from '@prisma/client';
+import { OperationType, DeploymentStatus, ResourceStatus, Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
 import { queueService } from '../queue';
@@ -349,6 +349,7 @@ export class DeploymentService {
     let environmentId = input.environmentId;
     let templateId = input.templateId;
     let configuration = input.configuration || {};
+    let targetDeploymentId = input.deploymentId;
 
     // 1. If targeting an existing deployment, infer missing context
     if (input.deploymentId) {
@@ -361,10 +362,31 @@ export class DeploymentService {
         error.statusCode = 404;
         throw error;
       }
-      projectId = projectId || existing.projectId;
-      environmentId = environmentId || existing.environmentId;
-      templateId = templateId || existing.templateId;
-      configuration = Object.keys(configuration).length > 0 ? configuration : (existing.configuration as any);
+      if (
+        existing.operationType === OperationType.DESTROY ||
+        existing.status !== DeploymentStatus.SUCCEEDED
+      ) {
+        const error: any = new Error(
+          `Target deployment [${input.deploymentId}] must be a successful non-destroy deployment`,
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+      if (
+        (projectId && projectId !== existing.projectId) ||
+        (environmentId && environmentId !== existing.environmentId) ||
+        (templateId && templateId !== existing.templateId)
+      ) {
+        const error: any = new Error(
+          'Destroy target overrides must match the source deployment project, environment, and template',
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+      projectId = existing.projectId;
+      environmentId = existing.environmentId;
+      templateId = existing.templateId;
+      configuration = existing.configuration as Record<string, any>;
     }
 
     if (!projectId || !environmentId || !templateId) {
@@ -373,6 +395,33 @@ export class DeploymentService {
       );
       error.statusCode = 400;
       throw error;
+    }
+
+    // Legacy callers may provide the target coordinates rather than a
+    // deployment ID. Resolve the newest successful deployment that still owns
+    // active resources, then persist that exact target for both PLAN and
+    // DESTROY jobs.
+    if (!targetDeploymentId) {
+      const target = await prisma.deployment.findFirst({
+        where: {
+          projectId,
+          environmentId,
+          templateId,
+          status: DeploymentStatus.SUCCEEDED,
+          operationType: { not: OperationType.DESTROY },
+          resources: { some: { status: ResourceStatus.ACTIVE } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (!target) {
+        const error: any = new Error(
+          'No successful deployment with active resources was found for this teardown target',
+        );
+        error.statusCode = 404;
+        throw error;
+      }
+      targetDeploymentId = target.id;
+      configuration = target.configuration as Record<string, any>;
     }
 
     // 2. Validate Project and Environment
@@ -408,6 +457,7 @@ export class DeploymentService {
         environmentId,
         templateId,
         userId,
+        targetDeploymentId,
         operationType: OperationType.DESTROY,
         status: DeploymentStatus.PLANNING,
         configuration,
@@ -433,7 +483,7 @@ export class DeploymentService {
           templateId,
           environmentId,
           operationType: OperationType.DESTROY,
-          targetDeploymentId: input.deploymentId || null,
+          targetDeploymentId,
         },
       },
     });
@@ -445,6 +495,7 @@ export class DeploymentService {
         projectId: destroyDeployment.projectId,
         environmentId: destroyDeployment.environmentId,
         templateId: destroyDeployment.templateId,
+        targetDeploymentId,
         userId,
         operationType: OperationType.DESTROY,
         action: 'PLAN',
@@ -491,6 +542,14 @@ export class DeploymentService {
     if (deployment.operationType !== OperationType.DESTROY) {
       const error: any = new Error(
         `Deployment [${deploymentId}] does not have operationType DESTROY. Use approveDeployment instead.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!deployment.targetDeploymentId) {
+      const error: any = new Error(
+        `Destroy deployment [${deploymentId}] does not identify the source deployment whose Terraform state must be destroyed`,
       );
       error.statusCode = 400;
       throw error;
@@ -568,6 +627,7 @@ export class DeploymentService {
         projectId: deployment.projectId,
         environmentId: deployment.environmentId,
         templateId: deployment.templateId,
+        targetDeploymentId: deployment.targetDeploymentId,
         userId: user.userId,
         operationType: OperationType.DESTROY,
         action: 'DESTROY',
@@ -719,6 +779,7 @@ export class DeploymentService {
       projectId: deployment.projectId,
       environmentId: deployment.environmentId,
       templateId: deployment.templateId,
+      targetDeploymentId: deployment.targetDeploymentId || null,
       userId: deployment.userId,
       operationType: deployment.operationType,
       status: deployment.status,

@@ -52,6 +52,7 @@ export interface DeploymentResponse {
   projectId: string;
   environmentId: string;
   templateId: string;
+  targetDeploymentId: string | null;
   userId: string;
   operationType: OperationType;
   status: DeploymentStatus;

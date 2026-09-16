@@ -10,6 +10,8 @@ export interface DeploymentJobMessage {
   projectId: string;
   environmentId: string;
   templateId: string;
+  /** Original deployment whose Terraform state is being destroyed. */
+  targetDeploymentId?: string;
   userId: string;
   operationType: OperationType;
   action: JobAction;

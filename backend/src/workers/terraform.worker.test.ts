@@ -43,6 +43,7 @@ jest.mock('../services/cloud', () => ({
 jest.mock('../services/terraform/workspace.manager', () => ({
   workspaceManager: {
     prepareWorkspace: jest.fn().mockResolvedValue('/tmp/workspaces/dep-123'),
+    syncStateToDeployment: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -78,7 +79,6 @@ jest.mock('../services/resources/resource.service', () => ({
   resourceService: {
     recordProvisionedResources: jest.fn().mockResolvedValue(undefined),
     markResourcesDestroyed: jest.fn().mockResolvedValue(undefined),
-    markResourcesDestroyedByTarget: jest.fn().mockResolvedValue(3),
   },
 }));
 
@@ -207,6 +207,7 @@ describe('TerraformWorkerService', () => {
   it('should execute a DESTROY action scoped to the original deployment target, not the destroy record', async () => {
     const mockDeployment = {
       id: 'dep-destroy-1',
+      targetDeploymentId: 'dep-create-1',
       projectId: 'proj-1',
       environmentId: 'env-1',
       template: { templateReference: 'templates/aws/aws_vpc', provider: Provider.AWS },
@@ -221,6 +222,7 @@ describe('TerraformWorkerService', () => {
       projectId: 'proj-1',
       environmentId: 'env-1',
       templateId: 'tmpl-1',
+      targetDeploymentId: 'dep-create-1',
       userId: 'usr-admin',
       operationType: OperationType.DESTROY,
       action: 'DESTROY',
@@ -231,17 +233,55 @@ describe('TerraformWorkerService', () => {
     await worker.handleJob(job);
 
     expect(terraformRunner.destroy).toHaveBeenCalled();
-    // Regression: teardown must mark the ORIGINAL create deployment's rows
-    // (same project/env/template) — not the destroy deployment's own id.
-    expect(resourceService.markResourcesDestroyedByTarget).toHaveBeenCalledWith({
-      projectId: 'proj-1',
-      environmentId: 'env-1',
-      templateId: 'tmpl-1',
-    });
+    // Regression: teardown must use the ORIGINAL deployment's state and rows,
+    // not a broad project/environment/template match or the destroy record.
+    expect(workspaceManager.prepareWorkspace).toHaveBeenCalledWith(
+      expect.objectContaining({ stateSourceDeploymentId: 'dep-create-1' }),
+    );
+    expect(workspaceManager.syncStateToDeployment).toHaveBeenCalledWith(
+      '/tmp/workspaces/dep-123',
+      'dep-create-1',
+    );
+    expect(resourceService.markResourcesDestroyed).toHaveBeenCalledWith('dep-create-1');
     expect(prisma.deployment.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'dep-destroy-1' },
         data: expect.objectContaining({ status: DeploymentStatus.SUCCEEDED }),
+      }),
+    );
+  });
+
+  it('should fail a DESTROY job that has no source deployment state target', async () => {
+    (prisma.deployment.findUnique as jest.Mock).mockResolvedValue({
+      id: 'dep-destroy-legacy',
+      projectId: 'proj-1',
+      environmentId: 'env-1',
+      template: { templateReference: 'templates/aws/aws_vpc', provider: Provider.AWS },
+      environment: { cloudAccountId: 'acc-1' },
+      configuration: { vpc_cidr: '10.0.0.0/16' },
+      targetDeploymentId: null,
+    });
+
+    await worker.handleJob({
+      deploymentId: 'dep-destroy-legacy',
+      projectId: 'proj-1',
+      environmentId: 'env-1',
+      templateId: 'tmpl-1',
+      userId: 'usr-admin',
+      operationType: OperationType.DESTROY,
+      action: 'DESTROY',
+      timestamp: new Date().toISOString(),
+      attempt: 1,
+    });
+
+    expect(terraformRunner.destroy).not.toHaveBeenCalled();
+    expect(prisma.deployment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'dep-destroy-legacy' },
+        data: expect.objectContaining({
+          status: DeploymentStatus.FAILED,
+          applyOutput: expect.stringContaining('missing targetDeploymentId'),
+        }),
       }),
     );
   });

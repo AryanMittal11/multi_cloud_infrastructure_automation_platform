@@ -18,6 +18,7 @@ jest.mock('../../config/prisma', () => ({
     deployment: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
     },
@@ -551,6 +552,8 @@ describe('DeploymentService Subsystem', () => {
       projectId: 'proj-123',
       environmentId: 'env-123',
       templateId: 'tmpl-123',
+      operationType: OperationType.CREATE,
+      status: DeploymentStatus.SUCCEEDED,
       configuration: { vpc_cidr: '10.0.0.0/16' },
       environment: { id: 'env-123', name: 'development', projectId: 'proj-123' },
       project: { id: 'proj-123', name: 'Proj 1' },
@@ -567,6 +570,7 @@ describe('DeploymentService Subsystem', () => {
       (prisma.deployment.create as jest.Mock).mockResolvedValue({
         ...existingDeployment,
         id: 'dep-destroy-plan',
+        targetDeploymentId: 'dep-target-1',
         operationType: OperationType.DESTROY,
         status: DeploymentStatus.PLANNING,
         user: { id: 'usr-dev', name: 'Dev', email: 'dev@test.com', role: Role.DEVELOPER },
@@ -581,10 +585,16 @@ describe('DeploymentService Subsystem', () => {
       expect(result.id).toBe('dep-destroy-plan');
       expect(result.operationType).toBe(OperationType.DESTROY);
       expect(result.status).toBe(DeploymentStatus.PLANNING);
+      expect(prisma.deployment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ targetDeploymentId: 'dep-target-1' }),
+        }),
+      );
       expect(queueService.publishJob).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'PLAN',
           operationType: OperationType.DESTROY,
+          targetDeploymentId: 'dep-target-1',
         }),
         'PLAN',
       );
@@ -596,6 +606,17 @@ describe('DeploymentService Subsystem', () => {
       await expect(
         service.createDestroyPlan('usr-dev', { deploymentId: 'non-existent' }),
       ).rejects.toThrow('Target deployment [non-existent] not found');
+    });
+
+    it('should reject coordinates that do not match the source deployment', async () => {
+      (prisma.deployment.findUnique as jest.Mock).mockResolvedValue(existingDeployment);
+
+      await expect(service.createDestroyPlan('usr-dev', {
+        deploymentId: 'dep-target-1',
+        environmentId: 'env-other',
+      })).rejects.toThrow(
+        'Destroy target overrides must match the source deployment project, environment, and template',
+      );
     });
 
     it('should throw 409 if environment is currently locked', async () => {
@@ -619,6 +640,7 @@ describe('DeploymentService Subsystem', () => {
       projectId: 'proj-123',
       environmentId: 'env-123',
       templateId: 'tmpl-123',
+      targetDeploymentId: 'dep-target-1',
       operationType: OperationType.DESTROY,
       status: DeploymentStatus.PLANNED,
       environment: { id: 'env-123', name: 'development', cloudAccountId: 'acc-1' },
@@ -651,6 +673,7 @@ describe('DeploymentService Subsystem', () => {
         expect.objectContaining({
           action: 'DESTROY',
           operationType: OperationType.DESTROY,
+          targetDeploymentId: 'dep-target-1',
         }),
         'DESTROY',
       );

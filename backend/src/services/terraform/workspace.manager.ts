@@ -40,6 +40,21 @@ export class WorkspaceManager {
       fs.mkdirSync(workspaceDir, { recursive: true });
     }
 
+    // A teardown is recorded as a new deployment, but Terraform state belongs
+    // to the original successful deployment. Seed the isolated destroy
+    // workspace with that state before init/plan/destroy. Without this,
+    // Terraform sees an empty state and cannot address the deployed resources.
+    if (
+      config.stateSourceDeploymentId &&
+      config.stateSourceDeploymentId !== config.deploymentId
+    ) {
+      this.copyStateArtifacts(
+        path.join(this.baseDir, config.stateSourceDeploymentId),
+        workspaceDir,
+        config.stateSourceDeploymentId,
+      );
+    }
+
     // 1. Resolve source template directory
     let sourceTemplateDir = path.join(process.cwd(), config.templateReference);
     if (!fs.existsSync(sourceTemplateDir)) {
@@ -75,6 +90,44 @@ export class WorkspaceManager {
 
     logger.info(`Prepared isolated workspace at ${workspaceDir} (provider: ${provider})`);
     return workspaceDir;
+  }
+
+  /**
+   * Copies the state produced by a successful teardown back to the deployment
+   * that originally owned it. This prevents stale state from being reused by a
+   * later teardown attempt.
+   */
+  async syncStateToDeployment(sourceWorkspaceDir: string, targetDeploymentId: string): Promise<void> {
+    const targetWorkspaceDir = path.join(this.baseDir, targetDeploymentId);
+    if (!fs.existsSync(targetWorkspaceDir)) {
+      fs.mkdirSync(targetWorkspaceDir, { recursive: true });
+    }
+    this.copyStateArtifacts(sourceWorkspaceDir, targetWorkspaceDir, targetDeploymentId);
+    logger.info(`Synchronized destroyed Terraform state back to deployment [${targetDeploymentId}]`);
+  }
+
+  private copyStateArtifacts(
+    sourceWorkspaceDir: string,
+    targetWorkspaceDir: string,
+    sourceDeploymentId: string,
+  ): void {
+    const sourceState = path.join(sourceWorkspaceDir, 'terraform.tfstate');
+    if (!fs.existsSync(sourceState)) {
+      throw new Error(
+        `Terraform state for target deployment [${sourceDeploymentId}] is missing. ` +
+        'Destruction was not attempted because running against an empty state could leave infrastructure orphaned.',
+      );
+    }
+
+    fs.copyFileSync(sourceState, path.join(targetWorkspaceDir, 'terraform.tfstate'));
+
+    const sourceBackup = path.join(sourceWorkspaceDir, 'terraform.tfstate.backup');
+    const targetBackup = path.join(targetWorkspaceDir, 'terraform.tfstate.backup');
+    if (fs.existsSync(sourceBackup)) {
+      fs.copyFileSync(sourceBackup, targetBackup);
+    } else if (fs.existsSync(targetBackup)) {
+      fs.unlinkSync(targetBackup);
+    }
   }
 
   /**

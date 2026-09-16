@@ -365,36 +365,153 @@ mvp_slide(5, "MVP 5", "Operate surface: inventory, topology, costs",
     "the platform observes what it provisions", 9)
 
 # ============================================================
-# 10 · ARCHITECTURE
+# 10 · TECHNICAL ARCHITECTURE  (layered diagram)
 # ============================================================
 s = slide()
 brand(s, Inches(0.55), Inches(0.5), scale=1.0, wordmark=False)
-h1(s, "Under the hood")
-eyebrow(s, Inches(1.18), Inches(1.42), "ARCHITECTURE IN ONE SLIDE")
+h1(s, "Technical architecture")
+eyebrow(s, Inches(1.18), Inches(1.42), "FIVE LAYERS · ONE GOVERNED PATH")
 
-layers = [
-    ("Frontend", "Next.js 15 · TypeScript · Tailwind — dark monochrome control plane, landing + platform app", "browser tab shows the brand icon"),
-    ("API", "Express · JWT (15m/7d rotation) · RBAC · Zod validation on every route", "13 route modules"),
-    ("Data", "PostgreSQL + Prisma — 10 models from users to audit logs", "AES-256-GCM credential vault"),
-    ("Worker", "Terraform pipeline: PLAN → POLICY → APPROVAL → APPLY/DESTROY · sandboxed simulation runner", "in-process queue"),
-    ("Templates", "12 canonical modules (4/provider) synced to catalog with JSON-Schema contracts", "git-versioned"),
+# ---- row 1: request path, left → right ----
+ARROW_W = Inches(0.32)
+row1_y, row1_h = Inches(2.0), Inches(1.15)
+bw1 = Inches(2.19)
+r1 = [
+    ("Client layer", "browser · Next.js 15 dashboard"),
+    ("Control plane", "Express API · JWT · RBAC · Zod"),
+    ("Platform services", "templates · policy · cost · designs"),
+    ("Async execution", "job queue → terraform worker · isolated workspace"),
+    ("IaC engine", "terraform plan · apply · destroy · 12 modules"),
 ]
-y = Inches(2.0)
-for name, desc, meta in layers:
-    c = box(s, Inches(0.55), y, Inches(12.23), Inches(0.78), fill=SURFACE, line=BORDER, radius=0.10)
-    txt(s, Inches(0.85), y, Inches(1.85), Inches(0.78), [[(name, {"size": 12.5, "bold": True})]], anchor=MSO_ANCHOR.MIDDLE)
-    txt(s, Inches(2.8), y, Inches(7.6), Inches(0.78), [[(desc, {"size": 10.5, "color": MUTED})]], anchor=MSO_ANCHOR.MIDDLE, spacing=1.1)
-    txt(s, Inches(10.55), y, Inches(2.05), Inches(0.78), [[(meta, {"size": 9, "font": MONO, "color": FAINT})]],
-        align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
-    y += Inches(0.88)
+x = Inches(0.55)
+for i, (t, d) in enumerate(r1):
+    box(s, x, row1_y, bw1, row1_h, fill=SURFACE, line=BORDER, radius=0.10)
+    txt(s, x + Inches(0.14), row1_y + Inches(0.12), bw1 - Inches(0.28), Inches(0.3),
+        [[(t, {"size": 11.5, "bold": True})]])
+    txt(s, x + Inches(0.14), row1_y + Inches(0.46), bw1 - Inches(0.28), Inches(0.6),
+        [[(d, {"size": 8, "font": MONO, "color": MUTED})]], spacing=1.15)
+    x += bw1
+    if i < len(r1) - 1:
+        txt(s, x, Inches(2.42), ARROW_W, Inches(0.3), [[("\u2192", {"color": FAINT, "size": 12})]],
+            align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        x += ARROW_W
 
-chip(s, Inches(0.55), Inches(6.55), "249/249 backend tests passing", color=GREEN)
-chip(s, Inches(4.4), Inches(6.55), "frontend tsc + production build clean", color=INK)
-chip(s, Inches(9.7), Inches(6.55), "live e2e walkthrough verified", color=INK)
+# ---- vertical drops: control plane → data layer, iac → clouds ----
+txt(s, Inches(2.45), Inches(3.18), Inches(1.05), Inches(0.32),
+    [[("prisma", {"font": MONO, "color": FAINT, "size": 8})]], align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
+txt(s, Inches(3.55), Inches(3.18), Inches(0.5), Inches(0.32),
+    [[("\u2193", {"color": FAINT, "size": 12})]], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+txt(s, Inches(10.3), Inches(3.18), Inches(1.1), Inches(0.32),
+    [[("provider api", {"font": MONO, "color": FAINT, "size": 8})]], align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
+txt(s, Inches(11.5), Inches(3.18), Inches(0.5), Inches(0.32),
+    [[("\u2193", {"color": FAINT, "size": 12})]], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+
+# ---- row 2: data layer + managed clouds ----
+row2_y, row2_h = Inches(3.55), Inches(1.35)
+box(s, Inches(0.55), row2_y, Inches(3.6), row2_h, fill=SURFACE, line=BORDER, radius=0.10)
+txt(s, Inches(0.75), row2_y + Inches(0.12), Inches(3.2), Inches(0.3), [[("Data layer", {"size": 12, "bold": True})]])
+txt(s, Inches(0.75), row2_y + Inches(0.46), Inches(3.2), Inches(0.55),
+    [[("PostgreSQL + Prisma — users · projects · environments · deployments · resources · audit logs", {"size": 9, "color": MUTED})]], spacing=1.12)
+txt(s, Inches(0.75), row2_y + Inches(1.04), Inches(3.2), Inches(0.25),
+    [[("AES-256-GCM credential vault", {"size": 8, "font": MONO, "color": FAINT})]])
+
+box(s, Inches(4.4), row2_y, Inches(8.38), row2_h, fill=SURFACE2, line=BORDER, radius=0.08)
+txt(s, Inches(4.62), row2_y + Inches(0.1), Inches(6.0), Inches(0.28),
+    [[("Managed cloud infrastructure", {"size": 11, "bold": True})]])
+providers = [("AWS", "VPC · EC2 · RDS · S3"), ("Azure", "VNet · VMs · Blob Storage"), ("GCP", "VPC · Compute Engine · SQL")]
+px = Inches(4.62)
+for name, items in providers:
+    box(s, px, row2_y + Inches(0.44), Inches(2.5), Inches(0.72), fill=SURFACE, line=BORDER, radius=0.12)
+    txt(s, px + Inches(0.14), row2_y + Inches(0.52), Inches(2.2), Inches(0.26), [[(name, {"size": 10, "bold": True})]])
+    txt(s, px + Inches(0.14), row2_y + Inches(0.8), Inches(2.2), Inches(0.3),
+        [[(items, {"size": 7.5, "font": MONO, "color": MUTED})]])
+    px += Inches(2.74)
+
+# ---- feedback loop caption ----
+txt(s, Inches(0.55), Inches(4.98), Inches(12.23), Inches(0.22),
+    [[("outputs \u2192 recorded inventory \u2192 topology & cost rollups \u2192 audit trail", {"size": 8.5, "font": MONO, "color": FAINT})]],
+    align=PP_ALIGN.CENTER)
+
+# ---- row 3: what the platform records ----
+r3 = [
+    ("Resource inventory", "every apply records resources cross-cloud; teardown flips them to DESTROYED"),
+    ("Topology & costs", "dependency graph = blast radius; rate-card estimates + optimization advisor"),
+    ("Audit & observability", "append-only actor · verb · target on every transition; worker logs & job status"),
+]
+cw3 = Inches(3.91)
+x = Inches(0.55)
+for t, d in r3:
+    box(s, x, Inches(5.22), cw3, Inches(0.95), fill=SURFACE, line=BORDER, radius=0.10)
+    txt(s, x + Inches(0.16), Inches(5.34), cw3 - Inches(0.32), Inches(0.28), [[(t, {"size": 11, "bold": True})]])
+    txt(s, x + Inches(0.16), Inches(5.64), cw3 - Inches(0.32), Inches(0.48), [[(d, {"size": 8.5, "color": MUTED})]], spacing=1.12)
+    x += cw3 + Inches(0.25)
+
+# ---- principle strip ----
+box(s, Inches(0.55), Inches(6.35), Inches(12.23), Inches(0.52), fill=SURFACE2, line=BORDER, radius=0.16)
+txt(s, Inches(0.85), Inches(6.35), Inches(9.1), Inches(0.52),
+    [[("The frontend never touches cloud APIs — execution flows only through the queue and sandboxed worker; every transition lands in the audit log.", {"size": 10.5, "color": MUTED})]],
+    anchor=MSO_ANCHOR.MIDDLE, spacing=1.1)
+chip(s, Inches(10.15), Inches(6.47), "251/251 backend tests", color=GREEN)
 footer(s, 10)
 
 # ============================================================
-# 11 · EXTRAS
+# 11 · WORKFLOW ARCHITECTURE
+# ============================================================
+s = slide()
+brand(s, Inches(0.55), Inches(0.5), scale=1.0, wordmark=False)
+h1(s, "Workflow architecture")
+eyebrow(s, Inches(1.18), Inches(1.42), "END-TO-END CONTROLLED LIFECYCLE")
+
+phases = [
+    ("01", "User & roles", "ADMIN governs accounts & policy · DEVELOPER provisions · VIEWER read-only — RBAC enforced on every route"),
+    ("02", "Project & cloud", "Admin scopes projects + environments · Developer binds a validated cloud account (AWS · Azure · GCP)"),
+    ("03", "Template & config", "Catalog → JSON-schema contract → region · size · storage parameters with safe defaults"),
+    ("04", "Validate & cost", "Invalid config rejected early · monthly estimate per provider surfaces before approval"),
+    ("05", "Plan & policy", "Terraform diff CREATE / MODIFY / DELETE · guardrails: encryption · exposure · CIDRs · destructive protection"),
+    ("06", "Approval", "Named approver signs the exact plan · rejection notifies the developer with reason · every decision audited"),
+    ("07", "Execution", "Job queue → sandboxed worker · state QUEUED ▸ RUNNING ▸ SUCCESSFUL / FAILED — the UI never executes"),
+    ("08", "Provision", "Provider-specific execution: compute · storage · network · load balancer on AWS · Azure · GCP"),
+    ("09", "Resource management", "Apply registers inventory · dependency graph (LB → web → DB) shows blast radius before change"),
+    ("10", "Monitor & notify", "Health & availability dashboards · alerts on anomalies and pipeline outcomes"),
+    ("11", "Audit & controlled change", "Append-only actor · verb · target · modifications and teardown re-run plan → policy → approve (typed confirm)"),
+]
+
+def phase_row(items, y, cw, ch):
+    x = Inches(0.55)
+    for num, t, d in items:
+        box(s, x, y, cw, ch, fill=SURFACE, line=BORDER, radius=0.08)
+        chip(s, x + Inches(0.14), y + Inches(0.13), num, color=FAINT, fill=SURFACE2, size=8)
+        txt(s, x + Inches(0.62), y + Inches(0.11), cw - Inches(0.76), Inches(0.3), [[(t, {"size": 11, "bold": True})]])
+        txt(s, x + Inches(0.14), y + Inches(0.45), cw - Inches(0.28), ch - Inches(0.57), [[(d, {"size": 8, "color": MUTED})]], spacing=1.12)
+        x += cw + Inches(0.14)
+
+W4 = Inches(2.9525); W3 = Inches(3.9833)
+phase_row(phases[0:4], Inches(1.95), W4, Inches(1.0))
+phase_row(phases[4:8], Inches(3.09), W4, Inches(1.0))
+phase_row(phases[8:11], Inches(4.23), W3, Inches(1.0))
+
+# lifecycle strip
+box(s, Inches(0.55), Inches(5.52), Inches(12.23), Inches(0.92), fill=SURFACE2, line=BORDER, radius=0.12)
+txt(s, Inches(0.85), Inches(5.63), Inches(5.5), Inches(0.24), [[("COMPLETE CONTROLLED LIFECYCLE", {"size": 9, "bold": True, "font": MONO, "color": GREEN})]])
+txt(s, Inches(6.5), Inches(5.63), Inches(6.0), Inches(0.24),
+    [[("any change loops back: plan → policy → approval → execution", {"size": 8, "font": MONO, "color": FAINT})]],
+    align=PP_ALIGN.RIGHT)
+lc = ["authenticate", "project · cloud", "template · validate", "plan · approve", "provision · register", "monitor", "audit · modify · destroy"]
+lx = Inches(0.85)
+for i, st in enumerate(lc):
+    w = chip(s, lx, Inches(5.95), st, color=INK if i in (0, len(lc) - 1) else MUTED, size=8)
+    lx = lx + w + Inches(0.06)
+    if i < len(lc) - 1:
+        txt(s, lx, Inches(5.95), Inches(0.18), Inches(0.28), [[("\u2192", {"color": FAINT, "size": 9})]],
+            align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        lx += Inches(0.18)
+txt(s, Inches(0.55), Inches(6.58), Inches(12.23), Inches(0.3),
+    [[("Authorized users safely plan, approve, deploy, monitor, and destroy reusable multi-cloud infrastructure — one governed lifecycle.", {"size": 10, "color": MUTED})]],
+    align=PP_ALIGN.CENTER)
+footer(s, 11)
+
+# ============================================================
+# 12 · EXTRAS
 # ============================================================
 s = slide()
 brand(s, Inches(0.55), Inches(0.5), scale=1.0, wordmark=False)
@@ -409,7 +526,7 @@ extras = [
     ("Notifications", "In-app alerts on approval requests and pipeline outcomes."),
     ("Portability export", "Export designs and deployments as portable Terraform — no lock-in."),
     ("Brand system", "Dark monochrome language, custom SVG favicon, landing page mirroring the real product."),
-    ("Test discipline", "249 backend tests: unit + route + worker + policy + crypto + template sync."),
+    ("Test discipline", "251 backend tests: unit + route + worker + policy + crypto + template sync."),
 ]
 y0, x0 = Inches(2.05), Inches(0.55)
 cw2, ch2 = Inches(6.0), Inches(1.06)
@@ -420,10 +537,38 @@ for i, (t, d) in enumerate(extras):
     c = box(s, x, y, cw2, ch2, fill=SURFACE, line=BORDER, radius=0.10)
     txt(s, x + Inches(0.24), y + Inches(0.14), cw2 - Inches(0.48), Inches(0.32), [[(t, {"size": 12, "bold": True})]])
     txt(s, x + Inches(0.24), y + Inches(0.5), cw2 - Inches(0.48), Inches(0.52), [[(d, {"size": 9.8, "color": MUTED})]], spacing=1.1)
-footer(s, 11)
+footer(s, 12)
 
 # ============================================================
-# 12 · CLOSING
+# 13 · FUTURE SCOPE
+# ============================================================
+s = slide()
+brand(s, Inches(0.55), Inches(0.5), scale=1.0, wordmark=False)
+h1(s, "Future scope")
+eyebrow(s, Inches(1.18), Inches(1.42), "WHERE THE PLATFORM GOES NEXT")
+
+future = [
+    ("Live provider execution", "NEXT", "Swap the sandboxed simulation runner for real terraform runs behind the same runner interface — zero pipeline or policy changes."),
+    ("Durable execution queue", "NEXT", "RabbitMQ-backed jobs with retries and dead-lettering so in-flight deployments survive restarts; scale-out to multiple workers."),
+    ("Drift detection & alerting", "NEXT", "Scheduled plan-vs-state reconciliation flags out-of-band console changes and opens a governed remediation path."),
+    ("Live pricing & budgets", "LATER", "Provider pricing APIs and usage telemetry replace the offline rate card — actuals, forecasts, and budget alerts."),
+    ("SSO & team collaboration", "LATER", "OIDC sign-in, per-project fine-grained roles, and multi-user designer sessions with live presence."),
+    ("GitOps workflow", "LATER", "Push generated modules to Git; plan-on-PR comments and review gates ride the existing approval pipeline."),
+]
+y0, x0 = Inches(2.05), Inches(0.55)
+cw2, ch2 = Inches(6.0), Inches(1.28)
+for i, (t, tag, d) in enumerate(future):
+    col, row = i % 2, i // 2
+    fx = x0 + col * (cw2 + Inches(0.23))
+    fy = y0 + row * (ch2 + Inches(0.16))
+    box(s, fx, fy, cw2, ch2, fill=SURFACE, line=BORDER, radius=0.10)
+    txt(s, fx + Inches(0.24), fy + Inches(0.16), cw2 - Inches(1.3), Inches(0.32), [[(t, {"size": 12.5, "bold": True})]])
+    chip(s, fx + cw2 - Inches(1.02), fy + Inches(0.18), tag, color=GREEN if tag == "NEXT" else FAINT)
+    txt(s, fx + Inches(0.24), fy + Inches(0.56), cw2 - Inches(0.48), Inches(0.62), [[(d, {"size": 10, "color": MUTED})]], spacing=1.15)
+footer(s, 13)
+
+# ============================================================
+# 14 · CLOSING
 # ============================================================
 s = slide()
 brand(s, Inches(0.55), Inches(0.5), scale=1.0)
@@ -439,7 +584,7 @@ x = Inches(0.55)
 for t in ["Thank you", "Questions welcome"]:
     w = chip(s, x, Inches(5.35), t, color=INK if t == "Thank you" else MUTED)
     x += w + Inches(0.3)
-footer(s, 12)
+footer(s, 14)
 
 prs.save("docs/cloudweave-supervisor-deck.pptx")
 print("saved docs/cloudweave-supervisor-deck.pptx —", len(prs.slides.slides if hasattr(prs.slides,'slides') else prs.slides._sldIdLst), "slides")

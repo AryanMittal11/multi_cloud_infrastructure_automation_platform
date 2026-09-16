@@ -63,6 +63,58 @@ describe('WorkspaceManager', () => {
     expect(fs.existsSync(workspaceDir)).toBe(false);
   });
 
+  it('should seed a destroy workspace with the target deployment state', async () => {
+    const sourceId = 'dep-create-source';
+    const sourceDir = path.join(testBaseDir, sourceId);
+    fs.mkdirSync(sourceDir, { recursive: true });
+    const state = { version: 4, resources: [{ type: 'aws_vpc', name: 'main' }] };
+    fs.writeFileSync(path.join(sourceDir, 'terraform.tfstate'), JSON.stringify(state), 'utf8');
+
+    const destroyDir = await workspaceManager.prepareWorkspace({
+      deploymentId: 'dep-destroy',
+      stateSourceDeploymentId: sourceId,
+      templateReference: 'templates/aws/aws_vpc',
+      configuration: {},
+      cloudCredentials: {},
+    });
+
+    expect(JSON.parse(fs.readFileSync(path.join(destroyDir, 'terraform.tfstate'), 'utf8')))
+      .toEqual(state);
+  });
+
+  it('should refuse teardown when the target deployment state is missing', async () => {
+    await expect(workspaceManager.prepareWorkspace({
+      deploymentId: 'dep-destroy',
+      stateSourceDeploymentId: 'dep-without-state',
+      templateReference: 'templates/aws/aws_vpc',
+      configuration: {},
+      cloudCredentials: {},
+    })).rejects.toThrow('Terraform state for target deployment [dep-without-state] is missing');
+  });
+
+  it('should sync the empty post-destroy state back to the source deployment', async () => {
+    const sourceId = 'dep-create-source';
+    const sourceDir = path.join(testBaseDir, sourceId);
+    const destroyDir = path.join(testBaseDir, 'dep-destroy');
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.mkdirSync(destroyDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(sourceDir, 'terraform.tfstate'),
+      JSON.stringify({ version: 4, resources: [{ type: 'aws_vpc', name: 'main' }] }),
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(destroyDir, 'terraform.tfstate'),
+      JSON.stringify({ version: 4, resources: [] }),
+      'utf8',
+    );
+
+    await workspaceManager.syncStateToDeployment(destroyDir, sourceId);
+
+    const synced = JSON.parse(fs.readFileSync(path.join(sourceDir, 'terraform.tfstate'), 'utf8'));
+    expect(synced.resources).toEqual([]);
+  });
+
   it('should generate an Azure provider block for Azure template references', async () => {
     const deploymentId = 'dep-azure-test';
     const workspaceDir = await workspaceManager.prepareWorkspace({

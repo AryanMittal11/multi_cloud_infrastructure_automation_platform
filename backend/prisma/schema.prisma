@@ -159,6 +159,7 @@ model Deployment {
   environmentId      String
   templateId         String
   userId             String
+  targetDeploymentId String?
   operationType      OperationType    @default(CREATE)
   status             DeploymentStatus @default(DRAFT)
   configuration      Json             // Validated user input values
@@ -176,9 +177,12 @@ model Deployment {
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
   template    Template    @relation(fields: [templateId], references: [id], onDelete: Restrict)
   user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  targetDeployment    Deployment?  @relation("DeploymentTeardownTarget", fields: [targetDeploymentId], references: [id], onDelete: SetNull)
+  teardownDeployments Deployment[] @relation("DeploymentTeardownTarget")
   resources   Resource[]
   auditLogs   AuditLog[]
 
+  @@index([targetDeploymentId])
   @@map("deployments")
 }
 

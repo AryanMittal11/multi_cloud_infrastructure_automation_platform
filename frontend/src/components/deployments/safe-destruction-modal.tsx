@@ -12,11 +12,13 @@ import {
   ShieldAlert,
   Loader2,
   Trash2,
-  Check,
   Terminal,
   ArrowRight,
-  ShieldCheck,
 } from 'lucide-react';
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 interface SafeDestructionModalProps {
   deployment: Deployment;
@@ -52,8 +54,8 @@ export function SafeDestructionModal({
       setDestroyDeploymentId(res.deployment.id);
       setErrorMessage(null);
     },
-    onError: (err: any) => {
-      setErrorMessage(err.message || 'Failed to initiate destruction dry-run');
+    onError: (error: unknown) => {
+      setErrorMessage(getErrorMessage(error, 'Failed to initiate destruction dry-run'));
     },
   });
 
@@ -86,8 +88,8 @@ export function SafeDestructionModal({
       onClose();
       router.push(`/deployments/${destroyDeploymentId}`);
     },
-    onError: (err: any) => {
-      setErrorMessage(err.message || 'Destruction confirmation rejected');
+    onError: (error: unknown) => {
+      setErrorMessage(getErrorMessage(error, 'Destruction confirmation rejected'));
     },
   });
 
@@ -201,7 +203,7 @@ export function SafeDestructionModal({
               </div>
             ) : (
               <div className="space-y-4">
-                {activeDestroyDeployment?.status === 'PLANNING' ? (
+                {!activeDestroyDeployment || activeDestroyDeployment.status === 'PLANNING' ? (
                   <div className="p-8 text-center rounded-xl bg-neutral-900/50 border border-neutral-800 space-y-3">
                     <Loader2 className="w-8 h-8 text-rose-500 animate-spin mx-auto" />
                     <h4 className="text-xs font-bold text-white">
@@ -211,7 +213,39 @@ export function SafeDestructionModal({
                       Isolated worker is computing resource teardown dependencies.
                     </p>
                   </div>
-                ) : (
+                ) : activeDestroyDeployment.status === 'FAILED' ? (
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 space-y-2">
+                      <div className="text-xs font-bold text-rose-300 flex items-center space-x-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Destruction plan failed</span>
+                      </div>
+                      <pre className="text-[11px] font-mono text-rose-200/90 max-h-36 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                        {activeDestroyDeployment.applyOutput || activeDestroyDeployment.planOutput || 'The worker could not generate a safe destruction plan.'}
+                      </pre>
+                    </div>
+                    <div className="pt-3 border-t border-neutral-800 flex justify-between items-center">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-xs font-semibold text-neutral-500 hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDestroyDeploymentId(null);
+                          setErrorMessage(null);
+                          destroyPlanMutation.reset();
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs"
+                      >
+                        Retry Preview
+                      </button>
+                    </div>
+                  </div>
+                ) : activeDestroyDeployment.status === 'PLANNED' ? (
                   <div className="space-y-3">
                     <div className="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 space-y-1">
                       <div className="text-xs font-bold text-rose-400 flex items-center space-x-2">
@@ -241,6 +275,10 @@ export function SafeDestructionModal({
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-neutral-900/50 border border-neutral-800 text-xs text-neutral-300">
+                    Destruction preview is in an unexpected state: {activeDestroyDeployment.status}
                   </div>
                 )}
               </div>

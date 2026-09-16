@@ -88,6 +88,8 @@ export class TerraformWorkerService {
       return;
     }
 
+    const targetDeploymentId = deployment.targetDeploymentId || job.targetDeploymentId;
+
     // 2. Acquire Concurrency Lock
     try {
       await deploymentLockManager.acquireLock(job.projectId, job.environmentId, job.deploymentId);
@@ -112,6 +114,12 @@ export class TerraformWorkerService {
     });
 
     try {
+      if (job.operationType === 'DESTROY' && !targetDeploymentId) {
+        throw new Error(
+          'Destroy job is missing targetDeploymentId; refusing to run Terraform against an empty workspace state.',
+        );
+      }
+
       // 4. Resolve & Decrypt Cloud Account Credentials (multi-provider aware)
       let envVars: Record<string, string> = {};
       let cloudRegion = 'us-east-1';
@@ -175,6 +183,7 @@ export class TerraformWorkerService {
       // 5. Prepare Isolated Workspace Directory
       const workspaceDir = await workspaceManager.prepareWorkspace({
         deploymentId: job.deploymentId,
+        stateSourceDeploymentId: targetDeploymentId,
         templateReference: deployment.template.templateReference,
         configuration: (deployment.configuration as Record<string, any>) || {},
         cloudCredentials: envVars,
@@ -310,13 +319,10 @@ export class TerraformWorkerService {
         }
 
         // Mark resources as destroyed — a DESTROY deployment owns no resource
-        // rows itself; the provisioned rows live under the original CREATE
-        // deployment(s) of the same project/env/template, so scope by target.
-        await resourceService.markResourcesDestroyedByTarget({
-          projectId: job.projectId,
-          environmentId: job.environmentId,
-          templateId: job.templateId,
-        });
+        // rows itself. Persist the empty post-destroy state back to the exact
+        // source deployment, then reconcile only that deployment's inventory.
+        await workspaceManager.syncStateToDeployment(workspaceDir, targetDeploymentId!);
+        await resourceService.markResourcesDestroyed(targetDeploymentId!);
 
         await prisma.deployment.update({
           where: { id: job.deploymentId },

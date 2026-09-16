@@ -32,6 +32,8 @@ export interface ParsedStateResult {
 
 export interface WorkspaceConfig {
   deploymentId: string;
+  /** Deployment workspace that owns the state for a teardown. */
+  stateSourceDeploymentId?: string;
   templateReference: string;
   configuration: Record<string, any>;
   cloudCredentials: Record<string, string>;
