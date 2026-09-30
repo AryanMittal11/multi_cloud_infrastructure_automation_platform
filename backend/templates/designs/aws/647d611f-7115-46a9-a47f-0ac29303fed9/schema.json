@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "2ec2 instances",
+  "description": "Auto-generated schema for visual design \"2ec2 instances\"",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": true
+}

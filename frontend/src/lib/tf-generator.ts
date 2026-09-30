@@ -58,50 +58,75 @@ export function generateTerraform(
   edges: CanvasEdge[],
 ): GeneratedDesign {
   const modules: GeneratedModule[] = nodes.map((node) => {
+    const nodeProvider = (node.data.provider as 'AWS' | 'AZURE' | 'GCP') || (provider as 'AWS' | 'AZURE' | 'GCP') || 'AWS';
     const templateRef =
-      node.data.templateRef || NODE_TEMPLATE_MAP[node.kind][node.data.provider as 'AWS' | 'AZURE' | 'GCP'];
+      node.data.templateRef || NODE_TEMPLATE_MAP[node.kind]?.[nodeProvider] || `templates/${nodeProvider.toLowerCase()}/${node.kind}`;
     const moduleName = hclIdentifier(node.data.label || node.kind);
 
-    const configEntries = Object.entries(node.data.config || {}).filter(
-      ([, v]) => v !== '' && v !== null && v !== undefined,
-    );
+    const userConfig = { ...(node.data.config || {}) };
 
-    const configBlock =
-      configEntries.length > 0
-        ? `  source = "../../templates/${templateRef.replace('templates/', '')}"\n\n` +
-          configEntries.map(([k, v]) => `  ${k} = ${hclValue(v)}`).join('\n') +
-          '\n'
-        : `  source = "../../templates/${templateRef.replace('templates/', '')}"\n`;
-
-    const upstream = edges
+    const upstreamNodes = edges
       .filter((e) => e.target === node.id)
       .map((e) => nodes.find((n) => n.id === e.source))
-      .filter(Boolean)
-      .map((upstreamNode) => {
-        const ref =
-          upstreamNode!.data.templateRef ||
-          NODE_TEMPLATE_MAP[upstreamNode!.kind][upstreamNode!.data.provider as 'AWS' | 'AZURE' | 'GCP'];
-        const upstreamName = hclIdentifier(upstreamNode!.data.label || upstreamNode!.kind);
-        const outputKey = MODULE_OUTPUT_MAP[ref] || 'id';
-        return `    ${upstreamName} = module.${upstreamName}.${outputKey}`;
-      });
+      .filter(Boolean) as CanvasNode[];
 
-    if (upstream.length > 0) {
-      return {
-        nodeId: node.id,
-        label: node.data.label,
-        templateRef,
-        terraform: `module "${moduleName}" {\n${configBlock}  depends_on = [\n${upstream
-          .map((u) => u.trim())
-          .join(',\n')}\n  ]\n}\n`,
-      };
+    const wiredArguments: Record<string, string> = {};
+
+    for (const upstream of upstreamNodes) {
+      const upstreamModuleName = hclIdentifier(upstream.data.label || upstream.kind);
+      if (upstream.kind === 'network') {
+        if (node.kind === 'compute') {
+          if (nodeProvider === 'AWS') {
+            if (!userConfig.vpc_id) wiredArguments['vpc_id'] = `module.${upstreamModuleName}.vpc_id`;
+            if (!userConfig.subnet_id) wiredArguments['subnet_id'] = `module.${upstreamModuleName}.public_subnet_ids[0]`;
+          } else if (nodeProvider === 'AZURE') {
+            if (!userConfig.resource_group_name) wiredArguments['resource_group_name'] = `module.${upstreamModuleName}.resource_group_name`;
+            if (!userConfig.subnet_id) wiredArguments['subnet_id'] = `module.${upstreamModuleName}.public_subnet_id`;
+          } else if (nodeProvider === 'GCP') {
+            if (!userConfig.network_name) wiredArguments['network_name'] = `module.${upstreamModuleName}.vpc_name`;
+            if (!userConfig.subnet_self_link) wiredArguments['subnet_self_link'] = `module.${upstreamModuleName}.public_subnet_self_link`;
+          }
+        } else if (node.kind === 'database') {
+          if (nodeProvider === 'AWS') {
+            if (!userConfig.vpc_id) wiredArguments['vpc_id'] = `module.${upstreamModuleName}.vpc_id`;
+            if (!userConfig.subnet_ids) wiredArguments['subnet_ids'] = `module.${upstreamModuleName}.private_subnet_ids`;
+          } else if (nodeProvider === 'AZURE') {
+            if (!userConfig.resource_group_name) wiredArguments['resource_group_name'] = `module.${upstreamModuleName}.resource_group_name`;
+            if (!userConfig.vnet_id) wiredArguments['vnet_id'] = `module.${upstreamModuleName}.vnet_id`;
+          } else if (nodeProvider === 'GCP') {
+            if (!userConfig.network_id) wiredArguments['network_id'] = `module.${upstreamModuleName}.vpc_id`;
+          }
+        }
+      }
+    }
+
+    const configLines: string[] = [];
+    configLines.push(`  source = "../../templates/${templateRef.replace(/^templates\//, '')}"\n`);
+
+    for (const [k, v] of Object.entries(userConfig)) {
+      if (v !== '' && v !== null && v !== undefined && !(k in wiredArguments)) {
+        configLines.push(`  ${k} = ${hclValue(v)}`);
+      }
+    }
+
+    for (const [k, v] of Object.entries(wiredArguments)) {
+      configLines.push(`  ${k} = ${v}`);
+    }
+
+    if (upstreamNodes.length > 0) {
+      configLines.push('\n  depends_on = [');
+      upstreamNodes.forEach((up) => {
+        const upName = hclIdentifier(up.data.label || up.kind);
+        configLines.push(`    module.${upName},`);
+      });
+      configLines.push('  ]');
     }
 
     return {
       nodeId: node.id,
       label: node.data.label,
       templateRef,
-      terraform: `module "${moduleName}" {\n${configBlock}}\n`,
+      terraform: `module "${moduleName}" {\n${configLines.join('\n')}\n}\n`,
     };
   });
 

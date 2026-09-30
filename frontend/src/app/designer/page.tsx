@@ -256,14 +256,14 @@ function DesignerInner() {
 
   const { push } = useToast();
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<string | null> => {
     if (!user) {
       router.push('/login');
-      return;
+      return null;
     }
     if (!designName.trim()) {
       push({ title: 'Name your design before saving', tone: 'warn' });
-      return;
+      return null;
     }
     setSaving(true);
     try {
@@ -281,6 +281,7 @@ function DesignerInner() {
       saveActiveDesignId(res.design.id);
       setSavedAt(new Date().toLocaleTimeString());
       push({ title: 'Design saved', sub: res.design.name, tone: 'success' });
+      return res.design.id;
     } catch (err: any) {
       push({
         title:
@@ -291,6 +292,7 @@ function DesignerInner() {
               : err?.message || 'Failed to save design',
         tone: 'fail',
       });
+      return null;
     } finally {
       setSaving(false);
     }
@@ -464,9 +466,13 @@ function DesignerInner() {
       <DeployDialog
         open={deployOpen}
         onClose={() => setDeployOpen(false)}
+        designId={designId}
         designName={designName}
         nodeCount={nodes.length}
-        templateRef={nodes[0]?.data?.templateRef ?? null}
+        cloudProvider={cloudProvider}
+        nodes={designPayload.nodes}
+        edges={designPayload.edges}
+        onSaveBeforeDeploy={handleSave}
       />
 
       {/* Mobile fallback note */}

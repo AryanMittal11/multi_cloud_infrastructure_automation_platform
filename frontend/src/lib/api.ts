@@ -411,6 +411,23 @@ export const api = {
         body: JSON.stringify(data),
       }),
     delete: (id: string) => request<{ success: boolean }>(`/designs/${id}`, { method: 'DELETE' }),
+    deploy: (
+      id: string,
+      data: {
+        projectId: string;
+        environmentId: string;
+        configuration?: Record<string, unknown>;
+        name?: string;
+        description?: string;
+        cloudProvider?: string;
+        nodes?: CanvasNode[];
+        edges?: CanvasEdge[];
+      },
+    ) =>
+      request<{ deployment: Deployment; template: Template; message: string }>(`/designs/${id}/deploy`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   users: {

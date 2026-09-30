@@ -1,6 +1,10 @@
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../../config/prisma';
-import { Role } from '@prisma/client';
+import { Provider, Role } from '@prisma/client';
 import { logger } from '../../utils/logger';
+import { generateDesignTerraform } from './design.generator';
+import { deploymentService } from '../deployments';
 
 export interface DesignNodeInput {
   id: string;
@@ -32,7 +36,25 @@ export interface DesignInput {
   edges: DesignEdgeInput[];
 }
 
+export interface DeployDesignInput {
+  projectId: string;
+  environmentId: string;
+  configuration?: Record<string, any>;
+  name?: string;
+  description?: string;
+  cloudProvider?: string;
+  nodes?: DesignNodeInput[];
+  edges?: DesignEdgeInput[];
+}
+
 export class DesignService {
+  private templatesRootDir: string;
+
+  constructor(templatesRootDir?: string) {
+    this.templatesRootDir =
+      templatesRootDir || path.resolve(__dirname, '../../../templates');
+  }
+
   /**
    * Lists designs. Admin (site owner) sees ALL designs; others see only their own.
    */
@@ -152,6 +174,18 @@ export class DesignService {
 
     await prisma.architectureDesign.delete({ where: { id } });
 
+    // Clean up template folder from disk if generated
+    ['aws', 'azure', 'gcp'].forEach((p) => {
+      const targetDir = path.join(this.templatesRootDir, 'designs', p, id);
+      if (fs.existsSync(targetDir)) {
+        try {
+          fs.rmSync(targetDir, { recursive: true, force: true });
+        } catch (err) {
+          logger.warn(`Failed to delete design template dir [${targetDir}]:`, err);
+        }
+      }
+    });
+
     await prisma.auditLog.create({
       data: {
         userId,
@@ -163,6 +197,147 @@ export class DesignService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * Synchronizes an ArchitectureDesign into an isolated, deployable Terraform template catalog entry.
+   */
+  async syncDesignTemplate(design: any) {
+    const provider = ((design.cloudProvider as string) || 'AWS').toUpperCase() as
+      | 'AWS'
+      | 'AZURE'
+      | 'GCP'
+      | 'MULTI';
+    const providerFolder = provider === 'AZURE' ? 'azure' : provider === 'GCP' ? 'gcp' : 'aws';
+    const targetDir = path.join(this.templatesRootDir, 'designs', providerFolder, design.id);
+
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    const nodes = (design.nodes as unknown as DesignNodeInput[]) || [];
+    const edges = (design.edges as unknown as DesignEdgeInput[]) || [];
+
+    const { mainTf, schemaJson } = generateDesignTerraform(
+      design.name,
+      provider,
+      nodes,
+      edges,
+    );
+
+    fs.writeFileSync(path.join(targetDir, 'main.tf'), mainTf, 'utf8');
+    fs.writeFileSync(
+      path.join(targetDir, 'schema.json'),
+      JSON.stringify(schemaJson, null, 2),
+      'utf8',
+    );
+
+    const templateRef = `templates/designs/${providerFolder}/${design.id}`;
+
+    const existingTemplate = await prisma.template.findFirst({
+      where: { templateReference: templateRef },
+    });
+
+    const templateName = `Design: ${design.name}`;
+    const templateDescription =
+      design.description ||
+      `Visual architecture design with ${nodes.length} resource(s) across ${provider}`;
+    const dbProvider = provider === 'MULTI' ? null : (provider as Provider);
+
+    let templateRecord;
+    if (existingTemplate) {
+      templateRecord = await prisma.template.update({
+        where: { id: existingTemplate.id },
+        data: {
+          name: templateName,
+          provider: dbProvider,
+          version: '1.0.0',
+          description: templateDescription,
+          inputSchema: schemaJson as any,
+        },
+      });
+    } else {
+      templateRecord = await prisma.template.create({
+        data: {
+          name: templateName,
+          provider: dbProvider,
+          version: '1.0.0',
+          description: templateDescription,
+          templateReference: templateRef,
+          inputSchema: schemaJson as any,
+        },
+      });
+    }
+
+    return templateRecord;
+  }
+
+  /**
+   * Deploys an architecture design by generating its dedicated Terraform template and queuing a plan.
+   */
+  async deployDesign(
+    userId: string,
+    role: Role,
+    designId: string,
+    input: DeployDesignInput,
+  ) {
+    if (!input.projectId || !input.environmentId) {
+      const error: any = new Error('projectId and environmentId are required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 1. If payload contains updated canvas state, persist it first
+    if (input.name || input.nodes || input.edges || input.cloudProvider) {
+      await this.updateDesign(designId, userId, role, {
+        name: input.name,
+        description: input.description,
+        cloudProvider: input.cloudProvider,
+        nodes: input.nodes,
+        edges: input.edges,
+      });
+    }
+
+    // 2. Fetch authoritative design
+    const design = await prisma.architectureDesign.findUnique({
+      where: { id: designId },
+    });
+
+    if (!design || (role !== Role.ADMIN && design.ownerId !== userId)) {
+      const error: any = new Error('Design not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const nodes = (design.nodes as unknown as DesignNodeInput[]) || [];
+    if (nodes.length === 0) {
+      const error: any = new Error(
+        'Cannot deploy an empty design. Add at least one resource to the canvas.',
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 3. Generate template on disk and record in DB
+    const template = await this.syncDesignTemplate(design);
+
+    // 4. Dispatch deployment plan creation
+    const deployment = await deploymentService.createPlan(userId, {
+      projectId: input.projectId,
+      environmentId: input.environmentId,
+      templateId: template.id,
+      configuration: input.configuration || {},
+    });
+
+    logger.info(
+      `Plan initiated for design [${design.name}] (${design.id}) via deployment [${deployment.id}]`,
+    );
+
+    return {
+      deployment,
+      template,
+      message: `Plan generation initiated successfully for design "${design.name}"`,
+    };
   }
 
   private formatDesignSummary(design: any) {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { designController } from '../controllers/design.controller';
-import { authenticateToken, requireDeveloper } from '../middleware';
+import { authenticateToken, requireDeveloper, validateBody } from '../middleware';
 
 export const designRouter = Router();
 
@@ -37,6 +37,17 @@ const createDesignSchema = z.object({
 
 const updateDesignSchema = createDesignSchema.partial();
 
+const deployDesignSchema = z.object({
+  projectId: z.string().uuid('projectId must be a valid UUID'),
+  environmentId: z.string().uuid('environmentId must be a valid UUID'),
+  configuration: z.record(z.any()).optional().default({}),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  cloudProvider: z.enum(['AWS', 'AZURE', 'GCP', 'MULTI']).optional(),
+  nodes: z.array(designNodeSchema).optional(),
+  edges: z.array(designEdgeSchema).optional(),
+});
+
 designRouter.use(authenticateToken);
 
 designRouter.get('/', requireDeveloper, designController.list);
@@ -45,3 +56,5 @@ designRouter.post('/', requireDeveloper, designController.create);
 designRouter.put('/:id', requireDeveloper, designController.update);
 // Ownership (owner-only) is enforced in DesignService.deleteDesign; any developer may remove their own design.
 designRouter.delete('/:id', requireDeveloper, designController.delete);
+// Deploy visual architecture design: generates Terraform template and dispatches plan
+designRouter.post('/:id/deploy', requireDeveloper, validateBody(deployDesignSchema), designController.deploy);

@@ -51,4 +51,18 @@ export const designController = {
       next(err);
     }
   },
+
+  deploy: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await designService.deployDesign(
+        req.user!.userId,
+        req.user!.role,
+        req.params.id,
+        req.body,
+      );
+      res.status(202).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
 };
