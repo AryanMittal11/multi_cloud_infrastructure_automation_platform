@@ -6,6 +6,7 @@ import { api, Deployment } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
 import { SafeDestructionModal } from '../../components/deployments/safe-destruction-modal';
 import { ConfirmApplyModal } from '../../components/deployments/confirm-apply-modal';
+import { ConfirmDestroyModal } from '../../components/deployments/confirm-destroy-modal';
 import Link from 'next/link';
 import {
   PlayCircle,
@@ -31,6 +32,7 @@ export default function DeploymentsPage() {
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
   const [destroyTarget, setDestroyTarget] = useState<Deployment | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<Deployment | null>(null);
+  const [confirmDestroyTarget, setConfirmDestroyTarget] = useState<Deployment | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['deployments'],
@@ -49,10 +51,20 @@ export default function DeploymentsPage() {
     },
   });
 
+  const confirmDestroyMutation = useMutation({
+    mutationFn: (id: string) =>
+      api.deployments.confirmDestroy(id, { confirmationKeyword: 'CONFIRM_DESTROY' }),
+    onSuccess: () => {
+      setConfirmDestroyTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['deployments'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'SUCCEEDED':
-        return 'bg-white/5 text-neutral-300 border-neutral-500/30';
+        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
       case 'RUNNING':
         return 'bg-white/5 text-neutral-300 border-neutral-500/30 animate-pulse';
       case 'QUEUED':
@@ -119,49 +131,49 @@ export default function DeploymentsPage() {
         </div>
       </div>
 
-      {/* Deployments Table / List */}
-      {user && (
+      {/* Main Table / List View */}
+      {isLoading ? (
+        <div className="p-16 text-center space-y-4">
+          <div className="w-10 h-10 rounded-full border-3 border-neutral-400 border-t-transparent animate-spin mx-auto" />
+          <p className="text-xs text-neutral-400">Synchronizing deployment registry...</p>
+        </div>
+      ) : error ? (
+        <div className="p-8 rounded-2xl border border-rose-500/30 bg-rose-950/20 text-rose-300 space-y-2 text-center">
+          <AlertCircle className="w-8 h-8 mx-auto" />
+          <h3 className="text-sm font-bold">Failed to load deployments</h3>
+          <p className="text-xs text-rose-200/80">{(error as Error).message}</p>
+        </div>
+      ) : (
         <>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((n) => (
-                <div
-                  key={n}
-                  className="h-20 rounded-2xl border border-neutral-800 bg-neutral-900/40 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="p-6 rounded-2xl border border-rose-500/30 bg-rose-950/20 text-rose-300 text-xs flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span>Failed to fetch deployments: {(error as Error).message}</span>
-            </div>
-          ) : data?.deployments && data.deployments.length > 0 ? (
-            <div className="space-y-3">
-              {data.deployments.map((deployment: Deployment) => (
+          {data?.deployments && data.deployments.length > 0 ? (
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden divide-y divide-neutral-800/60">
+              {data.deployments.map((deployment) => (
                 <div
                   key={deployment.id}
-                  className="p-4 rounded-2xl border border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-neutral-800/20 transition-colors"
                 >
-                  <div className="flex items-start md:items-center space-x-4">
-                    <div className="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-300 shrink-0">
-                      <Terminal className="w-4 h-4 text-neutral-300" />
+                  {/* Left Column: ID & Target Info */}
+                  <div className="flex items-start space-x-4">
+                    <div className="mt-1">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${getOperationBadge(
+                          deployment.operationType
+                        )}`}
+                      >
+                        {deployment.operationType}
+                      </span>
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-white">
-                          #{deployment.id.slice(0, 8)}
-                        </span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${getOperationBadge(
-                            deployment.operationType
-                          )}`}
+                      <div className="flex items-center space-x-2">
+                        <Link
+                          href={`/deployments/${deployment.id}`}
+                          className="font-mono text-sm font-bold text-white hover:text-neutral-300 transition-colors"
                         >
-                          {deployment.operationType}
-                        </span>
+                          #{deployment.id.slice(0, 8)}
+                        </Link>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${getStatusBadge(
+                          className={`text-[10px] font-bold px-2 py-0.2 rounded-full border uppercase ${getStatusBadge(
                             deployment.status
                           )}`}
                         >
@@ -169,35 +181,39 @@ export default function DeploymentsPage() {
                         </span>
                       </div>
 
-                      <div className="text-xs text-neutral-400 flex flex-wrap items-center gap-2">
-                        <span>Project: <strong className="text-neutral-200">{deployment.project?.name ?? 'Default'}</strong></span>
+                      <div className="text-xs text-neutral-400 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span>Project: <strong className="text-neutral-200">{deployment.project?.name}</strong></span>
                         <span>&bull;</span>
-                        <span>Env: <strong className="text-neutral-200">{deployment.environment?.name ?? 'development'}</strong></span>
+                        <span>Env: <strong className="text-neutral-200">{deployment.environment?.name}</strong></span>
                         <span>&bull;</span>
-                        <span>Template: <strong className="text-neutral-200">{deployment.template?.name ?? 'aws_vpc'}</strong></span>
+                        <span>Module: <strong className="text-neutral-200">{deployment.template?.name}</strong></span>
                       </div>
-
-                      {deployment.status === 'FAILED' && deployment.applyOutput && (
-                        <div className="mt-1 max-w-3xl font-mono text-[11px] leading-relaxed text-rose-300/90 line-clamp-2">
-                          {deployment.applyOutput.split('[FATAL EXECUTION FAILURE]: ').pop()?.trim()}
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 self-end md:self-auto">
-                    <div className="text-right text-[11px] text-neutral-500 hidden sm:block">
+                  {/* Right Column: Execution Metadata & Actions */}
+                  <div className="flex items-center space-x-3 self-end md:self-center">
+                    <div className="text-right text-[11px] text-neutral-500 font-mono hidden sm:block">
                       <div>{new Date(deployment.createdAt).toLocaleDateString()}</div>
                       <div>{new Date(deployment.createdAt).toLocaleTimeString()}</div>
                     </div>
 
-                    {deployment.status === 'PLANNED' && (
+                    {/* Planned DESTROY deployment button: Red Teardown Confirmation */}
+                    {deployment.status === 'PLANNED' && deployment.operationType === 'DESTROY' && (
                       <button
-                        onClick={() =>
-                          deployment.operationType === 'DESTROY'
-                            ? setConfirmTarget(deployment)
-                            : approveMutation.mutate({ id: deployment.id })
-                        }
+                        onClick={() => setConfirmDestroyTarget(deployment)}
+                        disabled={confirmDestroyMutation.isPending}
+                        className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md shadow-rose-600/30 transition-all flex items-center space-x-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Confirm Teardown</span>
+                      </button>
+                    )}
+
+                    {/* Planned CREATE/MODIFY deployment button: Green Approval */}
+                    {deployment.status === 'PLANNED' && deployment.operationType !== 'DESTROY' && (
+                      <button
+                        onClick={() => setConfirmTarget(deployment)}
                         disabled={approveMutation.isPending}
                         className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all"
                       >
@@ -205,6 +221,7 @@ export default function DeploymentsPage() {
                       </button>
                     )}
 
+                    {/* Standard Teardown trigger */}
                     {deployment.status === 'SUCCEEDED' && deployment.operationType !== 'DESTROY' && (
                       <button
                         onClick={() => setDestroyTarget(deployment)}
@@ -215,6 +232,19 @@ export default function DeploymentsPage() {
                         <span className="hidden sm:inline">Teardown</span>
                       </button>
                     )}
+
+                    {/* Retry Teardown for destroy records */}
+                    {deployment.operationType === 'DESTROY' &&
+                      (deployment.status === 'FAILED' || deployment.status === 'SUCCEEDED') && (
+                        <button
+                          onClick={() => setDestroyTarget(deployment)}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-600/30 text-rose-300 text-xs font-medium flex items-center space-x-1 transition-colors"
+                          title="Retry Teardown"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                          <span className="hidden sm:inline">Retry Teardown</span>
+                        </button>
+                      )}
 
                     <Link
                       href={`/deployments/${deployment.id}`}
@@ -248,7 +278,7 @@ export default function DeploymentsPage() {
         />
       )}
 
-      {/* Destructive approval confirmation */}
+      {/* Destructive apply approval confirmation (for plans with destructive changes) */}
       {confirmTarget && (
         <ConfirmApplyModal
           deployment={confirmTarget}
@@ -256,6 +286,17 @@ export default function DeploymentsPage() {
           error={approveMutation.error ? (approveMutation.error as Error).message : null}
           onConfirm={() => approveMutation.mutate({ id: confirmTarget.id, confirmationKeyword: 'CONFIRM_APPLY' })}
           onClose={() => setConfirmTarget(null)}
+        />
+      )}
+
+      {/* Explicit Destroy confirmation (for planned DESTROY deployments) */}
+      {confirmDestroyTarget && (
+        <ConfirmDestroyModal
+          deployment={confirmDestroyTarget}
+          isPending={confirmDestroyMutation.isPending}
+          error={confirmDestroyMutation.error ? (confirmDestroyMutation.error as Error).message : null}
+          onConfirm={() => confirmDestroyMutation.mutate(confirmDestroyTarget.id)}
+          onClose={() => setConfirmDestroyTarget(null)}
         />
       )}
 

@@ -172,6 +172,14 @@ export class DeploymentService {
       throw error;
     }
 
+    // Invariant: DESTROY deployments must always be executed as a destroy action
+    if (deployment.operationType === OperationType.DESTROY) {
+      return this.confirmDestroy(deploymentId, user, {
+        confirmationKeyword: 'CONFIRM_DESTROY',
+        comment: input?.comment,
+      });
+    }
+
     // 1. Enforce PLANNED state invariant
     if (deployment.status !== DeploymentStatus.PLANNED) {
       const error: any = new Error(
@@ -184,7 +192,7 @@ export class DeploymentService {
     // 2. Destructive & Production Confirmation Guard
     const planSummary = planParser.parsePlanOutput(deployment.planOutput);
     const isDestructive =
-      planSummary.isDestructive || deployment.operationType === OperationType.DESTROY;
+      planSummary.isDestructive;
     const isProduction = deployment.environment.name.toLowerCase() === 'production';
 
     if (isDestructive && input?.confirmationKeyword !== 'CONFIRM_APPLY') {
@@ -353,7 +361,7 @@ export class DeploymentService {
 
     // 1. If targeting an existing deployment, infer missing context
     if (input.deploymentId) {
-      const existing = await prisma.deployment.findUnique({
+      let existing = await prisma.deployment.findUnique({
         where: { id: input.deploymentId },
         include: { environment: true, project: true, template: true },
       });
@@ -361,6 +369,17 @@ export class DeploymentService {
         const error: any = new Error(`Target deployment [${input.deploymentId}] not found`);
         error.statusCode = 404;
         throw error;
+      }
+      // If targeting a destroy deployment that identified a source target, resolve to that source deployment
+      if (existing.operationType === OperationType.DESTROY && existing.targetDeploymentId) {
+        const sourceTarget = await prisma.deployment.findUnique({
+          where: { id: existing.targetDeploymentId },
+          include: { environment: true, project: true, template: true },
+        });
+        if (sourceTarget) {
+          existing = sourceTarget;
+          targetDeploymentId = sourceTarget.id;
+        }
       }
       if (
         existing.operationType === OperationType.DESTROY ||

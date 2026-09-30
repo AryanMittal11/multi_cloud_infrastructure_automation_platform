@@ -23,14 +23,6 @@ interface ExecutionStatusPipelineProps {
   executionReference?: string | null;
 }
 
-const PIPELINE_STAGES = [
-  { key: 'PLANNING', label: 'Planning', desc: 'Dry-run evaluation' },
-  { key: 'PLANNED', label: 'Planned', desc: 'Awaiting operator approval' },
-  { key: 'QUEUED', label: 'Queued', desc: 'Dispatched to RabbitMQ' },
-  { key: 'RUNNING', label: 'Applying', desc: 'Terraform worker execution' },
-  { key: 'SUCCEEDED', label: 'Completed', desc: 'State verified & recorded' },
-];
-
 export function ExecutionStatusPipeline({
   status,
   operationType,
@@ -41,10 +33,25 @@ export function ExecutionStatusPipeline({
 }: ExecutionStatusPipelineProps) {
   const isFailed = status === 'FAILED';
   const isCancelled = status === 'CANCELLED';
+  const isDestroy = operationType === 'DESTROY';
+
+  const pipelineStages = [
+    { key: 'PLANNING', label: 'Planning', desc: isDestroy ? 'Destruction preview' : 'Dry-run evaluation' },
+    { key: 'PLANNED', label: 'Planned', desc: isDestroy ? 'Awaiting teardown signoff' : 'Awaiting operator approval' },
+    { key: 'QUEUED', label: 'Queued', desc: 'Dispatched to queue' },
+    { key: 'RUNNING', label: isDestroy ? 'Destroying' : 'Applying', desc: isDestroy ? 'Terraform destroy execution' : 'Terraform worker execution' },
+    { key: 'SUCCEEDED', label: 'Completed', desc: isDestroy ? 'Infrastructure destroyed' : 'State verified & recorded' },
+  ];
 
   const getStageState = (stageKey: string) => {
+    // When execution succeeded, all stages including completed must show green tick
+    if (status === 'SUCCEEDED') return 'completed';
+
     if (isFailed || isCancelled) {
       if (stageKey === 'SUCCEEDED') return 'failed';
+      // Highlight exact stage where failure occurred
+      if (stageKey === 'RUNNING' && planTime) return 'failed';
+      if (stageKey === 'PLANNING' && !planTime) return 'failed';
     }
 
     const order = ['DRAFT', 'PLANNING', 'PLANNED', 'QUEUED', 'RUNNING', 'SUCCEEDED'];
@@ -97,7 +104,7 @@ export function ExecutionStatusPipeline({
             <span
               className={`font-bold px-2 py-0.5 rounded-full border uppercase text-[11px] ${
                 status === 'SUCCEEDED'
-                  ? 'bg-white/5 text-neutral-300 border-neutral-500/30'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   : status === 'RUNNING'
                   ? 'bg-white/5 text-neutral-300 border-neutral-500/30 animate-pulse'
                   : status === 'FAILED'
@@ -130,7 +137,7 @@ export function ExecutionStatusPipeline({
       {/* Visual Pipeline Bar */}
       <div className="relative pt-2 pb-1">
         <div className="grid grid-cols-5 gap-2 sm:gap-4 relative">
-          {PIPELINE_STAGES.map((stage, idx) => {
+          {pipelineStages.map((stage, idx) => {
             const state = getStageState(stage.key);
 
             return (

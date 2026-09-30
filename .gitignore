@@ -37,6 +37,8 @@ pnpm-debug.log*
 .terraform/
 .terraform.lock.hcl
 crash.log
+terraform_workspaces/
+**/terraform_workspaces/
 
 # IDE & OS files
 .DS_Store

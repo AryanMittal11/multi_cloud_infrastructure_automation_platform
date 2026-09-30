@@ -12,6 +12,7 @@ import { ResourceTable } from '../../../components/deployments/resource-table';
 import { PolicyReviewPanel, CostReviewPanel } from '../../../components/deployments/plan-diff-view';
 import { SafeDestructionModal } from '../../../components/deployments/safe-destruction-modal';
 import { ConfirmApplyModal } from '../../../components/deployments/confirm-apply-modal';
+import { ConfirmDestroyModal } from '../../../components/deployments/confirm-destroy-modal';
 import {
   ArrowLeft,
   Terminal,
@@ -38,6 +39,8 @@ export default function DeploymentMonitoringPage() {
 
   const [showConfig, setShowConfig] = useState(false);
   const [isDestructionModalOpen, setIsDestructionModalOpen] = useState(false);
+  const [showConfirmApply, setShowConfirmApply] = useState(false);
+  const [showConfirmDestroy, setShowConfirmDestroy] = useState(false);
 
   // Poll deployment details every 2 seconds if in active running/queued state
   const {
@@ -75,14 +78,26 @@ export default function DeploymentMonitoringPage() {
     },
   });
 
-  const [showConfirmApply, setShowConfirmApply] = useState(false);
-
-  // Approve mutation if deployment is in PLANNED state
+  // Approve mutation if deployment is in PLANNED state (for CREATE/MODIFY)
   const approveMutation = useMutation({
     mutationFn: (confirmationKeyword?: string) =>
       api.deployments.approve(deploymentId, { confirmationKeyword }),
     onSuccess: () => {
       setShowConfirmApply(false);
+      queryClient.invalidateQueries({ queryKey: ['deployment-detail', deploymentId] });
+      queryClient.invalidateQueries({ queryKey: ['deployments'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+  });
+
+  // Confirm destroy mutation if deployment is in PLANNED state with operationType DESTROY
+  const confirmDestroyMutation = useMutation({
+    mutationFn: () =>
+      api.deployments.confirmDestroy(deploymentId, {
+        confirmationKeyword: 'CONFIRM_DESTROY',
+      }),
+    onSuccess: () => {
+      setShowConfirmDestroy(false);
       queryClient.invalidateQueries({ queryKey: ['deployment-detail', deploymentId] });
       queryClient.invalidateQueries({ queryKey: ['deployments'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
@@ -180,13 +195,22 @@ export default function DeploymentMonitoringPage() {
             <span>{showConfig ? 'Hide Config' : 'View Config'}</span>
           </button>
 
-          {deployment.status === 'PLANNED' && (
+          {/* Destroy Approval Button (Rose styling, requires CONFIRM_DESTROY) */}
+          {deployment.status === 'PLANNED' && deployment.operationType === 'DESTROY' && (
             <button
-              onClick={() =>
-                deployment.operationType === 'DESTROY'
-                  ? setShowConfirmApply(true)
-                  : approveMutation.mutate(undefined)
-              }
+              onClick={() => setShowConfirmDestroy(true)}
+              disabled={!isOperator || confirmDestroyMutation.isPending}
+              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-rose-600/30 transition-all disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{confirmDestroyMutation.isPending ? 'Queuing Teardown...' : 'Confirm Teardown'}</span>
+            </button>
+          )}
+
+          {/* Standard Plan Approval Button (Green styling) */}
+          {deployment.status === 'PLANNED' && deployment.operationType !== 'DESTROY' && (
+            <button
+              onClick={() => setShowConfirmApply(true)}
               disabled={!isOperator || approveMutation.isPending}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50"
             >
@@ -195,6 +219,7 @@ export default function DeploymentMonitoringPage() {
             </button>
           )}
 
+          {/* Standard Teardown trigger for active/succeeded create deployments */}
           {deployment.status === 'SUCCEEDED' && deployment.operationType !== 'DESTROY' && (
             <button
               onClick={() => setIsDestructionModalOpen(true)}
@@ -204,6 +229,18 @@ export default function DeploymentMonitoringPage() {
               <span>Tear Down Environment</span>
             </button>
           )}
+
+          {/* Retry Teardown if a destroy run completed or failed */}
+          {deployment.operationType === 'DESTROY' &&
+            (deployment.status === 'FAILED' || deployment.status === 'SUCCEEDED') && (
+              <button
+                onClick={() => setIsDestructionModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-600/40 text-rose-300 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-md"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span>Retry Teardown</span>
+              </button>
+            )}
         </div>
       </div>
 
@@ -258,7 +295,7 @@ export default function DeploymentMonitoringPage() {
         />
       </div>
 
-      {/* Destructive approval confirmation */}
+      {/* Destructive apply approval confirmation (for CREATE/MODIFY plans with destructive diffs) */}
       {showConfirmApply && (
         <ConfirmApplyModal
           deployment={deployment}
@@ -266,6 +303,17 @@ export default function DeploymentMonitoringPage() {
           error={approveMutation.error ? (approveMutation.error as Error).message : null}
           onConfirm={() => approveMutation.mutate('CONFIRM_APPLY')}
           onClose={() => setShowConfirmApply(false)}
+        />
+      )}
+
+      {/* Explicit Destroy confirmation (for planned DESTROY deployments) */}
+      {showConfirmDestroy && (
+        <ConfirmDestroyModal
+          deployment={deployment}
+          isPending={confirmDestroyMutation.isPending}
+          error={confirmDestroyMutation.error ? (confirmDestroyMutation.error as Error).message : null}
+          onConfirm={() => confirmDestroyMutation.mutate()}
+          onClose={() => setShowConfirmDestroy(false)}
         />
       )}
     </div>
