@@ -28,6 +28,8 @@ import {
   Loader2,
   CheckCircle2,
   Wand2,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
@@ -72,6 +74,9 @@ function DesignerInner() {
   const [deployOpen, setDeployOpen] = useState(false);
   const [showInspector, setShowInspector] = useState(true);
   const [showCode, setShowCode] = useState(true);
+  const [aiPromptOpen, setAiPromptOpen] = useState(false);
+  const [aiPromptText, setAiPromptText] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // Load an existing design when ?id= is present, or restore last active design
   useEffect(() => {
@@ -298,6 +303,44 @@ function DesignerInner() {
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiPromptText.trim()) return;
+    setAiGenerating(true);
+    try {
+      const res = await api.ai.generateArchitecture({
+        prompt: aiPromptText.trim(),
+        cloudProvider: cloudProvider,
+      });
+      const arch = res.architecture;
+      setDesignName(arch.name);
+      setCloudProvider(arch.cloudProvider as any);
+      setNodesWithCallbacks(
+        (arch.nodes || []).map((n: any) => ({
+          id: n.id,
+          type: 'infra',
+          position: n.position,
+          data: { ...n.data, onSelect: undefined, onDelete: undefined, onConfigure: undefined },
+        })),
+      );
+      setEdges(arch.edges || []);
+      setAiPromptOpen(false);
+      setAiPromptText('');
+      push({
+        title: 'Architecture generated from AI',
+        sub: `${arch.name} (${arch.nodes.length} nodes)`,
+        tone: 'success',
+      });
+    } catch (err: any) {
+      push({
+        title: 'AI Generation failed',
+        sub: err.message || 'Could not synthesize architecture',
+        tone: 'fail',
+      });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const handleClear = () => {
     if (nodes.length === 0) return;
     if (!confirm('Clear the entire canvas? Unsaved work will be lost.')) return;
@@ -348,6 +391,13 @@ function DesignerInner() {
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setAiPromptOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold hover:border-indigo-400 hover:bg-indigo-500/20 flex items-center space-x-1.5 transition-all shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>AI Generate</span>
+          </button>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -474,6 +524,70 @@ function DesignerInner() {
         edges={designPayload.edges}
         onSaveBeforeDeploy={handleSave}
       />
+
+      {/* AI Generate Prompt Modal */}
+      {aiPromptOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Generate Architecture with Gemini AI</h3>
+                  <p className="text-[10px] text-neutral-400">Describe what you need and watch the canvas populate</p>
+                </div>
+              </div>
+              <button onClick={() => setAiPromptOpen(false)} className="text-neutral-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <textarea
+              value={aiPromptText}
+              onChange={(e) => setAiPromptText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  handleAiGenerate();
+                }
+              }}
+              placeholder="e.g. High-availability 3-tier AWS application with an EC2 web cluster, PostgreSQL database in a private subnet, and S3 storage bucket..."
+              rows={4}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-all resize-none"
+            />
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-[11px] text-neutral-500 font-mono">Provider: {cloudProvider}</span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setAiPromptOpen(false)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAiGenerate}
+                  disabled={aiGenerating || !aiPromptText.trim()}
+                  className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md shadow-indigo-600/30 disabled:opacity-50"
+                >
+                  {aiGenerating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Generating…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
+                      <span>Populate Canvas</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile fallback note */}
       <div className="lg:hidden px-4 py-2 bg-neutral-950/70 border-t border-neutral-800/80 text-[10px] text-neutral-500 text-center">

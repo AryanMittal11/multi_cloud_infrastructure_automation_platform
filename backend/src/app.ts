@@ -16,6 +16,7 @@ import { designRouter } from './routes/design.routes';
 import { userRouter } from './routes/user.routes';
 import { costRouter } from './routes/cost.routes';
 import { visualizationRouter } from './routes/visualization.routes';
+import { aiRouter } from './routes/ai.routes';
 import { terraformWorker } from './workers/terraform.worker';
 import { queueService } from './services/queue';
 
@@ -61,6 +62,7 @@ app.use('/api/designs', designRouter);
 app.use('/api/users', userRouter);
 app.use('/api/costs', costRouter);
 app.use('/api/topology', visualizationRouter);
+app.use('/api/ai', aiRouter);
 
 // Centralized error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

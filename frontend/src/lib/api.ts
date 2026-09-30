@@ -430,6 +430,14 @@ export const api = {
       }),
   },
 
+  ai: {
+    generateArchitecture: (data: { prompt: string; cloudProvider?: 'AWS' | 'AZURE' | 'GCP' | 'MULTI' }) =>
+      request<{ architecture: GeneratedArchitecture }>('/ai/generate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
   users: {
     list: () => request<{ users: UserWithCounts[] }>('/users'),
     get: (id: string) => request<{ user: UserWithCounts }>(`/users/${id}`),
@@ -595,4 +603,15 @@ export interface CanvasEdge {
   source: string;
   target: string;
   label?: string;
+}
+
+export interface GeneratedArchitecture {
+  name: string;
+  description: string;
+  cloudProvider: 'AWS' | 'AZURE' | 'GCP';
+  rationale: string;
+  estimatedCostMonthlyUsd: number;
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
+  terraformCode: string;
 }

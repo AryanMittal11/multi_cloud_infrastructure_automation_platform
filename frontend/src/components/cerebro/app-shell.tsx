@@ -20,6 +20,7 @@ import {
   Rocket,
   ScrollText,
   Server,
+  Sparkles,
   Users,
   Waypoints,
   X,
@@ -62,6 +63,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Deliver',
     items: [
       { label: 'Projects', href: '/projects', icon: FolderGit2, match: starts('/projects') },
+      { label: 'AI Architect', href: '/ai-architect', icon: Sparkles, match: starts('/ai-architect') },
       { label: 'Template Catalog', href: '/templates', icon: Library, match: starts('/templates') },
       { label: 'Visual Designer', href: '/designer', icon: PenTool, match: starts('/designer') },
       { label: 'Saved Designs', href: '/architectures', icon: Layers, match: starts('/architectures') },

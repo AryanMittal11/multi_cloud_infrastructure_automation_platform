@@ -24,6 +24,7 @@ const envSchema = z.object({
     .transform((val) => val !== 'false'),
   TERRAFORM_WORKSPACE_DIR: z.string().default('./terraform_workspaces'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  GEMINI_API_KEY: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
