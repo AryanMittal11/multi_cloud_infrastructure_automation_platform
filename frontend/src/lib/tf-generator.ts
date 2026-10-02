@@ -96,6 +96,13 @@ export function generateTerraform(
           } else if (nodeProvider === 'GCP') {
             if (!userConfig.network_id) wiredArguments['network_id'] = `module.${upstreamModuleName}.vpc_id`;
           }
+        } else if (node.kind === 'loadbalancer') {
+          if (nodeProvider === 'AWS') {
+            if (!userConfig.vpc_id) wiredArguments['vpc_id'] = `module.${upstreamModuleName}.vpc_id`;
+            if (!userConfig.subnet_ids) wiredArguments['subnet_ids'] = `module.${upstreamModuleName}.public_subnet_ids`;
+          } else if (nodeProvider === 'AZURE') {
+            if (!userConfig.resource_group_name) wiredArguments['resource_group_name'] = `module.${upstreamModuleName}.resource_group_name`;
+          }
         }
       }
     }

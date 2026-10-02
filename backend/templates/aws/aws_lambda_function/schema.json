@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS Lambda Serverless Function",
+  "description": "Event-driven serverless compute function with IAM execution role and CloudWatch logging",
+  "type": "object",
+  "required": ["function_name"],
+  "properties": {
+    "function_name": {
+      "type": "string",
+      "title": "Function Name",
+      "default": "cloud-api-function",
+      "description": "Unique identifier for the Lambda function"
+    },
+    "runtime": {
+      "type": "string",
+      "title": "Runtime",
+      "default": "nodejs18.x",
+      "enum": ["nodejs18.x", "nodejs20.x", "python3.11", "python3.10"],
+      "description": "Execution runtime language and version"
+    },
+    "memory_size": {
+      "type": "number",
+      "title": "Memory Size (MB)",
+      "default": 128,
+      "minimum": 128,
+      "maximum": 3008,
+      "description": "Allocated RAM for the function execution"
+    },
+    "timeout": {
+      "type": "number",
+      "title": "Timeout (seconds)",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 900,
+      "description": "Max execution duration before function times out"
+    }
+  }
+}

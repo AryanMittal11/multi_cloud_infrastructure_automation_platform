@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Linux Function App",
+  "description": "Serverless event-driven compute engine on Linux with serverless consumption plan and backing storage",
+  "type": "object",
+  "required": ["function_name"],
+  "properties": {
+    "function_name": {
+      "type": "string",
+      "title": "Function App Name",
+      "default": "cloud-az-func",
+      "description": "Globally unique name for the Function App"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "description": "Target Azure deployment region"
+    }
+  }
+}

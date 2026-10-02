@@ -2,8 +2,8 @@
 
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Network, Cpu, Database, HardDrive, Ship, Trash2, Settings2 } from 'lucide-react';
-import { KIND_META } from '../../lib/designer-types';
+import { Network, Cpu, Database, HardDrive, Ship, Trash2, Settings2, Zap, Layers, MessageSquare, Split } from 'lucide-react';
+import { CanvasNodeKind, KIND_META } from '../../lib/designer-types';
 import { ProviderIcon } from '../../lib/provider-icon';
 
 const kindIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -12,10 +12,14 @@ const kindIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   database: Database,
   'hard-drive': HardDrive,
   ship: Ship,
+  zap: Zap,
+  layers: Layers,
+  'message-square': MessageSquare,
+  split: Split,
 };
 
 export interface InfraNodeData {
-  kind: 'network' | 'compute' | 'database' | 'storage' | 'kubernetes';
+  kind: CanvasNodeKind;
   label: string;
   provider: 'AWS' | 'AZURE' | 'GCP';
   templateRef: string;

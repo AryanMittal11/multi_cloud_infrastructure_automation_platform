@@ -9,15 +9,23 @@ import {
   Ship,
   Cloud,
   ShieldCheck,
+  Zap,
+  Layers,
+  MessageSquare,
+  Split,
 } from 'lucide-react';
 import { CanvasNodeKind, KIND_META } from '../../lib/designer-types';
 import { ProviderIcon } from '../../lib/provider-icon';
 
 const PALETTE_ITEMS: Array<{ kind: CanvasNodeKind; description: string }> = [
-  { kind: 'network', description: 'VPC / VNet / VPC foundation' },
+  { kind: 'network', description: 'VPC / VNet foundation' },
   { kind: 'compute', description: 'Web server / VM instance' },
   { kind: 'database', description: 'Managed PostgreSQL' },
   { kind: 'storage', description: 'Encrypted object storage' },
+  { kind: 'serverless', description: 'Event-driven Lambda / Function' },
+  { kind: 'nosql', description: 'Fast NoSQL table (Dynamo/Cosmos)' },
+  { kind: 'queue', description: 'Decoupled message queue (SQS/PubSub)' },
+  { kind: 'loadbalancer', description: 'Layer 7/4 Ingress Load Balancer' },
   { kind: 'kubernetes', description: 'Container cluster host' },
 ];
 
@@ -28,6 +36,10 @@ export function NodePalette({ onAdd }: { onAdd: (kind: CanvasNodeKind) => void }
     database: Database,
     'hard-drive': HardDrive,
     ship: Ship,
+    zap: Zap,
+    layers: Layers,
+    'message-square': MessageSquare,
+    split: Split,
   };
 
   return (

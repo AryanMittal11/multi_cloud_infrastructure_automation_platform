@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS DynamoDB NoSQL Table",
+  "description": "Serverless NoSQL database table with pay-per-request pricing and encryption at rest",
+  "type": "object",
+  "required": ["table_name"],
+  "properties": {
+    "table_name": {
+      "type": "string",
+      "title": "Table Name",
+      "default": "application-data",
+      "description": "Unique DynamoDB table name"
+    },
+    "hash_key": {
+      "type": "string",
+      "title": "Partition Hash Key",
+      "default": "id",
+      "description": "Primary partition key attribute name"
+    },
+    "billing_mode": {
+      "type": "string",
+      "title": "Billing Mode",
+      "default": "PAY_PER_REQUEST",
+      "enum": ["PAY_PER_REQUEST", "PROVISIONED"],
+      "description": "On-demand or provisioned capacity mode"
+    },
+    "enable_pitr": {
+      "type": "boolean",
+      "title": "Point-in-Time Recovery",
+      "default": true,
+      "description": "Continuous automated backups for disaster recovery"
+    }
+  }
+}

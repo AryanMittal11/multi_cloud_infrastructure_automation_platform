@@ -11,6 +11,10 @@ export type CanvasNodeKind =
   | 'compute'
   | 'database'
   | 'storage'
+  | 'serverless'
+  | 'nosql'
+  | 'queue'
+  | 'loadbalancer'
   | 'kubernetes';
 
 export interface CanvasNodeData {
@@ -104,8 +108,27 @@ export const NODE_TEMPLATE_MAP: Record<CanvasNodeKind, Record<'AWS' | 'AZURE' | 
     AZURE: 'templates/azure/azure_blob_storage',
     GCP: 'templates/gcp/gcp_storage_bucket',
   },
+  serverless: {
+    AWS: 'templates/aws/aws_lambda_function',
+    AZURE: 'templates/azure/azure_function_app',
+    GCP: 'templates/gcp/gcp_cloud_function',
+  },
+  nosql: {
+    AWS: 'templates/aws/aws_dynamodb_table',
+    AZURE: 'templates/azure/azure_cosmosdb',
+    GCP: 'templates/gcp/gcp_firestore',
+  },
+  queue: {
+    AWS: 'templates/aws/aws_sqs_queue',
+    AZURE: 'templates/azure/azure_servicebus_queue',
+    GCP: 'templates/gcp/gcp_pubsub_topic',
+  },
+  loadbalancer: {
+    AWS: 'templates/aws/aws_alb',
+    AZURE: 'templates/azure/azure_load_balancer',
+    GCP: 'templates/gcp/gcp_load_balancer',
+  },
   kubernetes: {
-    // Provisioned as a compute node with platform-managed clustering in Phase 3+
     AWS: 'templates/aws/aws_ec2_web',
     AZURE: 'templates/azure/azure_vm_web',
     GCP: 'templates/gcp/gcp_compute_web',
@@ -140,10 +163,34 @@ export const KIND_META: Record<
     accent: 'border-neutral-500/40 bg-white/5',
     icon: 'hard-drive',
   },
+  serverless: {
+    label: 'Serverless',
+    color: 'text-amber-300',
+    accent: 'border-amber-500/40 bg-amber-500/10',
+    icon: 'zap',
+  },
+  nosql: {
+    label: 'NoSQL DB',
+    color: 'text-emerald-300',
+    accent: 'border-emerald-500/40 bg-emerald-500/10',
+    icon: 'layers',
+  },
+  queue: {
+    label: 'Message Queue',
+    color: 'text-sky-300',
+    accent: 'border-sky-500/40 bg-sky-500/10',
+    icon: 'message-square',
+  },
+  loadbalancer: {
+    label: 'Load Balancer',
+    color: 'text-indigo-300',
+    accent: 'border-indigo-500/40 bg-indigo-500/10',
+    icon: 'split',
+  },
   kubernetes: {
     label: 'Kubernetes',
-    color: 'text-neutral-200',
-    accent: 'border-neutral-500/40 bg-white/5',
+    color: 'text-cyan-300',
+    accent: 'border-cyan-500/40 bg-cyan-500/10',
     icon: 'ship',
   },
 };

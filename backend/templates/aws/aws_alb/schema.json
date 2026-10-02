@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS Application Load Balancer (ALB)",
+  "description": "Layer 7 HTTP/HTTPS load balancer distributing traffic across EC2 instances, containers, and IP targets",
+  "type": "object",
+  "required": ["alb_name"],
+  "properties": {
+    "alb_name": {
+      "type": "string",
+      "title": "ALB Name",
+      "default": "app-ingress-alb",
+      "description": "Unique identifier for the Application Load Balancer"
+    },
+    "vpc_id": {
+      "type": "string",
+      "title": "VPC ID",
+      "description": "Target VPC identifier"
+    }
+  }
+}

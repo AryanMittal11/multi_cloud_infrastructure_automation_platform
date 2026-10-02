@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS SQS Message Queue",
+  "description": "Fully managed message queuing service for microservices, distributed systems, and serverless applications",
+  "type": "object",
+  "required": ["queue_name"],
+  "properties": {
+    "queue_name": {
+      "type": "string",
+      "title": "Queue Name",
+      "default": "workload-jobs-queue",
+      "description": "Unique name for the SQS queue"
+    },
+    "delay_seconds": {
+      "type": "number",
+      "title": "Delivery Delay (seconds)",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 900,
+      "description": "Time to delay the first delivery of each message"
+    },
+    "message_retention_seconds": {
+      "type": "number",
+      "title": "Message Retention (seconds)",
+      "default": 345600,
+      "minimum": 60,
+      "maximum": 1209600,
+      "description": "Duration that messages remain in queue before expiration"
+    },
+    "receive_wait_time_seconds": {
+      "type": "number",
+      "title": "Receive Wait Time (seconds)",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 20,
+      "description": "Long polling wait time for messages"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Cosmos DB Multi-Model Database",
+  "description": "Globally distributed, multi-model NoSQL database service with serverless capacity mode",
+  "type": "object",
+  "required": ["account_name"],
+  "properties": {
+    "account_name": {
+      "type": "string",
+      "title": "Account Name",
+      "default": "az-cosmos-nosql",
+      "description": "Unique name for the Cosmos DB account"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "description": "Deployment region"
+    }
+  }
+}

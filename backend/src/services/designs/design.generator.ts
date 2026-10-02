@@ -21,6 +21,26 @@ export const NODE_TEMPLATE_MAP: Record<string, Record<'AWS' | 'AZURE' | 'GCP', s
     AZURE: 'templates/azure/azure_blob_storage',
     GCP: 'templates/gcp/gcp_storage_bucket',
   },
+  serverless: {
+    AWS: 'templates/aws/aws_lambda_function',
+    AZURE: 'templates/azure/azure_function_app',
+    GCP: 'templates/gcp/gcp_cloud_function',
+  },
+  nosql: {
+    AWS: 'templates/aws/aws_dynamodb_table',
+    AZURE: 'templates/azure/azure_cosmosdb',
+    GCP: 'templates/gcp/gcp_firestore',
+  },
+  queue: {
+    AWS: 'templates/aws/aws_sqs_queue',
+    AZURE: 'templates/azure/azure_servicebus_queue',
+    GCP: 'templates/gcp/gcp_pubsub_topic',
+  },
+  loadbalancer: {
+    AWS: 'templates/aws/aws_alb',
+    AZURE: 'templates/azure/azure_load_balancer',
+    GCP: 'templates/gcp/gcp_load_balancer',
+  },
   kubernetes: {
     AWS: 'templates/aws/aws_ec2_web',
     AZURE: 'templates/azure/azure_vm_web',
@@ -123,6 +143,13 @@ export function generateDesignTerraform(
             if (!userConfig.vnet_id) wiredArguments['vnet_id'] = `module.${upstreamModuleName}.vnet_id`;
           } else if (nodeProvider === 'GCP') {
             if (!userConfig.network_id) wiredArguments['network_id'] = `module.${upstreamModuleName}.vpc_id`;
+          }
+        } else if (node.kind === 'loadbalancer') {
+          if (nodeProvider === 'AWS') {
+            if (!userConfig.vpc_id) wiredArguments['vpc_id'] = `module.${upstreamModuleName}.vpc_id`;
+            if (!userConfig.subnet_ids) wiredArguments['subnet_ids'] = `module.${upstreamModuleName}.public_subnet_ids`;
+          } else if (nodeProvider === 'AZURE') {
+            if (!userConfig.resource_group_name) wiredArguments['resource_group_name'] = `module.${upstreamModuleName}.resource_group_name`;
           }
         }
       }

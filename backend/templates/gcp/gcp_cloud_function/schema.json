@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud Functions",
+  "description": "Scalable pay-as-you-go serverless functions platform for event-driven computing",
+  "type": "object",
+  "required": ["function_name"],
+  "properties": {
+    "function_name": {
+      "type": "string",
+      "title": "Function Name",
+      "default": "cloud-gcp-func",
+      "description": "Unique Cloud Function name"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region",
+      "default": "us-central1",
+      "description": "Deployment location"
+    },
+    "runtime": {
+      "type": "string",
+      "title": "Runtime",
+      "default": "nodejs18",
+      "enum": ["nodejs18", "nodejs20", "python311"],
+      "description": "Language runtime"
+    }
+  }
+}

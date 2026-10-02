@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud Firestore",
+  "description": "Fast, fully managed, serverless, cloud-native NoSQL document database that scales on demand",
+  "type": "object",
+  "required": ["database_id"],
+  "properties": {
+    "database_id": {
+      "type": "string",
+      "title": "Database ID",
+      "default": "(default)",
+      "description": "Identifier of the Firestore Database"
+    },
+    "location_id": {
+      "type": "string",
+      "title": "Location ID",
+      "default": "nam5",
+      "description": "Regional or multi-regional location"
+    }
+  }
+}

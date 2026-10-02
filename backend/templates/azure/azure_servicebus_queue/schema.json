@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Service Bus Queue",
+  "description": "Reliable cloud messaging as a service (MaaS) and simple hybrid integration with FIFO delivery",
+  "type": "object",
+  "required": ["queue_name"],
+  "properties": {
+    "queue_name": {
+      "type": "string",
+      "title": "Queue Name",
+      "default": "workload-jobs",
+      "description": "Unique queue name"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "description": "Deployment region"
+    }
+  }
+}

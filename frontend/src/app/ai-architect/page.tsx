@@ -20,6 +20,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Wand2,
+  Zap,
+  Split,
+  MessageSquare,
 } from 'lucide-react';
 import { api, GeneratedArchitecture } from '../../lib/api';
 import { useAuth } from '../../context/auth-context';
@@ -29,24 +32,34 @@ import { saveActiveDesignId } from '../../lib/design-storage';
 
 const QUICK_PROMPTS = [
   {
-    title: 'AWS Three-Tier Web Stack',
-    desc: 'VPC with public/private subnets, EC2 auto-scaled web cluster, and RDS PostgreSQL database.',
+    title: 'Standalone S3 Storage Bucket',
+    desc: 'Only want an encrypted AWS S3 storage bucket with versioning and public access block.',
     provider: 'AWS' as const,
   },
   {
-    title: 'Azure Enterprise Microservices',
-    desc: 'Virtual Network with security rules, Linux VM workloads, and scalable Blob Storage container.',
+    title: 'Serverless Event Pipeline',
+    desc: 'AWS Serverless backend with Lambda function, DynamoDB NoSQL table, and SQS message queue.',
+    provider: 'AWS' as const,
+  },
+  {
+    title: 'AWS Three-Tier Web Stack',
+    desc: 'VPC with public/private subnets, Application Load Balancer, EC2 web tier, and RDS PostgreSQL database.',
+    provider: 'AWS' as const,
+  },
+  {
+    title: 'Azure Function App with Cosmos DB',
+    desc: 'Azure Linux Function App connected to Cosmos DB NoSQL database.',
     provider: 'AZURE' as const,
   },
   {
-    title: 'GCP Analytics & Data Backend',
-    desc: 'Google Compute Engine instances with VPC network and Cloud SQL PostgreSQL database.',
+    title: 'GCP Cloud Functions & Pub/Sub',
+    desc: 'Event-driven GCP Cloud Function triggered by Pub/Sub topic and Firestore database.',
     provider: 'GCP' as const,
   },
   {
-    title: 'High-Availability WordPress Cluster',
-    desc: 'Fault-tolerant web tier attached to private managed relational database and S3 media storage.',
-    provider: 'AWS' as const,
+    title: 'Standalone Azure Linux VM',
+    desc: 'Single Azure Linux Virtual Machine with SSH access and automated firewall.',
+    provider: 'AZURE' as const,
   },
 ];
 
@@ -151,6 +164,14 @@ export default function AiArchitectPage() {
         return <Database className="w-4 h-4 text-emerald-400" />;
       case 'storage':
         return <HardDrive className="w-4 h-4 text-amber-400" />;
+      case 'serverless':
+        return <Zap className="w-4 h-4 text-amber-300" />;
+      case 'nosql':
+        return <Layers className="w-4 h-4 text-emerald-300" />;
+      case 'queue':
+        return <MessageSquare className="w-4 h-4 text-sky-400" />;
+      case 'loadbalancer':
+        return <Split className="w-4 h-4 text-indigo-300" />;
       default:
         return <Layers className="w-4 h-4 text-neutral-400" />;
     }
@@ -380,120 +401,196 @@ export default function AiArchitectPage() {
           {activeTab === 'topology' && (
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-4">
               <div className="flex items-center justify-between text-xs text-neutral-400 border-b border-neutral-800/60 pb-3">
-                <span>Visual Architecture Flow (Tiered Top-to-Bottom Layout)</span>
+                <span>
+                  {architecture.nodes.length === 1
+                    ? 'Dedicated Standalone Resource Topology'
+                    : 'Visual Architecture Flow (Tiered Top-to-Bottom Layout)'}
+                </span>
                 <span>{architecture.edges.length} Dependency Link(s)</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                {/* Column 1: Network Foundation */}
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-xs font-bold text-cyan-400 uppercase tracking-wider">
-                    <Network className="w-4 h-4" />
-                    <span>Network Tier</span>
-                  </div>
-                  {architecture.nodes
-                    .filter((n) => n.kind === 'network')
-                    .map((node) => (
-                      <div
-                        key={node.id}
-                        className="p-4 rounded-xl bg-neutral-950 border border-cyan-500/30 space-y-2 shadow-md hover:border-cyan-500/60 transition-all"
-                      >
+              {/* Standalone Single Resource Layout */}
+              {architecture.nodes.length === 1 ? (
+                <div className="py-6 flex justify-center">
+                  {(() => {
+                    const node = architecture.nodes[0];
+                    return (
+                      <div className="w-full max-w-md p-6 rounded-2xl bg-neutral-950 border-2 border-indigo-500/40 shadow-2xl space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-white">{node.data.label}</span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300">
+                          <div className="flex items-center space-x-2.5">
+                            <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
+                              {getKindIcon(node.kind)}
+                            </div>
+                            <div>
+                              <h3 className="text-base font-bold text-white">{node.data.label}</h3>
+                              <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-semibold">
+                                {node.kind} Service
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-500/30">
                             {node.data.provider}
                           </span>
                         </div>
-                        <p className="text-[11px] text-neutral-400">
-                          {node.data.notes || 'Isolated network foundation'}
-                        </p>
-                        {node.data.config && Object.keys(node.data.config).length > 0 && (
-                          <div className="pt-2 border-t border-neutral-800/80 font-mono text-[10px] text-neutral-400 space-y-0.5">
-                            {Object.entries(node.data.config).map(([k, v]) => (
-                              <div key={k} className="flex justify-between">
-                                <span className="text-neutral-500">{k}:</span>
-                                <span className="text-neutral-300">{String(v)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                </div>
 
-                {/* Column 2: Compute Workloads */}
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                    <Cpu className="w-4 h-4" />
-                    <span>Compute Tier</span>
-                  </div>
-                  {architecture.nodes
-                    .filter((n) => n.kind === 'compute' || n.kind === 'kubernetes')
-                    .map((node) => (
-                      <div
-                        key={node.id}
-                        className="p-4 rounded-xl bg-neutral-950 border border-indigo-500/30 space-y-2 shadow-md hover:border-indigo-500/60 transition-all"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-white">{node.data.label}</span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-950/60 text-indigo-300">
-                            {node.data.provider}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-neutral-400">
-                          {node.data.notes || 'Workload application instance'}
+                        <p className="text-xs text-neutral-400 leading-relaxed">
+                          {node.data.notes || 'Configured exactly as specified without excess dependencies.'}
                         </p>
-                        {node.data.config && Object.keys(node.data.config).length > 0 && (
-                          <div className="pt-2 border-t border-neutral-800/80 font-mono text-[10px] text-neutral-400 space-y-0.5">
-                            {Object.entries(node.data.config).map(([k, v]) => (
-                              <div key={k} className="flex justify-between">
-                                <span className="text-neutral-500">{k}:</span>
-                                <span className="text-neutral-300">{String(v)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                </div>
 
-                {/* Column 3: Data & Storage */}
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                    <Database className="w-4 h-4" />
-                    <span>Data &amp; Storage Tier</span>
-                  </div>
-                  {architecture.nodes
-                    .filter((n) => n.kind === 'database' || n.kind === 'storage')
-                    .map((node) => (
-                      <div
-                        key={node.id}
-                        className="p-4 rounded-xl bg-neutral-950 border border-emerald-500/30 space-y-2 shadow-md hover:border-emerald-500/60 transition-all"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1.5">
-                            {getKindIcon(node.kind)}
-                            <span className="text-xs font-bold text-white">{node.data.label}</span>
+                        <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 space-y-1.5">
+                          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                            Template Reference
                           </div>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300">
-                            {node.data.provider}
-                          </span>
+                          <div className="font-mono text-xs text-neutral-300 truncate">
+                            {node.data.templateRef}
+                          </div>
                         </div>
-                        <p className="text-[11px] text-neutral-400">{node.data.notes || node.kind}</p>
+
                         {node.data.config && Object.keys(node.data.config).length > 0 && (
-                          <div className="pt-2 border-t border-neutral-800/80 font-mono text-[10px] text-neutral-400 space-y-0.5">
+                          <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 space-y-1.5 font-mono text-[11px]">
+                            <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider font-sans">
+                              Configuration Parameters
+                            </div>
                             {Object.entries(node.data.config).map(([k, v]) => (
                               <div key={k} className="flex justify-between">
                                 <span className="text-neutral-500">{k}:</span>
-                                <span className="text-neutral-300">{String(v)}</span>
+                                <span className="text-neutral-300 font-semibold">{String(v)}</span>
                               </div>
                             ))}
                           </div>
                         )}
                       </div>
-                    ))}
+                    );
+                  })()}
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                  {/* Column 1: Network & Ingress Foundation */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                      <Network className="w-4 h-4" />
+                      <span>Network &amp; Ingress</span>
+                    </div>
+                    {architecture.nodes
+                      .filter((n) => n.kind === 'network' || n.kind === 'loadbalancer')
+                      .map((node) => (
+                        <div
+                          key={node.id}
+                          className="p-4 rounded-xl bg-neutral-950 border border-cyan-500/30 space-y-2 shadow-md hover:border-cyan-500/60 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {getKindIcon(node.kind)}
+                              <span className="text-xs font-bold text-white">{node.data.label}</span>
+                            </div>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300">
+                              {node.data.provider}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400">
+                            {node.data.notes || node.kind}
+                          </p>
+                          {node.data.config && Object.keys(node.data.config).length > 0 && (
+                            <div className="pt-2 border-t border-neutral-800/80 font-mono text-[10px] text-neutral-400 space-y-0.5">
+                              {Object.entries(node.data.config).map(([k, v]) => (
+                                <div key={k} className="flex justify-between">
+                                  <span className="text-neutral-500">{k}:</span>
+                                  <span className="text-neutral-300">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    {architecture.nodes.filter((n) => n.kind === 'network' || n.kind === 'loadbalancer').length === 0 && (
+                      <div className="p-4 rounded-xl border border-dashed border-neutral-800 text-center text-xs text-neutral-500">
+                        No dedicated network layer required
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Column 2: Compute & Serverless Workloads */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                      <Cpu className="w-4 h-4" />
+                      <span>Compute &amp; Functions</span>
+                    </div>
+                    {architecture.nodes
+                      .filter((n) => n.kind === 'compute' || n.kind === 'serverless' || n.kind === 'kubernetes')
+                      .map((node) => (
+                        <div
+                          key={node.id}
+                          className="p-4 rounded-xl bg-neutral-950 border border-indigo-500/30 space-y-2 shadow-md hover:border-indigo-500/60 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {getKindIcon(node.kind)}
+                              <span className="text-xs font-bold text-white">{node.data.label}</span>
+                            </div>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-950/60 text-indigo-300">
+                              {node.data.provider}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400">
+                            {node.data.notes || node.kind}
+                          </p>
+                          {node.data.config && Object.keys(node.data.config).length > 0 && (
+                            <div className="pt-2 border-t border-neutral-800/80 font-mono text-[10px] text-neutral-400 space-y-0.5">
+                              {Object.entries(node.data.config).map(([k, v]) => (
+                                <div key={k} className="flex justify-between">
+                                  <span className="text-neutral-500">{k}:</span>
+                                  <span className="text-neutral-300">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    {architecture.nodes.filter((n) => n.kind === 'compute' || n.kind === 'serverless' || n.kind === 'kubernetes').length === 0 && (
+                      <div className="p-4 rounded-xl border border-dashed border-neutral-800 text-center text-xs text-neutral-500">
+                        No compute instances required
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Column 3: Data, Storage & Queues */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                      <Database className="w-4 h-4" />
+                      <span>Data, Storage &amp; Events</span>
+                    </div>
+                    {architecture.nodes
+                      .filter((n) => n.kind === 'database' || n.kind === 'storage' || n.kind === 'nosql' || n.kind === 'queue')
+                      .map((node) => (
+                        <div
+                          key={node.id}
+                          className="p-4 rounded-xl bg-neutral-950 border border-emerald-500/30 space-y-2 shadow-md hover:border-emerald-500/60 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-1.5">
+                              {getKindIcon(node.kind)}
+                              <span className="text-xs font-bold text-white">{node.data.label}</span>
+                            </div>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300">
+                              {node.data.provider}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400">{node.data.notes || node.kind}</p>
+                          {node.data.config && Object.keys(node.data.config).length > 0 && (
+                            <div className="pt-2 border-t border-neutral-800/80 font-mono text-[10px] text-neutral-400 space-y-0.5">
+                              {Object.entries(node.data.config).map(([k, v]) => (
+                                <div key={k} className="flex justify-between">
+                                  <span className="text-neutral-500">{k}:</span>
+                                  <span className="text-neutral-300">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud Load Balancer",
+  "description": "High-performance, scalable Global HTTP(S) Load Balancer for distributing web traffic",
+  "type": "object",
+  "required": ["lb_name"],
+  "properties": {
+    "lb_name": {
+      "type": "string",
+      "title": "Load Balancer Name",
+      "default": "gcp-global-http-lb",
+      "description": "Global Load Balancer Name"
+    }
+  }
+}

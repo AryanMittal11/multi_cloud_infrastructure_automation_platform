@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Load Balancer",
+  "description": "Layer 4 high-performance, ultra low-latency load balancing for all TCP and UDP protocols",
+  "type": "object",
+  "required": ["lb_name"],
+  "properties": {
+    "lb_name": {
+      "type": "string",
+      "title": "Load Balancer Name",
+      "default": "ingress-load-balancer",
+      "description": "Unique name for the Azure Load Balancer"
+    },
+    "location": {
+      "type": "string",
+      "title": "Azure Region",
+      "default": "eastus",
+      "description": "Deployment region"
+    }
+  }
+}

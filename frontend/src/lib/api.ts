@@ -585,7 +585,16 @@ export interface ArchitectureDesign {
 
 export interface CanvasNode {
   id: string;
-  kind: 'network' | 'compute' | 'database' | 'storage' | 'kubernetes';
+  kind:
+    | 'network'
+    | 'compute'
+    | 'database'
+    | 'storage'
+    | 'serverless'
+    | 'nosql'
+    | 'queue'
+    | 'loadbalancer'
+    | 'kubernetes';
   position: { x: number; y: number };
   data: {
     kind: CanvasNode['kind'];

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud Pub/Sub Topic",
+  "description": "Asynchronous and scalable messaging service that decouples services producing events from services processing events",
+  "type": "object",
+  "required": ["topic_name"],
+  "properties": {
+    "topic_name": {
+      "type": "string",
+      "title": "Topic Name",
+      "default": "workload-events-topic",
+      "description": "Unique topic identifier"
+    }
+  }
+}

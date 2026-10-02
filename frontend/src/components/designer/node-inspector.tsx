@@ -19,7 +19,15 @@ export interface InspectorField {
 
 export interface InspectableNode {
   id: string;
-  kind: 'network' | 'compute' | 'database' | 'storage' | 'kubernetes';
+  kind: 'network'
+  | 'compute'
+  | 'database'
+  | 'storage'
+  | 'serverless'
+  | 'nosql'
+  | 'queue'
+  | 'loadbalancer'
+  | 'kubernetes';
   label: string;
   provider: 'AWS' | 'AZURE' | 'GCP';
   templateRef: string;
