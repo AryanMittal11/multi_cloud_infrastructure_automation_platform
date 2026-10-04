@@ -8,6 +8,13 @@ import {
   optimizeCosts,
   OptimizableDeployment,
   CostEstimateResult,
+  compareMultiCloud,
+  analyzeScaling,
+  projectCostTrend,
+  generateRightsizingReport,
+  getOptimizationTips,
+  getWorkloadProfiles,
+  getSavingsPlans,
 } from '../services/costs';
 
 /**
@@ -207,6 +214,117 @@ export const costController = {
 
       const result = optimizeCosts(optimizable);
       res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /* ================================================================
+     Cost Optimization Center — new analytics endpoints
+     ================================================================ */
+
+  /**
+   * GET /api/costs/compare?workload=web-medium
+   * Multi-cloud cost comparison for a given workload profile.
+   */
+  multiCloudCompare: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const workload = typeof req.query.workload === 'string' ? req.query.workload : 'web-medium';
+      const result = compareMultiCloud(workload);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/scaling?provider=AWS&workload=web-medium
+   * Scaling & traffic cost projection.
+   */
+  scalingAnalysis: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider = (['AWS', 'AZURE', 'GCP'].includes(req.query.provider as string)
+        ? req.query.provider : 'AWS') as 'AWS' | 'AZURE' | 'GCP';
+      const workload = typeof req.query.workload === 'string' ? req.query.workload : 'web-medium';
+      const result = analyzeScaling(provider, workload);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/trends?provider=AWS&baseMonthly=150&growthRate=10
+   * 12-month cost trend projection.
+   */
+  trendProjection: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider = (['AWS', 'AZURE', 'GCP'].includes(req.query.provider as string)
+        ? req.query.provider : 'AWS') as 'AWS' | 'AZURE' | 'GCP';
+      const baseMonthly = Math.max(1, Math.min(100000, Number(req.query.baseMonthly) || 150));
+      const growthRate = Math.max(0, Math.min(100, Number(req.query.growthRate) || 8));
+      const result = projectCostTrend(provider, baseMonthly, growthRate);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/rightsizing?provider=AWS&workload=web-medium
+   * Rightsizing recommendations for a given workload.
+   */
+  rightsizing: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider = (['AWS', 'AZURE', 'GCP'].includes(req.query.provider as string)
+        ? req.query.provider : 'AWS') as 'AWS' | 'AZURE' | 'GCP';
+      const workload = typeof req.query.workload === 'string' ? req.query.workload : 'web-medium';
+      const result = generateRightsizingReport(provider, workload);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/tips?provider=AWS
+   * Provider-specific cost optimization tips.
+   */
+  tips: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider = ['AWS', 'AZURE', 'GCP'].includes(req.query.provider as string)
+        ? (req.query.provider as 'AWS' | 'AZURE' | 'GCP')
+        : undefined;
+      const result = getOptimizationTips(provider);
+      res.status(200).json({ tips: result });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/workload-profiles
+   * List available workload profiles for comparison tools.
+   */
+  workloadProfiles: async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const profiles = getWorkloadProfiles();
+      res.status(200).json({ profiles });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/costs/savings-plans?provider=AWS
+   * List savings plan options for a given provider.
+   */
+  savingsPlans: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider = (['AWS', 'AZURE', 'GCP'].includes(req.query.provider as string)
+        ? req.query.provider : 'AWS') as 'AWS' | 'AZURE' | 'GCP';
+      const plans = getSavingsPlans(provider);
+      res.status(200).json({ provider, plans });
     } catch (err) {
       next(err);
     }

@@ -390,6 +390,36 @@ export const api = {
       request<CostSummary>(`/costs/summary${projectId ? `?projectId=${projectId}` : ''}`),
     optimizations: (projectId?: string) =>
       request<CostOptimizations>(`/costs/optimizations${projectId ? `?projectId=${projectId}` : ''}`),
+    compare: (workload?: string) =>
+      request<MultiCloudComparison>(`/costs/compare${workload ? `?workload=${workload}` : ''}`),
+    scaling: (provider?: string, workload?: string) => {
+      const params = new URLSearchParams();
+      if (provider) params.set('provider', provider);
+      if (workload) params.set('workload', workload);
+      const q = params.toString();
+      return request<ScalingAnalysis>(`/costs/scaling${q ? `?${q}` : ''}`);
+    },
+    trends: (provider?: string, baseMonthly?: number, growthRate?: number) => {
+      const params = new URLSearchParams();
+      if (provider) params.set('provider', provider);
+      if (baseMonthly !== undefined) params.set('baseMonthly', String(baseMonthly));
+      if (growthRate !== undefined) params.set('growthRate', String(growthRate));
+      const q = params.toString();
+      return request<CostTrendProjection>(`/costs/trends${q ? `?${q}` : ''}`);
+    },
+    rightsizing: (provider?: string, workload?: string) => {
+      const params = new URLSearchParams();
+      if (provider) params.set('provider', provider);
+      if (workload) params.set('workload', workload);
+      const q = params.toString();
+      return request<RightsizingReport>(`/costs/rightsizing${q ? `?${q}` : ''}`);
+    },
+    tips: (provider?: string) =>
+      request<{ tips: OptimizationTip[] }>(`/costs/tips${provider ? `?provider=${provider}` : ''}`),
+    workloadProfiles: () =>
+      request<{ profiles: WorkloadProfile[] }>('/costs/workload-profiles'),
+    savingsPlans: (provider?: string) =>
+      request<{ provider: string; plans: SavingsPlan[] }>(`/costs/savings-plans${provider ? `?provider=${provider}` : ''}`),
   },
 
   topology: {
@@ -534,6 +564,126 @@ export interface CostOptimizations {
   source: string;
   label: string;
   computedAt: string;
+}
+
+// ==========================================
+// Cost Optimization Center Types
+// ==========================================
+
+export interface CloudCostBreakdown {
+  provider: 'AWS' | 'AZURE' | 'GCP';
+  compute: number;
+  database: number;
+  storage: number;
+  network: number;
+  cluster: number;
+  total: number;
+  savingsPlans: { plan: string; discountPct: number; projectedTotal: number; monthlySavings: number }[];
+  providerBadge: string;
+  cheapestPlan: string;
+  cheapestTotal: number;
+}
+
+export interface MultiCloudComparison {
+  workloadProfile: string;
+  workloadDescription: string;
+  comparisons: CloudCostBreakdown[];
+  cheapestProvider: 'AWS' | 'AZURE' | 'GCP';
+  mostExpensiveProvider: 'AWS' | 'AZURE' | 'GCP';
+  maxSavingsUsd: number;
+  maxSavingsPct: number;
+  recommendation: string;
+  computedAt: string;
+}
+
+export interface ScalingScenario {
+  label: string;
+  multiplier: number;
+  computeCost: number;
+  databaseCost: number;
+  networkCost: number;
+  storageCost: number;
+  totalCost: number;
+  deltaFromBaseline: number;
+  deltaPct: number;
+  tips: string[];
+}
+
+export interface ScalingAnalysis {
+  provider: 'AWS' | 'AZURE' | 'GCP';
+  baselineCost: number;
+  scenarios: ScalingScenario[];
+  scalingStrategy: string;
+  autoScalingTips: string[];
+  computedAt: string;
+}
+
+export interface CostTrendPoint {
+  month: string;
+  monthIndex: number;
+  onDemand: number;
+  reserved: number;
+  optimized: number;
+}
+
+export interface CostTrendProjection {
+  provider: 'AWS' | 'AZURE' | 'GCP';
+  baseMonthly: number;
+  growthRatePct: number;
+  trend: CostTrendPoint[];
+  annualOnDemand: number;
+  annualReserved: number;
+  annualOptimized: number;
+  annualSavingsReserved: number;
+  annualSavingsOptimized: number;
+  computedAt: string;
+}
+
+export interface RightsizingRecommendation {
+  id: string;
+  currentTier: string;
+  suggestedTier: string;
+  currentMonthlyCost: number;
+  suggestedMonthlyCost: number;
+  monthlySavings: number;
+  reason: string;
+  impact: 'low' | 'medium' | 'high';
+  category: 'compute' | 'database' | 'storage' | 'network';
+  provider: 'AWS' | 'AZURE' | 'GCP';
+  action: string;
+}
+
+export interface RightsizingReport {
+  recommendations: RightsizingRecommendation[];
+  totalCurrentMonthly: number;
+  totalSuggestedMonthly: number;
+  totalMonthlySavings: number;
+  savingsPct: number;
+  computedAt: string;
+}
+
+export interface OptimizationTip {
+  id: string;
+  provider: 'AWS' | 'AZURE' | 'GCP' | 'ALL';
+  category: 'compute' | 'database' | 'storage' | 'network' | 'architecture' | 'billing';
+  title: string;
+  description: string;
+  estimatedSavingsPct: number;
+  effort: 'low' | 'medium' | 'high';
+}
+
+export interface WorkloadProfile {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface SavingsPlan {
+  plan: string;
+  description: string;
+  discountPct: number;
+  commitment: string;
+  risk: 'none' | 'low' | 'medium' | 'high';
 }
 
 export type TopologyNodeKind = 'network' | 'compute' | 'database' | 'storage' | 'loadbalancer' | 'cluster' | 'other';
