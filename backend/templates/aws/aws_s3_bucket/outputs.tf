@@ -15,5 +15,5 @@ output "bucket_domain_name" {
 
 output "bucket_region" {
   description = "The AWS region where the bucket is hosted"
-  value       = aws_s3_bucket.bucket.region
+  value       = data.aws_region.current.name
 }

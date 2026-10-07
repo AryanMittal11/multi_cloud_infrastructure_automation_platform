@@ -193,6 +193,10 @@ export function generateDesignTerraform(
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
 }`;
   } else if (provider === 'GCP') {
@@ -202,6 +206,10 @@ export function generateDesignTerraform(
     google = {
       source  = "hashicorp/google"
       version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
     }
   }
 }`;
@@ -213,6 +221,10 @@ export function generateDesignTerraform(
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
     }
   }
 }`;

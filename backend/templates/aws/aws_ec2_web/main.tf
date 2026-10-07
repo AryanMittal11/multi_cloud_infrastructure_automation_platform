@@ -5,7 +5,21 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
+}
+
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+locals {
+  server_name = "${var.server_name}-${random_string.suffix.result}"
 }
 
 # 1. Lookup Latest Amazon Linux 2023 AMI
@@ -26,7 +40,7 @@ data "aws_ami" "amazon_linux" {
 
 # 2. Security Group for Web Application
 resource "aws_security_group" "web" {
-  name        = "${var.server_name}-sg"
+  name        = "${local.server_name}-sg"
   description = "Managed security group for ${var.server_name} web server"
   vpc_id      = var.vpc_id != "" ? var.vpc_id : null
 
@@ -72,7 +86,7 @@ resource "aws_security_group" "web" {
   tags = merge(
     var.tags,
     {
-      Name      = "${var.server_name}-sg"
+      Name      = "${local.server_name}-sg"
       ManagedBy = "MultiCloudPlatform"
     }
   )
@@ -127,7 +141,7 @@ resource "aws_instance" "web" {
   tags = merge(
     var.tags,
     {
-      Name      = var.server_name
+      Name      = local.server_name
       Role      = "WebServer"
       ManagedBy = "MultiCloudPlatform"
     }
@@ -142,7 +156,7 @@ resource "aws_eip" "web" {
   tags = merge(
     var.tags,
     {
-      Name      = "${var.server_name}-eip"
+      Name      = "${local.server_name}-eip"
       ManagedBy = "MultiCloudPlatform"
     }
   )

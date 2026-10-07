@@ -5,11 +5,26 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
 }
 
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+locals {
+  alb_base = substr(replace(lower(var.alb_name), "_", "-"), 0, 24)
+  unique_alb_name = "${local.alb_base}-${random_string.suffix.result}"
+}
+
 resource "aws_security_group" "alb_sg" {
-  name        = "${var.alb_name}-sg"
+  name        = "${local.unique_alb_name}-sg"
   description = "Security group for application load balancer"
   vpc_id      = var.vpc_id
 
@@ -32,14 +47,14 @@ resource "aws_security_group" "alb_sg" {
   tags = merge(
     var.tags,
     {
-      Name      = "${var.alb_name}-sg"
+      Name      = "${local.unique_alb_name}-sg"
       ManagedBy = "MultiCloudPlatform"
     }
   )
 }
 
 resource "aws_lb" "alb" {
-  name               = var.alb_name
+  name               = local.unique_alb_name
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
@@ -50,14 +65,14 @@ resource "aws_lb" "alb" {
   tags = merge(
     var.tags,
     {
-      Name      = var.alb_name
+      Name      = local.unique_alb_name
       ManagedBy = "MultiCloudPlatform"
     }
   )
 }
 
 resource "aws_lb_target_group" "tg" {
-  name        = "${substr(var.alb_name, 0, 26)}-tg"
+  name        = "${substr(local.unique_alb_name, 0, 28)}-tg"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -76,7 +91,7 @@ resource "aws_lb_target_group" "tg" {
   tags = merge(
     var.tags,
     {
-      Name      = "${var.alb_name}-tg"
+      Name      = "${substr(local.unique_alb_name, 0, 28)}-tg"
       ManagedBy = "MultiCloudPlatform"
     }
   )

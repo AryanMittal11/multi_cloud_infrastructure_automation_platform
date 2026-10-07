@@ -171,6 +171,12 @@ export default function CostOptimizationCenter() {
     refetchInterval: 60000,
   });
 
+  React.useEffect(() => {
+    if (summaryData?.monthlyTotalUsd && summaryData.monthlyTotalUsd > 0) {
+      setBaseMonthly(Math.round(summaryData.monthlyTotalUsd));
+    }
+  }, [summaryData?.monthlyTotalUsd]);
+
   const { data: optData, isLoading: optLoading } = useQuery({
     queryKey: ['costs-optimizations'],
     queryFn: () => api.costs.optimizations(),

@@ -44,6 +44,7 @@ export const authController = {
         message: 'User successfully registered',
         user: result.user,
         accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
         expiresIn: result.tokens.expiresIn,
       });
     } catch (err) {
@@ -66,6 +67,7 @@ export const authController = {
         message: 'Authentication successful',
         user: result.user,
         accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
         expiresIn: result.tokens.expiresIn,
       });
     } catch (err) {
@@ -92,6 +94,7 @@ export const authController = {
       res.status(200).json({
         message: 'Tokens successfully refreshed',
         accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
         expiresIn: newTokens.expiresIn,
       });
     } catch (err) {

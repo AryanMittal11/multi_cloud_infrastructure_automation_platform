@@ -165,7 +165,7 @@ export class CloudService {
       throw error;
     }
 
-    if (role !== Role.ADMIN && account.ownerId !== userId) {
+    if (role !== Role.ADMIN || account.ownerId !== userId) {
       const error: any = new Error('Forbidden: You can only delete your own cloud account');
       error.statusCode = 403;
       throw error;

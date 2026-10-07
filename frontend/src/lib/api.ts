@@ -138,6 +138,7 @@ export interface HealthResponse {
 
 // Token management in localStorage
 const TOKEN_KEY = 'multicloud_token';
+const REFRESH_TOKEN_KEY = 'multicloud_refresh_token';
 const USER_KEY = 'multicloud_user';
 
 export function getStoredToken(): string | null {
@@ -151,6 +152,20 @@ export function setStoredToken(token: string | null): void {
     localStorage.setItem(TOKEN_KEY, token);
   } else {
     localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function getStoredRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setStoredRefreshToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (token) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 }
 
@@ -174,9 +189,58 @@ export function setStoredUser(user: User | null): void {
   }
 }
 
+let refreshInFlightPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) return null;
+
+  if (refreshInFlightPromise) {
+    return refreshInFlightPromise;
+  }
+
+  refreshInFlightPromise = (async () => {
+    try {
+      const url = `${env.API_URL}/auth/refresh`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!res.ok) {
+        setStoredToken(null);
+        setStoredRefreshToken(null);
+        setStoredUser(null);
+        return null;
+      }
+
+      const data = await res.json();
+      if (data?.accessToken) {
+        setStoredToken(data.accessToken);
+        if (data.refreshToken) {
+          setStoredRefreshToken(data.refreshToken);
+        }
+        return data.accessToken;
+      }
+      return null;
+    } catch {
+      setStoredToken(null);
+      setStoredRefreshToken(null);
+      setStoredUser(null);
+      return null;
+    } finally {
+      refreshInFlightPromise = null;
+    }
+  })();
+
+  return refreshInFlightPromise;
+}
+
 async function request<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetry: boolean = false
 ): Promise<T> {
   const token = getStoredToken();
   const headers: Record<string, string> = {
@@ -194,6 +258,15 @@ async function request<T>(
     ...options,
     headers,
   });
+
+  const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register') || endpoint.includes('/auth/refresh');
+
+  if (res.status === 401 && !isAuthEndpoint && !isRetry) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      return request<T>(endpoint, options, true);
+    }
+  }
 
   const contentType = res.headers.get('content-type');
   let data: any = null;
@@ -226,24 +299,36 @@ export const api = {
         body: JSON.stringify({ email, password }),
       });
       setStoredToken(res.accessToken);
+      if (res.refreshToken) {
+        setStoredRefreshToken(res.refreshToken);
+      }
       setStoredUser(res.user);
       return res;
     },
 
     register: async (name: string, email: string, password: string) => {
-      const res = await request<{ user: User; accessToken: string }>('/auth/register', {
+      const res = await request<{ user: User; accessToken: string; refreshToken?: string }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
       });
       setStoredToken(res.accessToken);
+      if (res.refreshToken) {
+        setStoredRefreshToken(res.refreshToken);
+      }
       setStoredUser(res.user);
       return res;
+    },
+
+    refresh: async () => {
+      const token = await refreshAccessToken();
+      return { accessToken: token };
     },
 
     me: () => request<{ user: User }>('/auth/me'),
 
     logout: () => {
       setStoredToken(null);
+      setStoredRefreshToken(null);
       setStoredUser(null);
     },
   },

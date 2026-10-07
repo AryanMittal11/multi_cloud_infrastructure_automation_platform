@@ -12,27 +12,34 @@ terraform {
   }
 }
 
-# 1. Generate Master Database Password if not explicitly provided
+# 1. Generate Master Database Password and unique suffix
 resource "random_password" "db_master_password" {
   length           = 20
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
 locals {
-  db_password = var.db_password != "" ? var.db_password : random_password.db_master_password.result
+  db_password    = var.db_password != "" ? var.db_password : random_password.db_master_password.result
+  unique_db_name = "${lower(replace(var.db_name, "_", "-"))}-${random_string.suffix.result}"
 }
 
 # 2. Database Subnet Group
 resource "aws_db_subnet_group" "db" {
-  name        = "${var.db_name}-subnet-group"
+  name        = "${local.unique_db_name}-subnet-group"
   description = "Database subnet group for ${var.db_name}"
   subnet_ids  = var.subnet_ids
 
   tags = merge(
     var.tags,
     {
-      Name      = "${var.db_name}-subnet-group"
+      Name      = "${local.unique_db_name}-subnet-group"
       ManagedBy = "MultiCloudPlatform"
     }
   )
@@ -40,7 +47,7 @@ resource "aws_db_subnet_group" "db" {
 
 # 3. Database Security Group
 resource "aws_security_group" "db" {
-  name        = "${var.db_name}-db-sg"
+  name        = "${local.unique_db_name}-db-sg"
   description = "Security group for ${var.db_name} RDS PostgreSQL database"
   vpc_id      = var.vpc_id
 
@@ -63,7 +70,7 @@ resource "aws_security_group" "db" {
   tags = merge(
     var.tags,
     {
-      Name      = "${var.db_name}-db-sg"
+      Name      = "${local.unique_db_name}-db-sg"
       ManagedBy = "MultiCloudPlatform"
     }
   )
@@ -71,7 +78,7 @@ resource "aws_security_group" "db" {
 
 # 4. Amazon RDS PostgreSQL Database Instance
 resource "aws_db_instance" "postgres" {
-  identifier           = var.db_name
+  identifier           = local.unique_db_name
   engine               = "postgres"
   engine_version       = var.postgres_version
   instance_class       = var.db_instance_class
@@ -95,7 +102,7 @@ resource "aws_db_instance" "postgres" {
   tags = merge(
     var.tags,
     {
-      Name      = var.db_name
+      Name      = local.unique_db_name
       ManagedBy = "MultiCloudPlatform"
     }
   )

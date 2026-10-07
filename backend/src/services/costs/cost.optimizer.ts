@@ -206,6 +206,120 @@ function idleSandboxRule(deployments: OptimizableDeployment[]): CostRecommendati
   };
 }
 
+/** Compute Architecture: Graviton / ARM migration rule (20% savings + higher perf). */
+function gravitonRule(deployment: OptimizableDeployment): CostRecommendation | null {
+  const computeItem = deployment.estimate.lineItems.find((li) => li.resourceType === 'compute');
+  if (!computeItem || deployment.provider !== 'AWS') return null;
+
+  const currentType = deployment.configuration['instance_type'] ? String(deployment.configuration['instance_type']) : null;
+  if (!currentType || currentType.includes('g.')) return null; // only flag when explicitly configured on x86
+
+  const gravitonEquivalent = currentType.replace('t3.', 't4g.').replace('c5.', 'c6g.').replace('m5.', 'm6g.').replace('r5.', 'r6g.');
+  if (gravitonEquivalent === currentType) return null;
+
+  const savings = round2(computeItem.monthlyUsd * 0.20);
+  if (savings < 0.2) return null;
+
+  return {
+    id: `${deployment.deploymentId}:arm-graviton`,
+    deploymentId: deployment.deploymentId,
+    projectName: deployment.projectName,
+    environmentName: deployment.environmentName,
+    rule: 'arm-graviton',
+    severity: 'opportunity',
+    title: `Migrate ${currentType} to AWS Graviton (${gravitonEquivalent})`,
+    detail: `Switching to AWS ARM-based Graviton instances (${gravitonEquivalent}) delivers 20% lower hourly compute costs with up to 40% better performance for Linux/web workloads.`,
+    steps: [
+      `Update instance_type to "${gravitonEquivalent}" in deployment settings.`,
+      'Ensure software packages and Docker containers are multi-arch or ARM64 compatible.',
+      'Deploy through standard plan/apply workflow.',
+    ],
+    estimatedMonthlySavingsUsd: savings,
+  };
+}
+
+/** Database Instance Rightsizing Rule. */
+function databaseRightsizingRule(deployment: OptimizableDeployment): CostRecommendation | null {
+  const dbItem = deployment.estimate.lineItems.find((li) => li.resourceType === 'database');
+  if (!dbItem) return null;
+
+  const currentClass = String(deployment.configuration['db_instance_class'] ?? deployment.configuration['instance_class'] ?? '');
+  const env = (deployment.environmentName ?? '').toLowerCase();
+  const isNonProd = /dev|test|staging|sandbox|qa/.test(env);
+
+  if (isNonProd && (currentClass.includes('large') || currentClass.includes('xlarge') || currentClass.includes('medium'))) {
+    const suggestedClass = deployment.provider === 'AWS' ? 'db.t3.micro' : deployment.provider === 'AZURE' ? 'Standard_B1ms' : 'db-f1-micro';
+    const savings = round2(dbItem.monthlyUsd * 0.55);
+    if (savings < 1.0) return null;
+
+    return {
+      id: `${deployment.deploymentId}:db-rightsizing`,
+      deploymentId: deployment.deploymentId,
+      projectName: deployment.projectName,
+      environmentName: deployment.environmentName,
+      rule: 'db-rightsizing',
+      severity: 'opportunity',
+      title: `Downsize database in "${deployment.environmentName}" to ${suggestedClass}`,
+      detail: `Non-production environment "${deployment.environmentName}" is running an expensive database tier (${currentClass || 'medium/large'}). Downsizing to ${suggestedClass} preserves full functionality while slashing database costs by >50%.`,
+      steps: [
+        `Change database instance class to "${suggestedClass}".`,
+        'Plan and apply during a maintenance window (RDS performs automated rolling resize).',
+        'Verify database connection and test suite passes.',
+      ],
+      estimatedMonthlySavingsUsd: savings,
+    };
+  }
+  return null;
+}
+
+/** Storage Lifecycle & Intelligent Tiering Rule. */
+function storageTieringRule(deployment: OptimizableDeployment): CostRecommendation | null {
+  const storageItem = deployment.estimate.lineItems.find((li) => li.resourceType === 'storage');
+  if (!storageItem || storageItem.monthlyUsd < 5.0) return null;
+
+  const savings = round2(storageItem.monthlyUsd * 0.40);
+  return {
+    id: `${deployment.deploymentId}:storage-lifecycle`,
+    deploymentId: deployment.deploymentId,
+    projectName: deployment.projectName,
+    environmentName: deployment.environmentName,
+    rule: 'storage-lifecycle',
+    severity: 'opportunity',
+    title: 'Enable S3 Intelligent-Tiering and Archive Lifecycle',
+    detail: 'Activating automated tiering moves objects untouched after 30/90 days to low-cost archival storage classes, reducing object storage spend by up to 40% with zero application changes.',
+    steps: [
+      'Enable Intelligent-Tiering transition in bucket configuration.',
+      'Add lifecycle expiration rule for temporary/debug logs older than 30 days.',
+      'Monitor monthly savings via AWS Cost Explorer / Cloud Storage Insights.',
+    ],
+    estimatedMonthlySavingsUsd: savings,
+  };
+}
+
+/** Platform-level: Commitments & Savings Plans. */
+function fleetSavingsPlanRule(deployments: OptimizableDeployment[]): CostRecommendation | null {
+  const total = round2(deployments.reduce((s, d) => s + d.estimate.monthlyTotalUsd, 0));
+  if (total < 40.0) return null;
+
+  const savings = round2(total * 0.32); // Conservative 1-year compute savings plan
+  return {
+    id: 'platform:savings-plan-1yr',
+    deploymentId: null,
+    projectName: null,
+    environmentName: null,
+    rule: 'fleet-savings-plan',
+    severity: 'opportunity',
+    title: `Adopt 1-Year Compute Savings Plan for ~$${savings.toFixed(2)}/mo savings`,
+    detail: `Your stable multi-cloud fleet generates ~$${total.toFixed(2)}/mo in on-demand compute spend. Committing to a flexible 1-year Compute Savings Plan immediately cuts 30-36% off your monthly cloud invoice with zero infrastructure changes.`,
+    steps: [
+      'Analyze 30-day baseline hourly compute usage.',
+      'Purchase a 1-year No Upfront or Partial Upfront Compute Savings Plan for baseline load.',
+      'Leave bursty/spiky traffic on on-demand for maximum flexibility.',
+    ],
+    estimatedMonthlySavingsUsd: savings,
+  };
+}
+
 /** Estimate the projected spend after every recommendation is applied. */
 function projectSavings(recommendations: CostRecommendation[], currentTotal: number): number {
   // Recommendations can overlap (e.g. region move changes all line items).
@@ -223,7 +337,7 @@ export function optimizeCosts(deployments: OptimizableDeployment[]): CostOptimiz
 
   const recommendations: CostRecommendation[] = [];
   for (const d of deployments) {
-    const rules = [volumeRule, instanceCountRule, regionRule];
+    const rules = [volumeRule, instanceCountRule, regionRule, gravitonRule, databaseRightsizingRule, storageTieringRule];
     for (const rule of rules) {
       const rec = rule(d);
       if (rec && rec.estimatedMonthlySavingsUsd >= 0.1) recommendations.push(rec);
@@ -232,6 +346,9 @@ export function optimizeCosts(deployments: OptimizableDeployment[]): CostOptimiz
 
   const platformRec = idleSandboxRule(deployments);
   if (platformRec) recommendations.push(platformRec);
+
+  const savingsPlanRec = fleetSavingsPlanRule(deployments);
+  if (savingsPlanRec) recommendations.push(savingsPlanRec);
 
   recommendations.sort((a, b) => b.estimatedMonthlySavingsUsd - a.estimatedMonthlySavingsUsd);
 

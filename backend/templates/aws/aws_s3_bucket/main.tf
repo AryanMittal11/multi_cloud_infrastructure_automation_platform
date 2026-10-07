@@ -19,6 +19,8 @@ resource "random_string" "suffix" {
   upper   = false
 }
 
+data "aws_region" "current" {}
+
 locals {
   bucket_name = "${lower(var.bucket_name_prefix)}-${random_string.suffix.result}"
 }

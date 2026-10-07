@@ -32,6 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await api.auth.me();
       setUser(res.user);
       setStoredUser(res.user);
+      // In case token was refreshed during api.auth.me()
+      const currentStored = getStoredToken();
+      if (currentStored && currentStored !== stored) {
+        setToken(currentStored);
+      }
     } catch (err) {
       console.warn('Session expired or unauthorized, clearing token');
       setStoredToken(null);

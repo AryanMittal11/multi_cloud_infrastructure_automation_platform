@@ -5,11 +5,25 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
 }
 
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+locals {
+  unique_function_name = "${substr(replace(var.function_name, "_", "-"), 0, 56)}-${random_string.suffix.result}"
+}
+
 resource "aws_iam_role" "lambda_role" {
-  name = "${var.function_name}-exec-role"
+  name = "${substr(local.unique_function_name, 0, 50)}-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
