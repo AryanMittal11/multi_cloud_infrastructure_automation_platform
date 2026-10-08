@@ -25,21 +25,60 @@ export const app = express();
 // CORS: comma-separated whitelist via CORS_ORIGIN; in development, any
 // http(s)://localhost[:port] origin is accepted so the frontend can run on
 // any dev port without re-configuring the control plane.
-const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+// const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin) return callback(null, true); // non-browser clients (curl, tests)
+//       if (allowedOrigins.includes(origin)) return callback(null, true);
+//       if (
+//         env.NODE_ENV === 'development' &&
+//         /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)
+//       ) {
+//         return callback(null, true);
+//       }
+//       return callback(null, false); // no CORS headers → browser blocks
+//     },
+//     credentials: true,
+//   }),
+// );
+
+// CORS configuration
+const allowedOrigins = env.CORS_ORIGIN
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // non-browser clients (curl, tests)
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow non-browser clients such as curl and health checks
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const normalizedOrigin = origin.replace(/\/$/, '');
+
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      // Allow localhost origins only in development
       if (
         env.NODE_ENV === 'development' &&
-        /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)
+        /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(
+          normalizedOrigin,
+        )
       ) {
         return callback(null, true);
       }
-      return callback(null, false); // no CORS headers → browser blocks
+
+      console.warn(`CORS rejected origin: ${origin}`);
+      return callback(new Error('Origin not allowed by CORS'));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 
