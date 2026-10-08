@@ -1,6 +1,9 @@
+# ==============================================================================
+# Render Blueprint Specification (Infrastructure as Code)
+# ==============================================================================
 services:
   # ----------------------------------------------------------------------------
-  # 1. Express Control Plane API (Web Service)
+  # 1. Express Backend Control Plane API (Web Service)
   # ----------------------------------------------------------------------------
   - type: web
     name: multicloud-backend
@@ -15,18 +18,11 @@ services:
         value: production
       - key: PORT
         value: 4000
-      - key: DATABASE_URL
-        sync: false
       - key: CORS_ORIGIN
-        sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: CREDENTIAL_ENCRYPTION_KEY
-        sync: false
-      - key: RABBITMQ_URL
         sync: false
       - key: RUN_SEED
         value: "false"
+      - fromGroup: multicloud-shared-env
 
   # ----------------------------------------------------------------------------
   # 2. Terraform Worker (Background Worker)
@@ -41,11 +37,19 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - fromGroup: multicloud-shared-env
+
+# ------------------------------------------------------------------------------
+# Shared Environment Variables Group (Shared by Backend & Worker)
+# ------------------------------------------------------------------------------
+envVarGroups:
+  - name: multicloud-shared-env
+    envVars:
       - key: DATABASE_URL
         sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: CREDENTIAL_ENCRYPTION_KEY
-        sync: false
       - key: RABBITMQ_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY
         sync: false
