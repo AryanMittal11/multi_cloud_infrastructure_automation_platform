@@ -17,7 +17,7 @@ COPY shared/package.json ./shared/
 COPY backend/package.json ./backend/
 
 # Install exact dependencies
-RUN npm ci --workspace=frontend --workspace=shared
+RUN npm ci --workspace=frontend --workspace=shared --ignore-scripts
 
 # ------------------------------------------------------------------------------
 # Stage 2: Production Build

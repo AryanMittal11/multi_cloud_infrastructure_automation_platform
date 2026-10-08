@@ -10,11 +10,12 @@ FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl openssl-dev libc6-compat
 WORKDIR /app
 
-# Copy root workspace manifests
+# Copy root workspace manifests & prisma schema
 COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
 
 # Install dependencies for backend and shared
 RUN npm ci --workspace=backend --workspace=shared
@@ -50,15 +51,13 @@ RUN mkdir -p /app/terraform_workspaces && \
 
 # Copy node_modules with compiled Prisma client
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/backend/node_modules ./backend_node_modules
-# Merge backend specific modules if needed
-RUN cp -rn /app/backend_node_modules/* /app/node_modules/ 2>/dev/null || true && rm -rf /app/backend_node_modules
 
 # Copy compiled backend dist, templates, prisma, and package metadata
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/templates ./templates
 COPY --from=builder /app/backend/prisma ./prisma
 COPY --from=builder /app/backend/package.json ./package.json
+COPY --from=builder /app/backend/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/backend/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN chmod +x ./docker-entrypoint.sh && \

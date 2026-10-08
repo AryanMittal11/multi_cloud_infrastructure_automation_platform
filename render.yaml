@@ -1,0 +1,51 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Express Control Plane API (Web Service)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: multicloud-backend
+    runtime: docker
+    dockerfilePath: ./backend.Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+      - key: RABBITMQ_URL
+        sync: false
+      - key: RUN_SEED
+        value: "false"
+
+  # ----------------------------------------------------------------------------
+  # 2. Terraform Worker (Background Worker)
+  # ----------------------------------------------------------------------------
+  - type: worker
+    name: multicloud-worker
+    runtime: docker
+    dockerfilePath: ./worker.Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+      - key: RABBITMQ_URL
+        sync: false

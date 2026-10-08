@@ -17,7 +17,7 @@ if [ -n "$DATABASE_URL" ]; then
   # Optionally seed database if RUN_SEED is enabled
   if [ "$RUN_SEED" = "true" ] || [ "$RUN_SEED" = "1" ]; then
     echo "Running database seed..."
-    npm run prisma:seed || true
+    npx ts-node -T -r tsconfig-paths/register prisma/seed.ts || npm run prisma:seed || true
   fi
 fi
 

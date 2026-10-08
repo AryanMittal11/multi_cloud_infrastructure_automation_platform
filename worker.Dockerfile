@@ -16,11 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy workspace configuration
+# Copy workspace configuration & prisma schema
 COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY frontend/package.json ./frontend/
+COPY backend/prisma ./backend/prisma
 
 # Install dependencies
 RUN npm ci --workspace=backend --workspace=shared
@@ -114,8 +115,6 @@ RUN mkdir -p /app/terraform_workspaces && \
 
 # Copy application artifacts from builder
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/backend/node_modules ./backend_node_modules
-RUN cp -rn /app/backend_node_modules/* /app/node_modules/ 2>/dev/null || true && rm -rf /app/backend_node_modules
 
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/templates ./templates

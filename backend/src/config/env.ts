@@ -7,7 +7,10 @@ const envSchema = z.object({
   PORT: z.string().default('4000').transform((val) => parseInt(val, 10)),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
-  JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
+  JWT_SECRET: z
+    .string()
+    .min(16, 'JWT_SECRET must be at least 16 characters')
+    .default('super-secret-jwt-key-replace-in-production-min-32-chars'),
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_SECRET: z.string().default('refresh-super-secret-key-min-32-characters'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
