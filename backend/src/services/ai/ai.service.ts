@@ -64,7 +64,7 @@ export class AiService {
 
     const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
-    if (apiKey) {
+    if (apiKey && process.env.NODE_ENV !== 'test') {
       try {
         logger.info(`Invoking Google Gemini AI for prompt: "${prompt.slice(0, 80)}..."`);
         const result = await this.callGeminiApi(apiKey, prompt, input.cloudProvider);

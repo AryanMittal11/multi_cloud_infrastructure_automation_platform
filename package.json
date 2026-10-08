@@ -11,7 +11,11 @@
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:backend && npm run build:frontend",
     "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
-    "test:backend": "npm --prefix backend run test"
+    "test:backend": "npm --prefix backend run test",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "workspaces": [
     "shared",

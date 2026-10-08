@@ -1,0 +1,9 @@
+node_modules
+dist
+terraform_workspaces/*
+!terraform_workspaces/.gitkeep
+.env*.local
+.env
+.vscode
+.git
+*.log
