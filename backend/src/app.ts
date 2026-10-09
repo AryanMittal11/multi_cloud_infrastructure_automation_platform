@@ -121,32 +121,21 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`🚀 Multi-Cloud Platform Control Plane running on http://localhost:${env.PORT}`);
   });
 
-  // Single-node resilience: when no broker is reachable and inline fallback is
-  // enabled, run the Terraform worker inside the API process so published jobs
-  // (in-memory fallback queue) are actually consumed. With RabbitMQ connected,
-  // the dedicated worker process owns execution, so we stay out of the way.
+  // Start the Terraform worker inside the API process so jobs are consumed
+  // immediately without requiring a separate worker terminal process.
   if (env.INLINE_WORKER_FALLBACK) {
-    // Idempotent: terraformWorker.start() is guarded by its own isRunning flag.
-    let inlineWorkerAnnounced = false;
     const ensureInlineWorker = async () => {
-      await queueService.initialize();
-      const status = await queueService.getStatus();
-      if (status.mode === 'in-memory-fallback') {
+      try {
+        await queueService.initialize();
         await terraformWorker.start();
-        if (!inlineWorkerAnnounced) {
-          inlineWorkerAnnounced = true;
-          console.log('🔧 Inline Terraform worker active (no broker detected).');
-        }
+        console.log('🔧 Terraform worker active and listening for deployment jobs.');
+      } catch (err) {
+        console.error('Terraform worker startup failed:', err);
       }
     };
 
     ensureInlineWorker().catch((err) =>
       console.error('Inline worker startup failed:', err),
     );
-    // Re-check periodically so a broker outage later in life still gets covered.
-    const brokerPoll = setInterval(() => {
-      ensureInlineWorker().catch(() => {});
-    }, 30_000);
-    brokerPoll.unref();
   }
 }

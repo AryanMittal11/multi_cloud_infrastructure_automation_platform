@@ -47,7 +47,7 @@ export function PolicyReviewPanel({ policyEvaluation }: { policyEvaluation: any 
           <div key={i} className="flex items-start space-x-2 text-xs p-2.5 rounded-xl bg-neutral-950 border border-neutral-800">
             <span className={r.passed ? 'text-neutral-300' : 'text-amber-400'}>{r.passed ? '✓' : '!'}</span>
             <div>
-              <p className="font-mono font-semibold text-neutral-200">{r.rule}</p>
+              <p className="font-mono font-semibold text-neutral-200">{r.policy || r.rule}</p>
               <p className="text-neutral-400">{r.message}</p>
             </div>
           </div>

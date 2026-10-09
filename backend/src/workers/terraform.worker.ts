@@ -237,7 +237,7 @@ export class TerraformWorkerService {
           where: { id: job.deploymentId },
           data: {
             status: DeploymentStatus.PLANNED,
-            planOutput: accumulatedLogs,
+            planOutput: accumulatedLogs || planResult.stdout,
             planTime: new Date(),
             policyEvaluation: policyEvaluation as unknown as Prisma.InputJsonValue,
             costEstimate: costEstimate as unknown as Prisma.InputJsonValue,
@@ -280,7 +280,7 @@ export class TerraformWorkerService {
           where: { id: job.deploymentId },
           data: {
             status: DeploymentStatus.SUCCEEDED,
-            applyOutput: accumulatedLogs,
+            applyOutput: accumulatedLogs || applyResult.stdout,
             applyTime: new Date(),
             costEstimate: appliedCostEstimate as unknown as Prisma.InputJsonValue,
           },
@@ -328,7 +328,7 @@ export class TerraformWorkerService {
           where: { id: job.deploymentId },
           data: {
             status: DeploymentStatus.SUCCEEDED,
-            applyOutput: accumulatedLogs,
+            applyOutput: accumulatedLogs || destroyResult.stdout,
           },
         });
 

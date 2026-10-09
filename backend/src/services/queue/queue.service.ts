@@ -195,6 +195,16 @@ export class QueueService {
       }
     });
 
+    // Drain any in-memory jobs queued prior to listener registration
+    if (this.queuedJobs.length > 0) {
+      const pendingJobs = [...this.queuedJobs];
+      for (const job of pendingJobs) {
+        setImmediate(() => {
+          this.fallbackEmitter.emit('job', job);
+        });
+      }
+    }
+
     await this.initialize();
 
     if (this.connection && !this.inMemoryFallback) {

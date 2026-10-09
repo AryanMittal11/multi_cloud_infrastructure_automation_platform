@@ -65,7 +65,10 @@ export class WorkspaceManager {
       // Copy all .tf files from source template into isolated workspace
       const files = fs.readdirSync(sourceTemplateDir);
       for (const file of files) {
-        if (file.endsWith('.tf') || file.endsWith('.hcl')) {
+        if (
+          (file.endsWith('.tf') || file.endsWith('.hcl')) &&
+          !file.startsWith('.terraform')
+        ) {
           fs.copyFileSync(path.join(sourceTemplateDir, file), path.join(workspaceDir, file));
         }
       }
