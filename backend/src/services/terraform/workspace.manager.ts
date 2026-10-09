@@ -12,9 +12,13 @@ export class WorkspaceManager {
     this.baseDir = path.resolve(process.cwd(), baseDir || env.TERRAFORM_WORKSPACE_DIR);
     this.templatesRootDir = path.resolve(__dirname, '../../../templates');
 
-    // Ensure base workspace directory exists
+    // Ensure base workspace and shared plugin cache directories exist
     if (!fs.existsSync(this.baseDir)) {
       fs.mkdirSync(this.baseDir, { recursive: true });
+    }
+    const pluginCacheDir = path.resolve(this.baseDir, '.plugin-cache');
+    if (!fs.existsSync(pluginCacheDir)) {
+      fs.mkdirSync(pluginCacheDir, { recursive: true });
     }
   }
 
@@ -86,13 +90,32 @@ export class WorkspaceManager {
     fs.writeFileSync(tfvarsPath, JSON.stringify(config.configuration, null, 2), 'utf8');
 
     // 3. Generate provider block matching the target cloud (multi-provider aware)
-    const providerPath = path.join(workspaceDir, 'provider_override.tf');
+    const providerPath = path.join(workspaceDir, 'providers.tf');
     const provider = this.resolveProviderFromReference(config.templateReference);
-    const providerHcl = this.buildProviderBlock(provider, config);
+    const hasRequiredProviders = this.hasRequiredProviders(workspaceDir);
+    const providerHcl = this.buildProviderBlock(provider, config, !hasRequiredProviders);
     fs.writeFileSync(providerPath, providerHcl.trim(), 'utf8');
 
     logger.info(`Prepared isolated workspace at ${workspaceDir} (provider: ${provider})`);
     return workspaceDir;
+  }
+
+  /**
+   * Checks if any .tf file in the workspace already declares a required_providers block.
+   */
+  private hasRequiredProviders(workspaceDir: string): boolean {
+    try {
+      const files = fs.readdirSync(workspaceDir).filter((f) => f.endsWith('.tf') && f !== 'providers.tf');
+      for (const file of files) {
+        const content = fs.readFileSync(path.join(workspaceDir, file), 'utf8');
+        if (/\brequired_providers\s*\{/.test(content)) {
+          return true;
+        }
+      }
+    } catch {
+      return false;
+    }
+    return false;
   }
 
   /**
@@ -141,24 +164,14 @@ export class WorkspaceManager {
   private buildProviderBlock(
     provider: 'AWS' | 'AZURE' | 'GCP',
     config: WorkspaceConfig,
+    includeRequiredProviders: boolean = false,
   ): string {
+    const terraformBlock = includeRequiredProviders ? this.buildTerraformBlock(provider) : '';
+
     if (provider === 'AZURE') {
       const location = config.region || config.configuration.location || 'eastus';
       return `
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.5"
-    }
-  }
-}
-
+${terraformBlock}
 # Authentication is injected via ARM_* environment variables by the worker.
 provider "azurerm" {
   features {
@@ -184,20 +197,7 @@ locals {
     if (provider === 'GCP') {
       const region = config.region || config.configuration.region || 'us-east1';
       return `
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.5"
-    }
-  }
-}
-
+${terraformBlock}
 # Authentication and project resolution are injected via
 # GOOGLE_CREDENTIALS / GOOGLE_PROJECT environment variables by the worker.
 provider "google" {
@@ -214,20 +214,7 @@ locals {
     // AWS (default)
     const region = config.region || config.configuration.region || 'us-east-1';
     return `
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.5"
-    }
-  }
-}
-
+${terraformBlock}
 # Authentication is injected via AWS_* environment variables by the worker.
 provider "aws" {
   region = "${region}"
@@ -239,6 +226,52 @@ provider "aws" {
   }
 }
 `;
+  }
+
+  private buildTerraformBlock(provider: 'AWS' | 'AZURE' | 'GCP'): string {
+    if (provider === 'AZURE') {
+      return `terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}`;
+    }
+    if (provider === 'GCP') {
+      return `terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}`;
+    }
+    return `terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+}`;
   }
 
   /**

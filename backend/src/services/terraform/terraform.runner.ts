@@ -69,19 +69,29 @@ export class TerraformRunner {
       return this.executeSimulated(args, options, startTime);
     }
 
+    // Prepare merged environment variables with plugin cache
+    const pluginCacheDir = path.resolve(
+      process.cwd(),
+      process.env.TERRAFORM_WORKSPACE_DIR || './workspaces',
+      '.plugin-cache',
+    );
+    if (!fs.existsSync(pluginCacheDir)) {
+      fs.mkdirSync(pluginCacheDir, { recursive: true });
+    }
+
+    const env = {
+      ...process.env,
+      TF_PLUGIN_CACHE_DIR: pluginCacheDir,
+      TF_IN_AUTOMATION: '1',
+      TF_INPUT: '0',
+      ...(options.envVars || {}),
+    };
+
     return new Promise((resolve) => {
       let stdoutAcc = '';
       let stderrAcc = '';
       let isSettled = false;
       let timer: NodeJS.Timeout | null = null;
-
-      // Prepare merged environment variables
-      const env = {
-        ...process.env,
-        TF_IN_AUTOMATION: '1',
-        TF_INPUT: '0',
-        ...(options.envVars || {}),
-      };
 
       const child = spawn(this.terraformBinary, args, {
         cwd: options.workspaceDir,
@@ -123,9 +133,20 @@ export class TerraformRunner {
         if (isSettled) return;
         isSettled = true;
         if (timer) clearTimeout(timer);
-        logger.warn(`Terraform process error: ${err.message}. Falling back to simulated execution.`);
-        const simResult = await this.executeSimulated(args, options, startTime);
-        resolve(simResult);
+        if (isMockAuth) {
+          logger.warn(`Terraform process error in sandbox mode: ${err.message}. Simulating result.`);
+          const simResult = await this.executeSimulated(args, options, startTime);
+          return resolve(simResult);
+        }
+        logger.error(`Terraform process error: ${err.message}`);
+        resolve({
+          command: commandStr,
+          success: false,
+          exitCode: 1,
+          stdout: stdoutAcc,
+          stderr: stderrAcc + `\n${err.message}`,
+          durationMs: Date.now() - startTime,
+        });
       });
 
       child.on('close', async (code: number | null) => {
@@ -135,15 +156,15 @@ export class TerraformRunner {
         const exitCode = code === null ? 1 : code;
         const success = exitCode === 0;
 
-        // If real terraform failed due to credential validation, network, lockfile, or provider issues in dev, gracefully fallback
-        if (!success) {
+        // If mock credentials were used and an auth/provider error occurred, simulate gracefully
+        if (!success && isMockAuth) {
           const isFallbackableError =
             /InvalidClientTokenId|NoCredentialProviders|no valid credential sources|AuthenticationFailed|Unauthorized|403|GetCallerIdentity|validating provider credentials|Inconsistent dependency lock file|Failed to query available provider packages|Error: Failed to install provider|could not query provider registry/i.test(
               stderrAcc + stdoutAcc,
             );
 
           if (isFallbackableError) {
-            logger.warn('Terraform encountered environment/provider/credential error. Falling back to simulated dry-run.');
+            logger.warn('Terraform encountered sandbox credential error. Falling back to simulated dry-run.');
             const simResult = await this.executeSimulated(args, options, startTime);
             return resolve(simResult);
           }
@@ -159,17 +180,27 @@ export class TerraformRunner {
         });
       });
 
-      // Default execution timeout guard (30s)
-      const timeoutDuration = options.timeoutMs || 30000;
+      // Command timeout guard (default 180s for real cloud operations)
+      const timeoutDuration = options.timeoutMs || 180000;
       timer = setTimeout(async () => {
         if (!isSettled) {
           isSettled = true;
           killProcessTree();
-          logger.warn(`Terraform command timed out after ${timeoutDuration}ms. Falling back to simulated execution.`);
-          // Pause briefly to let OS release file locks on Windows
-          await new Promise((r) => setTimeout(r, 150));
-          const simResult = await this.executeSimulated(args, options, startTime);
-          resolve(simResult);
+          if (isMockAuth) {
+            logger.warn(`Terraform command timed out after ${timeoutDuration}ms in sandbox mode. Simulating result.`);
+            await new Promise((r) => setTimeout(r, 150));
+            const simResult = await this.executeSimulated(args, options, startTime);
+            return resolve(simResult);
+          }
+          logger.error(`Terraform command timed out after ${timeoutDuration}ms`);
+          resolve({
+            command: commandStr,
+            success: false,
+            exitCode: 124,
+            stdout: stdoutAcc,
+            stderr: stderrAcc + `\nTerraform command timed out after ${timeoutDuration}ms`,
+            durationMs: Date.now() - startTime,
+          });
         }
       }, timeoutDuration);
     });
@@ -364,11 +395,13 @@ export class TerraformRunner {
     };
 
     const resources = (declared.length > 0 ? declared : [{ type: 'aws_vpc', name: 'main' }]).map((r, i) => ({
+      mode: 'managed',
       type: r.type,
       name: r.name,
       provider: providerFor(r.type),
       instances: [
         {
+          schema_version: 1,
           attributes: {
             id: `sim-${r.type}-${r.name}-${i}`,
             arn: `arn:simulated:${r.type}:${r.name}:${i}`,

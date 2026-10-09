@@ -42,7 +42,7 @@ describe('WorkspaceManager', () => {
     expect(parsedTfvars.vpc_cidr).toBe('10.0.0.0/16');
 
     // Verify provider override was written
-    const providerFile = path.join(workspaceDir, 'provider_override.tf');
+    const providerFile = path.join(workspaceDir, 'providers.tf');
     expect(fs.existsSync(providerFile)).toBe(true);
     const providerContent = fs.readFileSync(providerFile, 'utf8');
     expect(providerContent).toContain('us-west-2');
@@ -125,7 +125,7 @@ describe('WorkspaceManager', () => {
       region: 'westeurope',
     });
 
-    const providerContent = fs.readFileSync(path.join(workspaceDir, 'provider_override.tf'), 'utf8');
+    const providerContent = fs.readFileSync(path.join(workspaceDir, 'providers.tf'), 'utf8');
     expect(providerContent).toContain('provider "azurerm"');
     expect(providerContent).toContain('westeurope');
     // Zero Secret Leakage: credentials must never be written into HCL
@@ -142,7 +142,7 @@ describe('WorkspaceManager', () => {
       region: 'europe-west1',
     });
 
-    const providerContent = fs.readFileSync(path.join(workspaceDir, 'provider_override.tf'), 'utf8');
+    const providerContent = fs.readFileSync(path.join(workspaceDir, 'providers.tf'), 'utf8');
     expect(providerContent).toContain('provider "google"');
     expect(providerContent).toContain('europe-west1');
     // Zero Secret Leakage: no credential assignment may appear in the provider stanza
